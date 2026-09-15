@@ -4,7 +4,7 @@ import { createServerClient } from '@supabase/ssr'
 import { registrarError } from '@/lib/errores'
 
 // Proxy de Next.js 16 (runtime Node.js). Capa de UX/refresco de sesión, NO de seguridad:
-// cada Server Action / Ruta protegida vuelve a verificar sesión y rol.
+// cada Server Action / Ruta protegida vuelve a verificar sesión y faceta.
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
   // Cookies de sesión refrescadas en este request (para reenviarlas en redirects).

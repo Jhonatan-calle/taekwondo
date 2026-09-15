@@ -10,7 +10,7 @@ if (!supabaseUrl || !serviceRoleKey) {
 }
 
 // Cliente ADMIN con SERVICE ROLE (Route Handlers / Server Actions de privilegio).
-// Bypass de RLS: único canal autorizado para escribir profiles.rol y operaciones internas.
+// Bypass de RLS: único canal autorizado para escribir profiles.es_profesor y operaciones internas.
 export const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
   auth: {
     persistSession: false,

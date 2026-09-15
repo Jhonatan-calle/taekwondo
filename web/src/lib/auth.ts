@@ -23,7 +23,7 @@ export async function requireUser() {
   redirect('/login')
 }
 
-// Perfil del usuario (rol). Fallo de BD → registrado + null (nunca rompe la vista).
+// Perfil del usuario (faceta profesor). Fallo de BD → registrado + null (nunca rompe la vista).
 export async function getProfile() {
   const user = await getUser()
   if (!user) return null
@@ -31,7 +31,7 @@ export async function getProfile() {
     const supabase = await createClient()
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('rol')
+      .select('es_profesor')
       .eq('id', user.id)
       .maybeSingle()
     if (error) throw error
@@ -42,12 +42,12 @@ export async function getProfile() {
   }
 }
 
-// Obliga a tener sesión + rol profesor. Redirige a / si no cumple.
+// Obliga a tener sesión + faceta profesor activa. Redirige a / si no cumple.
 export async function requireProfesor() {
   const user = await requireUser()
   const profile = await getProfile()
-  if (!profile || profile.rol !== 'profesor') {
+  if (!profile || profile.es_profesor !== true) {
     redirect('/')
   }
-  return { user, profile, rol: profile.rol }
+  return { user, profile, esProfesor: profile.es_profesor }
 }

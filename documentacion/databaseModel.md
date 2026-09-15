@@ -16,7 +16,7 @@ erDiagram
         string datos_salud
         uuid maestro_id FK "maestro ascendente (linaje/árbol de poder)"
         bool grados_verificados
-        string rol "profesor | alumno (organizador = profesor dueño del torneo; Fase 2 evoluciona a facetas duales)"
+        bool es_profesor "faceta profesor (alumno = perfil base)"
         timestamptz creado_en
     }
 

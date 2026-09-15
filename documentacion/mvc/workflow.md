@@ -6,11 +6,17 @@
 
 - [x] **Autenticación:** Implementar Supabase Auth para gestionar la seguridad del MVP y los roles. La seguridad del MVP estará centrada en Profesores y Organizadores, quienes tendrán cuentas activas para gestionar los torneos.
 
+> **NOTA — Rutas públicas y proxy (`web/src/proxy.ts`):**
+> El proxy redirige toda ruta sin sesión a `/login`. Las rutas públicas de la
+> **Fase 3** (p. ej. `/t/<link_token>` para que el alumno complete su inscripción
+> sin registrarse) DEBEN agregarse al bypass del matcher del proxy.
+> EVITAR regresiones de acceso público entre sesiones.
+
 
 
 **Fase 2: Modelado de Usuarios y Base de Datos (PostgreSQL)**
 
-- [ ] **Esquema de Roles Duales:** Estructurar en el back-end (PostgreSQL) el sistema que permite a un usuario actuar tanto de alumno como de profesor bajo una misma cuenta.
+- [x] **Esquema de Roles Duales:** Estructurar en el back-end (PostgreSQL) el sistema que permite a un usuario actuar tanto de alumno como de profesor bajo una misma cuenta.
 
 - [ ] **Árbol de Jerarquías:** Modelar las relaciones complejas del sistema para el linaje o árbol jerárquico, permitiendo que cada alumno esté conectado a un grupo administrado por su Profesor.
 
@@ -90,4 +96,10 @@ Los `try/catch` del sistema registran los errores capturados en una tabla intern
 |  |  |  |  |  |  |  |
 |  |  |  |  |  |  |  |
 |  |  |  |  |  |  |  |
+
+---
+
+**Anexo: Rutas públicas y proxy**
+
+Al crear rutas públicas (inscripción web de Fase 3 u otras sin login), actualizar el `matcher` de `web/src/proxy.ts` (hoy excluye `api|_next/static|_next/image|favicon.ico|estáticos`) para que esas rutas no se redirijan a `/login`. Verificarlo con `curl` sin sesión previa.
 |  |  |  |  |  |  |  |

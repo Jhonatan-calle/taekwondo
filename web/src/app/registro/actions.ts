@@ -48,11 +48,12 @@ export async function registrar(
     if (error) throw error
     if (!data.user) throw new Error('No se pudo crear el usuario.')
 
-    // El rol y el nombre se escriben EXCLUSIVAMENTE con el cliente admin (Service Role):
-    // las políticas RLS + el trigger de seguridad impiden que un usuario se auto-asigne rol.
+    // La faceta profesor y el nombre se escriben EXCLUSIVAMENTE con el cliente
+    // admin (Service Role): las políticas RLS + el trigger de seguridad impiden
+    // que un usuario se auto-active como profesor.
     const { error: errorPerfil } = await supabaseAdmin
       .from('profiles')
-      .update({ rol: 'profesor', nombre_completo: nombre })
+      .update({ es_profesor: true, nombre_completo: nombre })
       .eq('id', data.user.id)
     if (errorPerfil) throw errorPerfil
   } catch (error) {

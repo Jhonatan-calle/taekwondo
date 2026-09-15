@@ -18,7 +18,7 @@
 
 - [x] **Esquema de Roles Duales:** Estructurar en el back-end (PostgreSQL) el sistema que permite a un usuario actuar tanto de alumno como de profesor bajo una misma cuenta.
 
-- [ ] **Árbol de Jerarquías:** Modelar las relaciones complejas del sistema para el linaje o árbol jerárquico, permitiendo que cada alumno esté conectado a un grupo administrado por su Profesor.
+- [x] **Árbol de Jerarquías:** Modelar las relaciones complejas del sistema para el linaje o árbol jerárquico, permitiendo que cada alumno esté conectado a un grupo administrado por su Profesor.
 
 - [ ] **Restricciones de Acceso:** Configurar la lógica para que solo los usuarios con 1er Dan o superior verificado puedan activar la faceta de Profesor y acceder a funciones de gestión.
 

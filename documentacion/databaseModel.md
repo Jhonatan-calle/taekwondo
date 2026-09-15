@@ -14,7 +14,7 @@ erDiagram
         numeric altura_cm
         string contacto_emergencia
         string datos_salud
-        uuid maestro_id FK "maestro ascendente (linaje/árbol de poder)"
+        uuid maestro_id FK "maestro ascendente (se deriva al aprobarse el 1er grupo; reasignable solo vía Service Role)"
         bool grados_verificados
         bool es_profesor "faceta profesor (alumno = perfil base)"
         timestamptz creado_en
@@ -22,7 +22,7 @@ erDiagram
 
     GRUPOS {
         uuid id PK
-        uuid profesor_id FK
+        uuid profesor_id FK "RLS: dueño (profesor) + miembros del grupo"
         string nombre
         string ubicacion
         string horarios
@@ -31,7 +31,7 @@ erDiagram
     }
 
     MIEMBROS_GRUPO {
-        uuid grupo_id FK
+        uuid grupo_id FK "RLS: alumno solo a sí mismo; profesor a su grupo"
         uuid alumno_id FK
         string estado "activo | pendiente_aprobacion"
         timestamptz creado_en

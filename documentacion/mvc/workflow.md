@@ -1,8 +1,8 @@
 **Fase 1: Setup de la Arquitectura Base y Repositorio**
 
 - [x] **Inicialización del Frontend:** Configurar el proyecto utilizando Next.js (React) junto con Tailwind CSS y shadcn/ui. Esto garantizará un diseño fluido e impecable centrado en el enfoque "Mobile-First".
-
-- [ ] **Inicialización del Backend y Base de Datos:** Configurar Supabase para utilizar PostgreSQL como base de datos principal. Es crucial estructurar la base de datos desde el primer día para almacenar perfiles e historiales completos.
+|
+- [x] **Inicialización del Backend y Base de Datos:** Configurar Supabase para utilizar PostgreSQL como base de datos principal. Es crucial estructurar la base de datos desde el primer día para almacenar perfiles e historiales completos.
 
 - [ ] **Autenticación:** Implementar Supabase Auth para gestionar la seguridad del MVP y los roles. La seguridad del MVP estará centrada en Profesores y Organizadores, quienes tendrán cuentas activas para gestionar los torneos.
 

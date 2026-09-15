@@ -71,8 +71,8 @@ erDiagram
         uuid id PK
         uuid torneo_id FK
         uuid alumno_id FK
-        uuid profesor_id FK "profesor que da el aval"
-        jsonb datos_antropometricos "edad, peso, altura"
+        uuid profesor_id FK "profesor que da el aval; en el formulario público (/t/:token) lo elige el participante"
+        jsonb datos_antropometricos "snapshot al inscribirse: {grado, fecha_nacimiento, peso_kg, altura_cm}"
         string estado "pendiente | confirmado | rechazado"
         uuid confirmado_por FK
         timestamptz confirmado_en

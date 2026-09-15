@@ -7,8 +7,10 @@
   monetización). App móvil nativa en etapas futuras.
 - Docs de referencia obligatoria antes de codear:
   - `documentacion/descripcion-general.md` → SRS completo (roles, torneos, reglas de negocio).
+  - `documentacion/ReglasyRestricciones-SistemaTaekwondoITF.md` → Reglas de negocio, permisos y
+    restricciones del sistema (roles y grados, eventos, inscripciones a torneos, emparejamiento).
   - `documentacion/mvc/stack.md` → Stack tecnológico (solo para el mvc).
-  - `documentacion/mvc/workflow.md` → Fases de desarrollo con checkboxes de avance (solo para el mvc)..
+  - `documentacion/mvc/workflow.md` → Fases de desarrollo con checkboxes de avance (solo para el mvc).
 
 ## Stack tecnológico
 - Frontend: Next.js (React) + Tailwind CSS + shadcn/ui (Mobile-First).

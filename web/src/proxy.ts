@@ -41,9 +41,12 @@ export async function proxy(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     const path = request.nextUrl.pathname
+    // Rutas públicas sin sesión: login/registro y la inscripción pública por link
+    // (Fase 3: `/t/<link_token>` para completar la inscripción sin registrarse).
     const esRutaLogin = path === '/login' || path === '/registro'
+    const esRutaPublica = esRutaLogin || path.startsWith('/t/')
 
-    if (!user && !esRutaLogin) {
+    if (!user && !esRutaPublica) {
       const url = request.nextUrl.clone()
       url.pathname = '/login'
       url.search = ''

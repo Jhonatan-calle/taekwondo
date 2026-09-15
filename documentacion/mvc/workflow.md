@@ -27,7 +27,8 @@
 **Fase 3:* Desarrollo del Módulo de Torneos MVP (Next.js & Node.js)**
 Esta fase es la prioridad del MVP y la vía inicial de monetización.
 
-- [ ] **Flujo de Inscripción Web:** Desarrollar los formularios en Next.js donde el participante completa sus datos tras recibir un link de su profesor. Este formulario no procesará pagos, ya que el alumno abonará directamente al profesor en efectivo o transferencia.
+- [x] **Flujo de Inscripción Web:** Desarrollar los formularios en Next.js donde el participante completa sus datos tras recibir un link de su profesor. Este formulario no procesará pagos, ya que el alumno abonará directamente al profesor en efectivo o transferencia.
+  - Ruta pública `/t/<link_token>` (sin sesión) con formulario Mobile-First: nombre, email, fecha de nacimiento, peso, altura, cinturón y **elección del maestro** (federa el aval). El envío crea la cuenta de sistema (vía Admin API) + perfil poblado + `inscripciones` en estado `pendiente`. Validación cruzada de identidad para emails preexistentes y captura del unique 23505. El alta mínima de torneo en `/panel` genera el `link_token`. Detalles en `documentacion/planes/flujo-inscripcion-web.md`.
 
 - [ ] **Panel de Profesores:** Crear la vista donde los profesores validan las inscripciones en estado "Pendiente" y confirman a los alumnos que ya pagaron. En esta instancia, el profesor podrá cargar datos internos e invisibles para el alumno, como el nivel de agresividad.
 

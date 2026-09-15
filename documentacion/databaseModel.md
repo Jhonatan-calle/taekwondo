@@ -16,6 +16,7 @@ erDiagram
         string datos_salud
         uuid maestro_id FK "maestro ascendente (se deriva al aprobarse el 1er grupo; reasignable solo vía Service Role)"
         bool grados_verificados
+        grado_dan grado_dan_actual "Dan vigente verificado (solo-sistema; su presencia habilita la faceta profesor)"
         bool es_profesor "faceta profesor (alumno = perfil base)"
         timestamptz creado_en
     }

@@ -1,4 +1,4 @@
-**Fase 1: Setup de la Arquitectura Base y Repositorio**
+*Fase 1: Setup de la Arquitectura Base y Repositorio**
 
 - [x] **Inicialización del Frontend:** Configurar el proyecto utilizando Next.js (React) junto con Tailwind CSS y shadcn/ui. Esto garantizará un diseño fluido e impecable centrado en el enfoque "Mobile-First".
 |
@@ -20,7 +20,7 @@
 
 - [x] **Árbol de Jerarquías:** Modelar las relaciones complejas del sistema para el linaje o árbol jerárquico, permitiendo que cada alumno esté conectado a un grupo administrado por su Profesor.
 
-- [ ] **Restricciones de Acceso:** Configurar la lógica para que solo los usuarios con 1er Dan o superior verificado puedan activar la faceta de Profesor y acceder a funciones de gestión.
+- [x] **Restricciones de Acceso:** Configurar la lógica para que solo los usuarios con 1er Dan o superior verificado puedan activar la faceta de Profesor y acceder a funciones de gestión.
 
 
 

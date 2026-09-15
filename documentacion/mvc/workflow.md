@@ -24,7 +24,7 @@
 
 
 
-**Fase 3: Desarrollo del Módulo de Torneos MVP (Next.js & Node.js)**
+**Fase 3:* Desarrollo del Módulo de Torneos MVP (Next.js & Node.js)**
 Esta fase es la prioridad del MVP y la vía inicial de monetización.
 
 - [ ] **Flujo de Inscripción Web:** Desarrollar los formularios en Next.js donde el participante completa sus datos tras recibir un link de su profesor. Este formulario no procesará pagos, ya que el alumno abonará directamente al profesor en efectivo o transferencia.

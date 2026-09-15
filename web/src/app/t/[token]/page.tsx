@@ -1,3 +1,4 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { registrarError } from '@/lib/errores'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import type { MaestroParaInscripcion } from './actions'
@@ -71,26 +72,34 @@ export default async function InscripcionPagina({ params, searchParams }: Parame
   }).format(new Date(`${resultado.torneoFecha}T00:00:00Z`))
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 p-6">
-      <div className="text-center">
-        <h1 className="text-2xl font-semibold">Inscripción a torneo</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {resultado.torneoNombre} · {fechaLegible}
-        </p>
-      </div>
-      <InscripcionForm token={token} maestros={resultado.maestros} />
+    <main className="flex flex-1 items-center justify-center p-6">
+      <Card className="w-full max-w-sm">
+        <CardHeader className="text-center">
+          <CardTitle>Inscripción a torneo</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            {resultado.torneoNombre} · {fechaLegible}
+          </p>
+        </CardHeader>
+        <CardContent>
+          <InscripcionForm token={token} maestros={resultado.maestros} />
+        </CardContent>
+      </Card>
     </main>
   )
 }
 
 function Mensaje({ icono, titulo, texto }: { icono: string; titulo: string; texto: string }) {
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
-      <span className="text-4xl" role="img" aria-hidden>
-        {icono}
-      </span>
-      <h1 className="text-xl font-semibold">{titulo}</h1>
-      <p className="text-sm text-muted-foreground">{texto}</p>
+    <main className="flex flex-1 items-center justify-center p-6">
+      <Card className="w-full max-w-sm">
+        <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
+          <span className="text-4xl" role="img" aria-hidden>
+            {icono}
+          </span>
+          <CardTitle>{titulo}</CardTitle>
+          <p className="text-sm text-muted-foreground">{texto}</p>
+        </CardContent>
+      </Card>
     </main>
   )
 }

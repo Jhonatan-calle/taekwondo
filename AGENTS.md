@@ -11,6 +11,8 @@
     restricciones del sistema (roles y grados, eventos, inscripciones a torneos, emparejamiento).
   - `documentacion/mvc/stack.md` → Stack tecnológico (solo para el mvc).
   - `documentacion/mvc/workflow.md` → Fases de desarrollo con checkboxes de avance (solo para el mvc).
+  - `documentacion/guia-estetica.md` → Design system: tokens de color, patrones de layout,
+    componentes UI compartidos y patrón canónico de formulario. Obligatoria antes de escribir estilos.
 
 ## Stack tecnológico
 - Frontend: Next.js (React) + Tailwind CSS + shadcn/ui (Mobile-First).

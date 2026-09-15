@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { requireProfesor } from '@/lib/auth'
 import { registrarError } from '@/lib/errores'
 import { createClient } from '@/lib/supabase/server'
@@ -20,7 +21,7 @@ export default async function PanelPage() {
   const torneos = await listarTorneos(supabase, user.id)
 
   return (
-    <main className="flex w-full max-w-3xl flex-1 flex-col gap-6 p-6">
+    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Panel de Profesor</h1>
@@ -35,44 +36,50 @@ export default async function PanelPage() {
         </form>
       </div>
 
-      <section className="rounded-2xl border bg-card p-6 shadow-sm">
-        <h2 className="text-lg font-medium">Nuevo torneo</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Al crearlo se genera automáticamente el link de inscripción para compartir con tus alumnos.
-        </p>
-        <div className="mt-4">
-          <TorneoNuevoForm />
-        </div>
-      </section>
-
-      <section className="rounded-2xl border bg-card p-6 shadow-sm">
-        <h2 className="text-lg font-medium">Tus torneos</h2>
-        {torneos.length === 0 ? (
-          <p className="mt-1 text-sm text-muted-foreground">
-            Todavía no creaste torneos. Usá el formulario de arriba para empezar.
+      <Card>
+        <CardHeader>
+          <CardTitle>Nuevo torneo</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Al crearlo se genera automáticamente el link de inscripción para compartir con tus alumnos.
           </p>
-        ) : (
-          <ul className="mt-4 flex flex-col gap-4">
-            {torneos.map((torneo) => (
-              <li key={torneo.id} className="flex flex-col gap-1 rounded-xl border p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-medium">{torneo.nombre}</span>
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                    {ESTADO_TORNEO[torneo.estado] ?? torneo.estado}
-                  </span>
-                </div>
-                <span className="text-sm text-muted-foreground">{fechaLegible(torneo.fecha)}</span>
-                <code className="mt-1 truncate rounded-md bg-muted px-2 py-1 text-xs">
-                  {enlaceInscripcion(torneo.link_token)}
-                </code>
-                <p className="text-xs text-muted-foreground">
-                  Compartí este link para que tus alumnos completen su inscripción.
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+        </CardHeader>
+        <CardContent>
+          <TorneoNuevoForm />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Tus torneos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {torneos.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Todavía no creaste torneos. Usá el formulario de arriba para empezar.
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-4">
+              {torneos.map((torneo) => (
+                <li key={torneo.id} className="flex flex-col gap-1 rounded-xl border p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium">{torneo.nombre}</span>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                      {ESTADO_TORNEO[torneo.estado] ?? torneo.estado}
+                    </span>
+                  </div>
+                  <span className="text-sm text-muted-foreground">{fechaLegible(torneo.fecha)}</span>
+                  <code className="mt-1 truncate rounded-md bg-muted px-2 py-1 text-xs">
+                    {enlaceInscripcion(torneo.link_token)}
+                  </code>
+                  <p className="text-xs text-muted-foreground">
+                    Compartí este link para que tus alumnos completen su inscripción.
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
     </main>
   )
 }

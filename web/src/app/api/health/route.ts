@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
 
-import { supabaseServer } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/admin'
 
 // Health check: verifica conectividad con la base de datos (select 1).
 export async function GET() {
   try {
-    const { error } = await supabaseServer.from('profiles').select('id').limit(1)
+    const { error } = await supabaseAdmin.from('profiles').select('id').limit(1)
     if (error) {
       throw error
     }

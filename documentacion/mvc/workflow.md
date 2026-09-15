@@ -4,7 +4,7 @@
 |
 - [x] **Inicialización del Backend y Base de Datos:** Configurar Supabase para utilizar PostgreSQL como base de datos principal. Es crucial estructurar la base de datos desde el primer día para almacenar perfiles e historiales completos.
 
-- [ ] **Autenticación:** Implementar Supabase Auth para gestionar la seguridad del MVP y los roles. La seguridad del MVP estará centrada en Profesores y Organizadores, quienes tendrán cuentas activas para gestionar los torneos.
+- [x] **Autenticación:** Implementar Supabase Auth para gestionar la seguridad del MVP y los roles. La seguridad del MVP estará centrada en Profesores y Organizadores, quienes tendrán cuentas activas para gestionar los torneos.
 
 
 

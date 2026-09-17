@@ -5,6 +5,7 @@ import { requireProfesor } from '@/lib/auth'
 import { registrarError } from '@/lib/errores'
 import { createClient } from '@/lib/supabase/server'
 import { cerrarSesion } from './actions'
+import { GenerarLlavesForm } from './generar-llaves-form'
 import type { InscripcionesGrupo } from './inscripciones'
 import { InscripcionesSeccion } from './inscripciones'
 import { TorneoNuevoForm } from './torneo-nuevo-form'
@@ -45,14 +46,22 @@ const VARIANTE_ESTADO_TORNEO: Record<string, 'default' | 'success' | 'warning' |
   finalizado: 'default',
 }
 
-export default async function PanelPage() {
+export default async function PanelPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ llaves?: string; omitidos?: string }>
+}) {
   const { user } = await requireProfesor()
+  const params = await searchParams
 
   const supabase = await createClient()
-  const [torneos, grupos] = await Promise.all([
-    listarTorneos(supabase, user.id),
+  const torneos = await listarTorneos(supabase, user.id)
+  const [grupos, resumenLlaves] = await Promise.all([
     listarInscripcionesAgrupadas(supabase, user.id),
+    listarResumenLlaves(supabase, torneos.map((t) => t.id)),
   ])
+
+  const omitidos = Number(params.omitidos ?? 0)
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-6">
@@ -69,6 +78,18 @@ export default async function PanelPage() {
           </Button>
         </form>
       </div>
+
+      {params.llaves && (
+        <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+          Las llaves se armaron correctamente.
+          {omitidos > 0 && (
+            <span className="mt-0.5 block text-xs text-emerald-600">
+              Se omitieron {omitidos} inscripción(es) por datos incompletos. Revisá esas filas en
+              tus inscripciones para completar su agresividad o datos.
+            </span>
+          )}
+        </div>
+      )}
 
       <Card>
         <CardHeader>
@@ -126,6 +147,23 @@ export default async function PanelPage() {
                   <p className="text-xs text-muted-foreground">
                     Compartí este link para que tus alumnos completen su inscripción.
                   </p>
+                  {(torneo.estado === 'inscripciones' || torneo.estado === 'armado_llaves') && (
+                    <GenerarLlavesForm torneoId={torneo.id} />
+                  )}
+                  {torneo.estado === 'armado_llaves' &&
+                    (resumenLlaves.get(torneo.id)?.length ?? 0) > 0 && (
+                      <div className="mt-1 flex flex-col gap-0.5 rounded-lg bg-muted/50 p-3">
+                        <p className="text-xs font-medium uppercase text-muted-foreground">
+                          Llaves armadas
+                        </p>
+                        {(resumenLlaves.get(torneo.id) ?? []).map((cat) => (
+                          <p key={cat.id} className="text-xs text-muted-foreground">
+                            {cat.nombre}: {cat.enfrentamientos} enfrentamiento(s) ·{' '}
+                            {cat.libres} libre(s)
+                          </p>
+                        ))}
+                      </div>
+                    )}
                 </li>
               ))}
             </ul>
@@ -235,4 +273,60 @@ function fechaLegible(fecha: string): string {
 
 function enlaceInscripcion(token: string): string {
   return `/t/${token}`
+}
+
+type CategoriaLigera = {
+  id: string
+  nombre: string
+  torneo_id: string
+  enfrentamientos: number
+  libres: number
+}
+
+// Resumen de llaves por torneo (solo lectura, RLS organizador). Sirve para la card
+// "Tus torneos": por categoría, cantidad de enfrentamientos y libres (byes).
+async function listarResumenLlaves(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  torneoIds: string[],
+): Promise<Map<string, CategoriaLigera[]>> {
+  const mapa = new Map<string, CategoriaLigera[]>()
+  if (torneoIds.length === 0) return mapa
+
+  try {
+    const { data, error } = await supabase
+      .from('categorias')
+      .select(`id, nombre, torneo_id, llaves(enfrentamientos(id, participante_a, participante_b))`)
+      .in('torneo_id', torneoIds)
+    if (error) throw error
+
+    for (const fila of data ?? []) {
+      const llaves = Array.isArray(fila.llaves) ? fila.llaves : fila.llaves ? [fila.llaves] : []
+      let enfrentamientos = 0
+      let libres = 0
+      for (const llave of llaves) {
+        const ef = Array.isArray(llave.enfrentamientos)
+          ? llave.enfrentamientos
+          : llave.enfrentamientos
+            ? [llave.enfrentamientos]
+            : []
+        for (const e of ef) {
+          if (e.participante_b) enfrentamientos++
+          else libres++
+        }
+      }
+      const lista = mapa.get(fila.torneo_id) ?? []
+      lista.push({
+        id: fila.id,
+        nombre: fila.nombre,
+        torneo_id: fila.torneo_id,
+        enfrentamientos,
+        libres,
+      })
+      mapa.set(fila.torneo_id, lista)
+    }
+  } catch (error) {
+    await registrarError({ modulo: 'emparejamiento', contexto: 'listarResumenLlaves', error })
+  }
+
+  return mapa
 }

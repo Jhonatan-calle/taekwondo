@@ -91,8 +91,8 @@ erDiagram
         uuid id PK
         uuid torneo_id FK
         string nombre
-        grado_gup rango_min
-        string rango_max_especial "maneja caso 'dan' (1er Dan+)"
+        grado_gup rango_min "solo rangos Gup: primer cinturón del rango (ej blanco/amarillo/azul)"
+        string rango_max_especial "maneja caso 'dan' (ej 'dan_3'/'dan_6'); null en rangos Gup"
         int edad_min
         int edad_max
         numeric peso_min
@@ -102,7 +102,7 @@ erDiagram
     LLAVES {
         uuid id PK
         uuid categoria_id FK
-        string nombre_ronda
+        string nombre_ronda "el armado inicial crea 'Primera ronda' (orden 0)"
         int orden
     }
 
@@ -110,7 +110,7 @@ erDiagram
         uuid id PK
         uuid llave_id FK
         uuid participante_a FK
-        uuid participante_b FK
+        uuid participante_b FK "null = bye (sin rival válido)"
         uuid ganador_id FK
         string tipo "combate | tul"
         string estado "pendiente | en_curso | finalizado"
@@ -167,3 +167,21 @@ erDiagram
     TORNEOS ||--o| JURADOS_TORNEO : torneo_id
     PROFILES ||--o{ JURADOS_TORNEO : jurado_id
     PROFILES ||--o| GRADUACIONES : alumno_id
+
+    ```
+
+## Notas del Motor de Emparejamiento (Fase 3, ítem 3)
+
+- **Alcance:** solo armado inicial. El motor (TS puro en `web/src/lib/emparejamiento/`) toma
+  inscripciones **confirmadas** de un torneo, agrupa por categoría estricta (rango de cinturón ×
+  banda de edad, SRS §B.2) y empareja por mínima diferencia de peso con desempate por agresividad
+  y altura. Categoría infantil = bandas con `max ≤ 13 años` → prohibido emparejar con |Δpeso| > 5 kg.
+- **Persistencia atómica:** el resultado llega como jsonb al RPC `generar_llaves(p_torneo_id,
+  p_categorias)` (SECURITY DEFINER, valida que `auth.uid()` sea el `organizador_id`, elimina
+  categorías previas del torneo y reconstruye en una transacción; el torneo pasa a `armado_llaves`).
+- **Llaves iniciales:** cada categoría arma una `LLAVES` de primera ronda (`nombre_ronda =
+  'Primera ronda'`, `orden = 0`). Las rondas subsiguientes se generan en el módulo en vivo (Fase 3).
+- **Byes:** un participante sin rival válido (impar o infantil sin oponente dentro del tope) queda
+  como `ENFRENTAMIENTOS.participante_b = NULL`.
+- **RLS nuevas:** SELECT de `categorias`/`llaves`/`enfrentamientos` (y UPDATE de `torneos`) habilitado
+  para el organizador del torneo. Escritura de llaves solo vía RPC (nunca directa).

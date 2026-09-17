@@ -13,6 +13,8 @@
   - `documentacion/mvc/workflow.md` → Fases de desarrollo con checkboxes de avance (solo para el mvc).
   - `documentacion/guia-estetica.md` → Design system: tokens de color, patrones de layout,
     componentes UI compartidos y patrón canónico de formulario. Obligatoria antes de escribir estilos.
+  - `documentacion/planes/` → Planes previos (implementados y en curso) y su historial de
+    revisiones. Revisar antes de iniciar un nuevo plan para no duplicar ni contradecir.
 
 ## Stack tecnológico
 - Frontend: Next.js (React) + Tailwind CSS + shadcn/ui (Mobile-First).

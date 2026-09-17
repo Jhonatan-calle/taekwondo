@@ -4,7 +4,7 @@ import { useActionState } from 'react'
 
 import { SubmitButton } from '@/components/ui/submit-button'
 
-import { generarEmparejamiento, type ResultadoGenerarEmparejamiento } from './actions'
+import { generarEmparejamiento, type ResultadoGenerarEmparejamiento } from '../actions'
 
 // Botón "Generar llaves" por torneo (trigger mínimo del Motor de Emparejamiento).
 // Solo visible para torneos del organizador en estados que admiten (re)armado.

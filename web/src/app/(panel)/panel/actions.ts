@@ -55,7 +55,7 @@ export async function crearTorneo(
     return { error: 'No pudimos crear el torneo, intentá de nuevo en unos minutos.' }
   }
 
-  redirect('/panel')
+  redirect('/panel/torneos')
 }
 
 // Confirma el pago/aval de una inscripción pendiente (solo el profesor del aval).
@@ -91,7 +91,7 @@ export async function confirmarInscripcion(
     return { error: 'No pudimos confirmar la inscripción, intentá de nuevo en unos minutos.' }
   }
 
-  redirect('/panel')
+  redirect('/panel/inscripciones')
 }
 
 // Rechaza una inscripción pendiente. Deja audit trail simétrico (rechazado_por/en).
@@ -125,7 +125,7 @@ export async function rechazarInscripcion(
     return { error: 'No pudimos rechazar la inscripción, intentá de nuevo en unos minutos.' }
   }
 
-  redirect('/panel')
+  redirect('/panel/inscripciones')
 }
 
 // Carga/actualiza el nivel de agresividad (dato interno, invisible al alumno).
@@ -153,7 +153,7 @@ export async function guardarAgresividad(
     return { error: 'No pudimos guardar el nivel de agresividad, intentá de nuevo en unos minutos.' }
   }
 
-  redirect('/panel')
+  redirect('/panel/inscripciones')
 }
 
 // Arma las llaves de un torneo: solo inscripciones confirmadas (RLS), motor de
@@ -235,7 +235,7 @@ export async function generarEmparejamiento(
     })
     if (errorRpc) throw errorRpc
 
-    redirect(`/panel?llaves=${torneoId}&omitidos=${sinDatos}`)
+    redirect(`/panel/torneos?llaves=${torneoId}&omitidos=${sinDatos}`)
   } catch (error) {
     unstable_rethrow(error)
     await registrarError({ modulo: 'emparejamiento', contexto: 'generarEmparejamiento', error })

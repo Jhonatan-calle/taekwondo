@@ -97,6 +97,26 @@ Todas las cards del proyecto usan el componente `Card` de `@/components/ui/card`
 </Card>
 ```
 
+### Nav persistente (paneles con rutas)
+
+Para secciones de un panel con múltiples rutas, cada página usa el page-shell de "pateles con contenido largo" y la navegación vive en una barra persistente a nivel `layout`:
+
+```tsx
+// layout.tsx (Server): guard + header + nav
+<header className="border-b">
+  <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-2 p-6 pb-3">
+    {/* título del panel + acciones (ej. cerrar sesión) */}
+  </div>
+</header>
+<PanelNav />
+{children}
+```
+
+- `PanelNav` es un componente **Client** (`src/app/(panel)/panel/nav-panel.tsx`) que usa `usePathname()` para marcar la pill activa con `aria-current="page"`.
+- Pills: activo `bg-primary text-primary-foreground`; inactivo `text-muted-foreground hover:bg-muted`.
+- `flex gap-1 overflow-x-auto` → en móvil las pestañas hacen scroll horizontal.
+- Las Server Actions redirigen SIEMPRE a la ruta de la sección contextual (`/panel/torneos`, `/panel/inscripciones`), nunca a `/panel` genérico.
+
 ---
 
 ## 3. Catálogo de componentes

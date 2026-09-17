@@ -5,7 +5,7 @@ import { useActionState } from 'react'
 import { FormField } from '@/components/ui/form-field'
 import { Input } from '@/components/ui/input'
 import { SubmitButton } from '@/components/ui/submit-button'
-import { crearTorneo, type ResultadoCrearTorneo } from './actions'
+import { crearTorneo, type ResultadoCrearTorneo } from '../actions'
 
 export function TorneoNuevoForm() {
   const [state, formAction] = useActionState<ResultadoCrearTorneo, FormData>(crearTorneo, {})

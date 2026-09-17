@@ -106,15 +106,17 @@ Todos los componentes UI viven en `src/components/ui/` y se importan con `@/comp
 | Componente | Archivo | Descripción |
 |---|---|---|
 | `Button` | `button.tsx` | Botón con variantes (default, outline, secondary, ghost, destructive, link) |
+| `Badge` | `badge.tsx` | Etiqueta de estado/contabilidad (`rounded-full`); variantes `default`, `success`, `warning`, `destructive` |
 | `Card` | `card.tsx` | Contenedor con borde, fondo `bg-card` y sombra `shadow-sm` |
 | `CardHeader` | `card.tsx` | Header de la card (`p-6`) |
 | `CardTitle` | `card.tsx` | Título dentro del header (`text-lg font-semibold`) |
+| `CardDescription` | `card.tsx` | Subtítulo del header (`text-sm text-muted-foreground`) |
 | `CardContent` | `card.tsx` | Contenido de la card (`p-6 pt-0`) |
 | `Input` | `input.tsx` | Input de texto nativo estilizado (`h-9`, focus ring) |
 | `Label` | `label.tsx` | Label de formulario (`text-sm font-medium`) |
 | `Select` | `select.tsx` | Select nativo estilizado (`h-9`, focus ring) |
 | `FormField` | `form-field.tsx` | Wrapper Label + Input (`flex flex-col gap-1.5`) |
-| `SubmitButton` | `submit-button.tsx` | Botón de envío con `useFormStatus` automático |
+| `SubmitButton` | `submit-button.tsx` | Botón de envío con `useFormStatus` automático; acepta `variant`/`size` del `Button` y `textoCargando` |
 
 ### Convenciones de creación de componentes
 

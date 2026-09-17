@@ -1,7 +1,7 @@
 # Plan: Flujo de Inscripción Web (Fase 3, ítem 1)
 
 > **Metadatos**
-> - **Versión:** 1.2
+> - **Versión:** 1.3
 > - **Estado:** Aprobado
 > - **Fecha de aprobación:** 2026-09-15
 
@@ -11,6 +11,7 @@
 | 1.0 | 2026-09-15 | Borrador inicial con decisiones D-1/D-2/D-3. |
 | 1.1 | 2026-09-15 | **Feedback del usuario:** robustecer `registrarInscripcion` — Paso 4 recupera id de usuario preexistente (`admin.listUsers`), nuevo **paso 5 de validación cruzada de identidad** (nombre del form vs `PROFILES.nombre_completo`, normalizado; mismatch → abortar con mensaje de capa de usuario, sin `errores_runtime`), y **paso 6 captura el código 23505** (Unique Violation) con mensaje exacto de "ya inscripto". |
 | 1.2 | 2026-09-15 | **Aprobado** por el usuario y **implementado**. Ajuste técnico: el SDK `@supabase/auth-js` v2.116 no expone `filter`/`search` en `admin.listUsers()` (solo `page`/`perPage`); la recuperación por email se hace con la consulta **GoTrue Admin REST `GET /auth/v1/admin/users?filter=email&keyword=<email>`** (Service Role), eficiente y alineada al espíritu del paso 4. |
+| 1.3 | 2026-09-16 | **Corrección post-implementación:** `crearTorneo` no seteaba `organizador_id` (NOT NULL sin default ni trigger) → el INSERT fallaba con 23502 y el alta de torneo nunca era usable. Se agrega el fix y se documenta como restricción #9. |
 
 ## Restricciones y Correcciones Previas (No repetir)
 1. NO tocar `.env*`. NO commits/push automáticos.
@@ -21,6 +22,7 @@
 6. `datos_antropometricos` (jsonb) contrato: `{ grado, fecha_nacimiento, peso_kg, altura_cm }` (grado = etiqueta de los enums `grado_gup`/`grado_dan`, necesario para categorías).
 7. El registro de errores jamás rompe el flujo principal.
 8. **Error de capa de usuario ≠ error técnico:** el caso "email ya registrado con otro nombre" y el "unique 23505" son respuestas de validación/negocio y NO se insertan en `errores_runtime` ni exponen datos guardados (el nombre original en BD jamás se muestra en la UI).
+9. **`torneos.organizador_id` es `uuid not null` SIN default ni trigger.** Toda alta de torneo (Server Action `crearTorneo` u otra) DEBE setear explícitamente `organizador_id: user.id`; omitirlo produce 23502 y el try/catch devuelve el mensaje genérico, dejando la feature inutilizable.
 
 ## Contexto / objetivo
 Primer ítem de Fase 3. Participante recibe de su maestro el link `/t/<link_token>` y completa sus datos en un formulario web Mobile-First **sin registrarse ni pagar** (pago fuera de plataforma). Nace como inscripción `pendiente`, visible solo para el maestro elegido como aval. Incluye el alta mínima del torneo en el panel para generar dicho link.

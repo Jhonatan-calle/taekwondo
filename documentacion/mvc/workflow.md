@@ -32,7 +32,8 @@ Esta fase es la prioridad del MVP y la vía inicial de monetización.
 
 - [x] **Guía Estética + Consistencia Visual:** Design system centralizado (`documentacion/guia-estetica.md`) con tokens de color ITF (rojo/azul), componentes UI compartidos (Input, Label, Select, Card, FormField, SubmitButton) y patrón canónico de formulario. Eliminada la duplicación de estilos en los 4 formularios del proyecto. Detalles en `documentacion/planes/guia-estetica-consistencia-visual.md`.
 
-- [ ] **Panel de Profesores:** Crear la vista donde los profesores validan las inscripciones en estado "Pendiente" y confirman a los alumnos que ya pagaron. En esta instancia, el profesor podrá cargar datos internos e invisibles para el alumno, como el nivel de agresividad.
+- [x] **Panel de Profesores:** Crear la vista donde los profesores validan las inscripciones en estado "Pendiente" y confirman a los alumnos que ya pagaron. En esta instancia, el profesor podrá cargar datos internos e invisibles para el alumno, como el nivel de agresividad.
+  - En `/panel`: sección "Inscripciones para confirmar" agrupada por torneo con historial (pendientes/confirmados/rechazados). Confirmar → `confirmado` con `confirmado_por/en`; rechazar → `rechazado` con audiencia simétrica `rechazado_por/en`. Edición del nivel de agresividad (1–5) en filas confirmadas, aislado por RLS (invisible al alumno). Detalles en `documentacion/planes/panel-profesores.md`.
 
 - [ ] **Motor de Emparejamiento (Node.js/TypeScript):** Desarrollar un algoritmo basado en reglas que empareje a los inscriptos confirmados considerando cinturón, edad, peso, altura y agresividad. Se debe incluir la regla de seguridad para infantiles que prohíbe emparejamientos con diferencias de peso mayores a 5 kg.
 

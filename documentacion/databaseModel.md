@@ -76,6 +76,8 @@ erDiagram
         string estado "pendiente | confirmado | rechazado"
         uuid confirmado_por FK
         timestamptz confirmado_en
+        uuid rechazado_por FK "auditoría simétrica: profesor que rechazó"
+        timestamptz rechazado_en
         timestamptz creado_en
     }
 

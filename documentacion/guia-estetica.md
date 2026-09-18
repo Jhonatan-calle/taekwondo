@@ -117,6 +117,16 @@ Para secciones de un panel con múltiples rutas, cada página usa el page-shell 
 - `flex gap-1 overflow-x-auto` → en móvil las pestañas hacen scroll horizontal.
 - Las Server Actions redirigen SIEMPRE a la ruta de la sección contextual (`/panel/torneos`, `/panel/inscripciones`), nunca a `/panel` genérico.
 
+### Editor de llaves (chip participante + casilla)
+
+Patrón del Panel del Organizador (`src/app/(panel)/panel/organizador/`) para editar enfrentamientos de forma táctil (Mobile-First):
+
+- **Chip participante** (`chip-participante.tsx`): contenedor `flex flex-1 flex-col gap-1 rounded-lg border p-2.5` con nombre + `Badge` de grado y datos antropométricos en `text-xs text-muted-foreground`. Estado **seleccionado** = `border-primary bg-primary/10 ring-2 ring-primary/30`. El botón "x" (liberar/bye) es `text-muted-foreground hover:bg-destructive/10 hover:text-destructive`.
+- **Casilla** (`enfrentamiento-card.tsx`): el enfrentamiento es `flex items-stretch gap-2 rounded-xl border p-3` con `vs` central (`text-xs uppercase text-muted-foreground`). La casilla vacía es un botón `border-dashed` con `+ Libre`; se deshabilita (`disabled:opacity-40`) hasta que hay un participante seleccionado.
+- **Interacción de selección:** primer toque = seleccionar; segundo toque sobre casilla/rival = mover (el ocupante pasa a "sin ubicar"). El estado se muestra en una franja `rounded-lg bg-primary/10 px-3 py-2 text-sm`.
+- **Sección "Sin ubicar"** (`lista-sin-ubicar.tsx`): filas `border-dashed` con `Select` de categoría + `Button variant="outline"`.
+- Las advertencias de reglas se resuelven con `window.confirm` (no bloqueantes), sin modales propios.
+
 ---
 
 ## 3. Catálogo de componentes

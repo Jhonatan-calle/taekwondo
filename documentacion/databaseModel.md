@@ -185,3 +185,26 @@ erDiagram
   como `ENFRENTAMIENTOS.participante_b = NULL`.
 - **RLS nuevas:** SELECT de `categorias`/`llaves`/`enfrentamientos` (y UPDATE de `torneos`) habilitado
   para el organizador del torneo. Escritura de llaves solo vía RPC (nunca directa).
+
+## Notas del Panel del Organizador (Fase 3, ítem 4)
+
+- **Alimentado solo por confirmados:** el panel (`/panel/organizador`) lee exclusivamente
+  `inscripciones.estado = 'confirmado'` (filtro en `organizador/datos.ts` + RLS
+  `inscripciones_select_organizador`). Pendientes/rechazados jamás llegan a la vista.
+- **Edición manual atómica:** el organizador arma el estado final de la llave en el cliente
+  (`web/src/lib/llaves/`, puro/determinista) y lo persiste con el RPC
+  `guardar_llaves_manuales(p_torneo_id, p_categorias)` (SECURITY DEFINER, `search_path = public`):
+  valida `auth.uid() = organizador_id`, exige `torneos.estado = 'armado_llaves'`, verifica que toda
+  referencia a inscripción pertenezca al torneo y esté `confirmado`, y reemplaza las categorías del
+  torneo con el **mismo contrato jsonb** que `generar_llaves` (sin cambiar el estado del torneo).
+- **Ids regenerados:** reconstruir `categorias`/`llaves`/`enfrentamientos` en cada guardado crea ids
+  nuevos (igual que regenerar); el módulo en vivo deberá resolver las FKs recién creadas.
+- **Doble categoría (SRS B.2.3):** un participante confirmado puede aparecer en varias categorías del
+  torneo (a lo sumo una vez por categoría). El RPC `guardar_llaves_manuales` rechaza con `raise
+  exception` la repetición DENTRO de la misma categoría y los auto-enfrentamientos
+  (`participante_a = participante_b`). El editor (`lib/llaves/editar.ts`) aplica el mismo invariante:
+  mover/sumar a otro bracket conserva las apariciones en otras categorías, y la "x" quita solo de la
+  categoría en curso.
+- **Advertencias no bloqueantes (SRS B.2.3):** la regla infantil ≤5 kg y las salidas de rango/edad se
+  informan con confirmación en la UI (`lib/llaves/advertencias.ts`), pero no impiden guardar: el
+  control es total y la responsabilidad del organizador.

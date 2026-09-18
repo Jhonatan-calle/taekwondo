@@ -9,6 +9,7 @@ const SECCIONES = [
   { href: '/panel', label: 'Resumen' },
   { href: '/panel/inscripciones', label: 'Inscripciones' },
   { href: '/panel/torneos', label: 'Torneos' },
+  { href: '/panel/organizador', label: 'Organizador' },
 ]
 
 // Navegación persistente del panel (Mobile-First): pills con estado activo.

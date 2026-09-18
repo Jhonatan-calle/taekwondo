@@ -9,13 +9,43 @@ export type ParametrosError = {
   severidad?: 'info' | 'warning' | 'error' | 'critical'
 }
 
+// Extrae un mensaje legible ante cualquier forma de error (Error, Supabase,
+// objeto desconocido). Nunca debe quedar '[object Object]' en el registro.
+function extraerMensajeError(error: unknown): string {
+  if (error instanceof Error) return error.message
+
+  if (typeof error === 'object' && error !== null) {
+    const e = error as Record<string, unknown>
+    if (typeof e.message === 'string') return e.message
+    try {
+      const serializado = JSON.stringify(e)
+      if (serializado && serializado !== '{}') return serializado
+    } catch {
+      // se usa el fallback
+    }
+  }
+
+  return String(error)
+}
+
+// Ruido esperado (no son fallas de usuario): pre-render dinámico de Next.js y
+// redirects de las acciones. Se descartan para no ensuciar errores_runtime.
+function esRuidoError(error: unknown, mensaje: string): boolean {
+  if (mensaje.startsWith('Dynamic server usage')) return true
+  const nombre =
+    typeof error === 'object' && error !== null
+      ? (error as Record<string, unknown>).name
+      : undefined
+  return nombre === 'NEXT_REDIRECT' || nombre === 'NextRedirectError'
+}
+
 // Crea un registrador de errores atado a un cliente Supabase específico.
 // El registro en errores_runtime es interno y jamás debe romper el flujo principal.
 export function crearRegistrador(supabase: SupabaseClient) {
   return async (params: ParametrosError): Promise<void> => {
     try {
-      const mensaje_error =
-        params.error instanceof Error ? params.error.message : String(params.error)
+      const mensaje_error = extraerMensajeError(params.error)
+      if (esRuidoError(params.error, mensaje_error)) return
       const stack_trace = params.error instanceof Error ? params.error.stack : undefined
 
       const { error } = await supabase.from('errores_runtime').insert({

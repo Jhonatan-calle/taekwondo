@@ -64,8 +64,10 @@ export default async function PanelResumenPage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Button render={<Link href="/panel/inscripciones" />}>Ir a Inscripciones</Button>
-            <Button variant="outline" render={<Link href="/panel/torneos" />}>
+            <Button nativeButton={false} render={<Link href="/panel/inscripciones" />}>
+              Ir a Inscripciones
+            </Button>
+            <Button variant="outline" nativeButton={false} render={<Link href="/panel/torneos" />}>
               Ir a Torneos
             </Button>
           </div>

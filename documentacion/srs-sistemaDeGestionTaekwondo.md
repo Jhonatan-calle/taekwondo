@@ -4,24 +4,22 @@
 
 El sistema tiene como objetivo gestionar la administración integral de una escuela de Taekwondo. Está diseñado para facilitar a los instructores el control operativo de sus alumnos, la planificación de clases, el registro de asistencias, y la gestión financiera que incluye tanto el cobro de cuotas como el pago de alquileres de los espacios físicos utilizados. Asimismo, proporcionará a los administradores y maestros de alto rango herramientas de supervisión para visualizar la estructura organizacional de la escuela y métricas clave de desempeño.
 
-# **2\. Jerarquía de Usuarios y Control de Acceso**
+# **2. Jerarquía de Usuarios y Control de Acceso**
 
-El sistema implementa un modelo de acceso basado en un árbol jerárquico que refleja el linaje o la cadena de mando tradicional de la disciplina.
+El sistema implementa un modelo de acceso basado en un árbol jerárquico infinito que refleja el linaje natural de la disciplina (relación directa alumno-instructor). No existen roles geográficos estáticos; la autoridad fluye dinámicamente según la posición del usuario en el árbol.
 
-## **Estructura de Roles**
+## **Estructura de Roles Dinámica**
 
-* **Maestro Provincial (ej. Encargado de Córdoba):** Se sitúa en la cúspide de la jerarquía provincial, con supervisión sobre toda la red regional.  
-* **Maestro Regional/Ciudad (ej. Encargado de Río Cuarto):** Subordinado directo al Maestro Provincial, responsable de una zona geográfica específica.  
-* **Profesor Titular:** Subordinado a un Maestro Regional o a otro Profesor de mayor rango. Administra sus propios centros de enseñanza y grupos de alumnos.  
-* **Alumno-Profesor:** Un estudiante que, poseyendo un rango que lo habilita, dicta clases a sus propios alumnos mientras continúa reportando a su Profesor Titular original.  
-* **Alumno Regular:** Estudiante en la base del árbol jerárquico, sin personal a cargo.
+* **Maestro:** Usuario superior (con la bandera `es_maestro` habilitada) que tiene descendencia en el sistema. Su posición en el árbol le otorga poder recursivo sobre sus subordinados (Profesores y Alumnos-Profesores) y toda la red debajo de ellos. Son los únicos habilitados para aperturar mesas de examen.
+* **Profesor / Alumno-Profesor:** Usuario con un grado mínimo de 1º Dan (`dan_1`) que ha sido habilitado para dar clases (bandera `es_profesor` activa). Administra a sus propios alumnos directos. Sigue siendo un alumno respecto a su propio instructor superior (`maestro_id`), a quien le rinde cuentas.
+* **Alumno Regular:** Estudiante en la base del árbol jerárquico, sin permisos de enseñanza ni alumnos a cargo.
 
-## **Reglas de Visibilidad y Permisos**
+## **Reglas de Visibilidad y Permisos (Árbol de Poder)**
 
-* **Gestión Directa:** Un profesor posee acceso total a los datos personales, historial de asistencias y estados de cuenta exclusivamente de sus alumnos directos.  
-* **Privacidad en Cascada:** Los superiores jerárquicos no pueden acceder a los datos personales sensibles de los alumnos de sus subordinados. Su acceso se limita a la visualización de métricas estadísticas anonimizadas.  
-* **Excepción de Auditoría de Infraestructura:** Con el fin de garantizar la sostenibilidad de la organización, un superior tiene acceso directo al estado de las locaciones de todos sus subordinados, pudiendo verificar el pago de alquileres, montos, vencimientos y comprobantes adjuntos.  
-* **Excepción de Mesas de Examen:** Durante los periodos de evaluación, el examinador designado puede visualizar una planilla con los datos técnicos (nombre, edad, peso, grado actual) de los alumnos postulados por sus subordinados.
+* **Gestión Directa:** Un Profesor posee acceso total para editar perfiles, registrar pagos de cuotas y postular a exámenes **exclusivamente** a sus alumnos directos.
+* **Privacidad en Cascada:** Ningún superior jerárquico puede leer los datos personales sensibles de los alumnos de sus subordinados; su acceso hacia las ramas inferiores se limita a visualizar métricas estadísticas anonimizadas generadas por el sistema.
+* **Auditoría de Infraestructura en Cascada:** Cualquier Maestro en la cadena de mando tiene el poder recursivo de auditar a sus instructores subordinados, pudiendo visualizar el pago de alquileres y comprobantes adjuntos de toda su rama inferior.
+* **Excepción de Mesa de Examen:** Al momento de evaluar, el Maestro examinador recibe temporalmente acceso a una planilla técnica (nombre, edad, peso, grados) de los alumnos postulados por los profesores de su linaje.
 
 # **3\. Requerimientos Funcionales**
 

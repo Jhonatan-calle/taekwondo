@@ -7,12 +7,15 @@ jerarquía y disciplina del Taekwondo ITF. Fuente funcional: `srs-sistemaDeGesti
 
 > - **Perfil base:** todo usuario ingresa como **Alumno Regular**. La propagación de la jerarquía se
 >   modela con el campo `maestro_id` sobre `profiles` (árbol de linaje).
-> - **Jerarquía (SRS §2):** Maestro Provincial → Maestro Regional/Ciudad → Profesor Titular →
->   Alumno-Profesor → Alumno Regular. Cada nodo es subordinado directo de su `maestro_id`.
+> - **Modelo dinámico (SRS §2):** árbol de linaje infinito (relación directa alumno-instructor); **no
+>   existen roles geográficos estáticos**. La autoridad fluye recursivamente según la posición en el
+>   árbol: cada nodo es subordinado directo de su `maestro_id`.
 > - **Faceta Maestro:** boolean `es_maestro` de **uso exclusivo del sistema** (concedido vía Service
->   Role o RPCs autorizados). Habilita apertura de mesas de examen y supervisión regional.
+>   Role o RPCs autorizados). Habilita apertura de mesas de examen y poder recursivo sobre toda su
+>   rama descendente.
 > - **Faceta Profesor:** solo puede activarse con **1er Dan (o superior) verificado**
 >   (`grado_actual >= 'dan_1'`). Los grados Gup (cinturones de color) tienen el acceso bloqueado.
+>   Sigue siendo alumno respecto a su propio instructor superior (`maestro_id`).
 > - **Prohibición de auto-promoción:** el sistema bloquea por completo que un practicante modifique
 >   su propio `grado_actual`/`grados_verificados` o se otorgue las facetas Profesor/Maestro. El grado
 >   solo se actualiza al aprobar un examen oficial (ver §4).

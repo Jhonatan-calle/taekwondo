@@ -1,40 +1,63 @@
 # Manual de Reglas y Restricciones del Sistema \- Taekwondo ITF
 
-Este documento detalla las reglas de negocio, permisos y restricciones que el sistema aplica para reflejar fielmente la organización, jerarquía y disciplina del Taekwondo ITF. Está diseñado para que maestros, organizadores y autoridades validen que la plataforma respeta la realidad operativa de los Dojangs y torneos.
+Reglas de negocio, permisos y restricciones que el sistema aplica para reflejar la organización,
+jerarquía y disciplina del Taekwondo ITF. Fuente funcional: `srs-sistemaDeGestionTaekwondo.md`.
 
-## **1\. Roles y Ascenso Jerárquico (El Árbol de Poder)**
+## 1. Roles y Ascenso Jerárquico (El Árbol de Poder)
 
-> * **Perfil Base:** Todo usuario que ingresa al sistema lo hace bajo el perfil base de "Alumno". \[cite: 2, 9\]  
-> * **Requisito para ser Profesor:** Para activar las funciones de Profesor (gestión de clases, aprobación de alumnos), es un requisito innegociable poseer un grado mínimo de 1er Dan (Cinturón Negro) debidamente verificado. \[cite: 2, 4\] Los cinturones de color (Gups) tienen el acceso a estas funciones completamente bloqueado. \[cite: 2\]  
-> * **Prohibición de Auto-Promoción:** El sistema bloquea por completo que un practicante modifique su propio grado o se otorgue la faceta de Profesor por cuenta propia. \[cite: 4, 9\] El grado solo se actualiza cuando un Maestro o autoridad superior (Sinodal) registra oficialmente la aprobación de un examen. \[cite: 2\]  
-> * **Linaje Inmutable:** Cada alumno se vincula a la línea jerárquica de su maestro al ingresar un código de invitación y ser aceptado en un grupo. \[cite: 2\] Una vez establecida esta relación, el alumno no puede modificar, reasignar ni alterar quién es su maestro ascendente. \[cite: 8\] Solo una autoridad administradora del sistema puede hacer reasignaciones de linaje. \[cite: 8\]
+> - **Perfil base:** todo usuario ingresa como **Alumno Regular**. La propagación de la jerarquía se
+>   modela con el campo `maestro_id` sobre `profiles` (árbol de linaje).
+> - **Jerarquía (SRS §2):** Maestro Provincial → Maestro Regional/Ciudad → Profesor Titular →
+>   Alumno-Profesor → Alumno Regular. Cada nodo es subordinado directo de su `maestro_id`.
+> - **Faceta Maestro:** boolean `es_maestro` de **uso exclusivo del sistema** (concedido vía Service
+>   Role o RPCs autorizados). Habilita apertura de mesas de examen y supervisión regional.
+> - **Faceta Profesor:** solo puede activarse con **1er Dan (o superior) verificado**
+>   (`grado_actual >= 'dan_1'`). Los grados Gup (cinturones de color) tienen el acceso bloqueado.
+> - **Prohibición de auto-promoción:** el sistema bloquea por completo que un practicante modifique
+>   su propio `grado_actual`/`grados_verificados` o se otorgue las facetas Profesor/Maestro. El grado
+>   solo se actualiza al aprobar un examen oficial (ver §4).
+> - **Linaje inamovible:** una vez establecido, el alumno no puede modificar, reasignar ni alterar su
+>   `maestro_id`. Solo una autoridad administradora (Service Role) hace reasignaciones.
 
-## **2\. Gestión de Eventos y Privilegios**
+## 2. Visibilidad y Permisos
 
-> * **Restricción Estricta de Creación:** Los alumnos tienen terminantemente prohibido crear, modificar o eliminar cualquier tipo de evento en la plataforma (ya sean clases, toma de asistencia, exámenes o torneos). \[cite: 2\] El rol del alumno es exclusivamente de consulta de sus propios datos. \[cite: 2\]  
-> * **Registro Externo de Logros:** El progreso (nuevos tuls y cambios de cinturón) no es declarado por el alumno; es el resultado directo de la aprobación de un evento oficial (examen) registrado por el Profesor. \[cite: 2\]
+> - **Gestión directa:** un profesor tiene acceso total a los datos personales, historial y estados
+>   de cuenta **exclusivamente de sus alumnos directos** (`maestro_id = profesor`).
+> - **Privacidad en cascada:** los superiores jerárquicos **no** acceden a los datos personales
+>   sensibles de los alumnos de sus subordinados; solo ven métricas estadísticas **anonimizadas**
+>   (RPC `metricas_dashboard`).
+> - **Excepción — Auditoría de infraestructura:** un superior ve el estado de las locaciones de todos
+>   sus subordinados (pagos de alquiler, montos, vencimientos y comprobantes).
+> - **Excepción — Mesas de examen:** el maestro examinador ve la planilla con datos técnicos (nombre,
+>   edad, peso, grado actual y aspirado) de los postulados (RPC `planilla_mesa_examen`).
+> - **Alumnos no crean eventos:** la faceta Alumno tiene prohibido crear, modificar o eliminar
+>   eventos (clases, asistencias, exámenes, pagos). Su rol es de consulta.
+> - **DNI:** obligatorio y único a nivel app; única para los identificadores (nullable en BD con
+>   validación en la aplicación).
 
-## **3\. Inscripciones a Torneos: Privacidad y el Aval del Maestro**
+## 3. Pagos (solo registro)
 
-> * **Inscripciones Pendientes y Privacidad:** Cuando un alumno llena su formulario de inscripción a un torneo, ingresa en estado "Pendiente". \[cite: 2\] En esta etapa, sus datos son **estrictamente privados** y solo pueden ser visualizados por su propio maestro. \[cite: 2\] El organizador del torneo o las autoridades superiores no pueden ver a estos alumnos en su sistema. \[cite: 2\]  
-> * **Gestión de Pagos:** El sistema no procesa dinero. \[cite: 2\] El costo de la inscripción se abona por fuera del sistema directamente al profesor (efectivo o transferencia). \[cite: 2\]  
-> * **El Aval Oficial:** El alumno solo es visible para el torneo y pasa al estado "Confirmado" una vez que su propio maestro verifica el pago y le otorga explícitamente el aval oficial desde su panel. \[cite: 2\]  
-> * **El Dato Secreto (Agresividad):** Al momento de otorgar el aval, el maestro puede cargar un indicador interno sobre el "nivel de agresividad" del competidor. \[cite: 2\] Este dato está bloqueado para el alumno (jamás podrá verlo) y se utiliza exclusivamente para ayudar a organizar luchas más parejas. \[cite: 2, 10\]  
-> * **Profesores Competidores:** Los profesores que organizan a sus alumnos también pueden inscribirse como participantes en el torneo bajo este mismo flujo operativo. \[cite: 2\]
+> - El sistema **no procesa dinero**: solo **registra pagos** de **cuotas** de alumnos
+>   (`pagos_cuota`, único por `(alumno_id, periodo)`) y de **alquileres** de locaciones
+>   (`pagos_alquiler`, con comprobantes adjuntos en storage privado).
+> - El "derecho de examen" se registra en la postulación (recaudación de la mesa consultable por el
+>   maestro examinador).
 
-## **4\. Emparejamiento de Combates (Reglas del Algoritmo)**
+## 4. Exámenes de Graduación
 
-Para la creación de las llaves de competencia, el sistema imita el criterio de las mesas de control reales, utilizando un algoritmo de filtros estrictos y reglas de seguridad. \[cite: 2\]
+> - **Planificación:** los Maestros (`es_maestro`) aperturan mesas de examen (fecha, lugar, límite de
+>   inscripción).
+> - **Inscripción:** los profesores postulan a sus **alumnos directos**; el sistema calcula
+>   automáticamente el **grado inmediato superior** al que aspiran.
+> - **Evaluación:** solo el **maestro examinador** (dueño de la mesa) carga el resultado
+>   (aprobado / desaprobado / ausente) vía RPC `registrar_resultado_examen`.
+> - **Ascenso y registro:** al aprobar, el sistema actualiza automáticamente `profiles.grado_actual`
+>   y deja registro permanente en `graduaciones` (historial académico). La escritura en `graduaciones`
+>   solo ocurre vía RPC, nunca directa.
 
-| Categorías por Grado (Cinturón) | Categorías por Edad   |
-| :---- | :---- |
-| Blanco a punta amarilla \[cite: 2\] | Hasta 7 años | 8-9 años | 10-11 años \[cite: 2\] |
-| Amarillo a punta azul \[cite: 2\] | 12-13 años | 14-16 años \[cite: 2\] |
-| Azul a punta negra \[cite: 2\] | 17-20 años | 21-34 años \[cite: 2\] |
-| 1er Dan a 3er Dan \[cite: 2\] | 35-50 años \[cite: 2\] |
-| 4to Dan en adelante \[cite: 2\] | 50+ años \[cite: 2\] |
+## 5. Módulo de Torneos (CONGELADO — web fuera de desarrollo)
 
-> * **Regla de Seguridad Infantil (Bloqueante):** El sistema tiene totalmente prohibido emparejar contrincantes en categorías infantiles si existe una diferencia de peso superior a los 5 kilogramos. \[cite: 2, 5\]  
-> * **Afinidad Física y Técnica:** Dentro de una misma categoría, el sistema busca primero la menor diferencia de peso. \[cite: 2\] A igualdad de peso, desempata buscando niveles de agresividad similares y estaturas parecidas. \[cite: 2\]  
-> * **Intervención Manual:** Independientemente de lo que genere el sistema, el Dueño/Organizador del torneo tiene libertad absoluta y control total para realizar modificaciones manuales sobre las llaves si su criterio lo requiere. \[cite: 2, 5\]  
-> * **Doble Categoría (Manual):** Con el mismo control total, el organizador puede permitir que un participante combine en **más de una categoría** (su categoría original + categorías extra) para maximizar la cantidad de competidores con contrincante. Cada participante aparece **a lo sumo una vez por categoría** y jamás se enfrenta a sí mismo; el sistema lo garantiza en la BD y solo muestra avisos no bloqueantes (peso infantil, rango y edad) si la ubicación queda fuera de los parámetros de la categoría.
+> El módulo de torneos se conserva **intacto en la BD** (tablas, RLS y RPCs) pero **no se desarrolla**
+> en la app móvil ni en la web (congelada). Reglas históricas (inscripciones pendientes/privacidad,
+> aval del profesor, nivel de agresividad, emparejamiento con regla infantil ≤5 kg y doble categoría):
+> ver `descartado-web/descripcion-general-srs-web.md` y `descartado-web/planes/`.

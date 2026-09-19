@@ -14,11 +14,43 @@ erDiagram
         numeric altura_cm
         string contacto_emergencia
         string datos_salud
-        uuid maestro_id FK "maestro ascendente (se deriva al aprobarse el 1er grupo; reasignable solo vía Service Role)"
+        uuid maestro_id FK "árbol de linaje (ascendente); asignado/cambiado solo vía Service Role"
         bool grados_verificados
-        grado_dan grado_dan_actual "Dan vigente verificado (solo-sistema; su presencia habilita la faceta profesor)"
         bool es_profesor "faceta profesor (alumno = perfil base)"
+        bool es_maestro "faceta maestro (solo-sistema, concede servicios internos)"
+        string dni UK "nullable en BD; obligatorio a nivel app"
+        genero genero "masculino | femenino | otro"
+        grado grado_actual "enum unificado Gup+Dan (dan_1..dan_9)"
         timestamptz creado_en
+    }
+
+    LOCACIONES {
+        uuid id PK
+        string nombre
+        string direccion
+        uuid creado_por FK "RLS: dueño gestiona; superiores auditan"
+        timestamptz creado_en
+    }
+
+    PAGOS_ALQUILER {
+        uuid id PK
+        uuid locacion_id FK "on delete restrict"
+        numeric monto
+        string periodo "ej '2026-09'"
+        date fecha_pago
+        uuid creado_por FK
+        timestamptz creado_en
+    }
+
+    PAGOS_CUOTA {
+        uuid id PK
+        uuid alumno_id FK
+        string periodo "ej '2026-09'"
+        numeric monto
+        date fecha_pago
+        uuid profesor_id FK "profesor directo que registra"
+        timestamptz creado_en
+        unico "(alumno_id, periodo)"
     }
 
     GRUPOS {
@@ -28,6 +60,7 @@ erDiagram
         string ubicacion
         string horarios
         string codigo_invitacion UK "código único de vinculación"
+        uuid locacion_id FK "locación físico-geográfica del grupo"
         timestamptz creado_en
     }
 
@@ -55,6 +88,41 @@ erDiagram
         uuid alumno_id FK
         bool presente
         timestamptz creado_en
+    }
+
+    MESAS_EXAMEN {
+        uuid id PK
+        uuid maestro_id FK "maestro examinador (autoriza resultados)"
+        date fecha
+        string lugar
+        int limite_inscripcion
+        string estado "abierta | cerrada | finalizada"
+        timestamptz creado_en
+    }
+
+    POSTULACIONES_EXAMEN {
+        uuid id PK
+        uuid mesa_id FK
+        uuid alumno_id FK
+        uuid profesor_id FK "profesor que postula (alumno directo)"
+        grado grado_aspirado
+        numeric derecho_examen
+        string estado "postulado | aprobado | desaprobado | ausente"
+        uuid evaluado_por FK
+        timestamptz evaluado_en
+        timestamptz creado_en
+        unico "(mesa_id, alumno_id)"
+    }
+
+    GRADUACIONES {
+        uuid id PK
+        uuid alumno_id FK
+        uuid sinodal_id FK "maestro evaluador"
+        grado grado_anterior
+        grado grado_nuevo
+        uuid mesa_id FK
+        string resultado "aprobado (único que deja registro); desaprobado/ausente solo cambian la postulación"
+        timestamptz examinado_en
     }
 
     TORNEOS {
@@ -91,7 +159,7 @@ erDiagram
         uuid id PK
         uuid torneo_id FK
         string nombre
-        grado_gup rango_min "solo rangos Gup: primer cinturón del rango (ej blanco/amarillo/azul)"
+        grado rango_min "río de cinturón (Gup o Dan)"
         string rango_max_especial "maneja caso 'dan' (ej 'dan_3'/'dan_6'); null en rangos Gup"
         int edad_min
         int edad_max
@@ -122,18 +190,6 @@ erDiagram
         uuid jurado_id FK
     }
 
-    GRADUACIONES {
-        uuid id PK
-        uuid alumno_id FK
-        uuid sinodal_id FK "maestro evaluador"
-        grado_gup grado_anterior
-        grado_gup grado_nuevo
-        grado_dan dan_anterior
-        grado_dan dan_nuevo
-        bool aprobado
-        timestamptz examinado_en
-    }
-
     ERRORES_RUNTIME {
         bigint id PK
         timestamptz fecha
@@ -147,12 +203,27 @@ erDiagram
     }
 
     AUTH.USERS ||--o| PROFILES : id
+    PROFILES ||--o{ PROFILES : maestro_id "(árbol de linaje)"
+    PROFILES ||--o| LOCACIONES : creado_por
+    LOCACIONES ||--o| PAGOS_ALQUILER : locacion_id
+    PROFILES ||--o| PAGOS_ALQUILER : creado_por
+    PROFILES ||--o| PAGOS_CUOTA : alumno_id
+    PROFILES ||--o| PAGOS_CUOTA : profesor_id
     PROFILES ||--o| GRUPOS : profesor_id
-    PROFILES ||--o| MIEMBROS_GRUPO : alumno_id
+    GRUPOS }o--|| LOCACIONES : locacion_id
     GRUPOS ||--o| MIEMBROS_GRUPO : grupo_id
+    PROFILES ||--o| MIEMBROS_GRUPO : alumno_id
     GRUPOS ||--o| CLASES : grupo_id
     CLASES ||--o| ASISTENCIA : clase_id
     PROFILES ||--o| ASISTENCIA : alumno_id
+    PROFILES ||--o| MESAS_EXAMEN : maestro_id
+    MESAS_EXAMEN ||--o| POSTULACIONES_EXAMEN : mesa_id
+    PROFILES ||--o| POSTULACIONES_EXAMEN : alumno_id
+    PROFILES ||--o| POSTULACIONES_EXAMEN : profesor_id
+    PROFILES ||--o| POSTULACIONES_EXAMEN : evaluado_por
+    PROFILES ||--o| GRADUACIONES : alumno_id
+    PROFILES ||--o| GRADUACIONES : sinodal_id
+    MESAS_EXAMEN ||--o| GRADUACIONES : mesa_id
     PROFILES ||--o| TORNEOS : organizador_id
     TORNEOS ||--o| INSCRIPCIONES : torneo_id
     PROFILES ||--o| INSCRIPCIONES : alumno_id
@@ -166,9 +237,35 @@ erDiagram
     INSCRIPCIONES ||--o| ENFRENTAMIENTOS : ganador_id
     TORNEOS ||--o| JURADOS_TORNEO : torneo_id
     PROFILES ||--o{ JURADOS_TORNEO : jurado_id
-    PROFILES ||--o| GRADUACIONES : alumno_id
+```
 
-    ```
+## Notas del modelo de gestión de escuela (app móvil)
+
+- **Migraciones centralizadas:** el historial canónico vive en `supabase/migrations/` (raíz del repo).
+  El módulo de torneos quedó **intacto** (ver diagrama); `web/` está congelada.
+- **Grado unificado:** `public.grado` reemplaza los antiguos `grado_gup`/`grado_dan`/`tipo_grado`
+  (eliminados). Valores: `blanco`, `blanco_punta_amarilla`, `amarillo`, `amarillo_punta_verde`,
+  `verde`, `verde_punta_azul`, `azul`, `azul_punta_roja`, `rojo`, `rojo_punta_negra`, `dan_1…dan_9`.
+- **Jerarquía:** `es_maestro` (boolean solo-sistema) + árbol `maestro_id` (`profiles.maestro_id`).
+  El trigger por defecto mantiene el linaje; cambiar la relación/ser maestro solo se permite vía
+  Service Role o RPCs con `set_config('app.<contexto>','on',true)`.
+- **Privacidad en cascada (RLS `profiles`):** cada usuario ve su **propio** perfil + sus **alumnos
+  directos** (`es_alumno_directo_de`). Un superior jamás lee datos personales de subordinados
+  lejanos; solo métricas anonimizadas por RPC. Excepciones: auditoría de alquileres (superiores del
+  dueño) y planilla de mesa de examen (maestro examinador).
+- **Gates anti-escalada:** `es_profesor`, `es_maestro` y `grado_actual`/`grados_verificados` solo se
+  modifican vía entidades internas. El gate de profesor exige `grado_actual >= 'dan_1'`
+  (`puede_activar_profesor()`).
+- **Exámenes de graduación:** flujo `mesas_examen` → `postulaciones_examen` → RPC
+  `registrar_resultado_examen(p_postulacion, p_resultado)` (valida maestro examinador). `aprobado`
+  actualiza `profiles.grado_actual` y deja registro permanente en `graduaciones`; `desaprobado`/
+  `ausente` solo cambian el estado de la postulación.
+- **Dashboard anonimizado:** RPC `metricas_dashboard(p_vista, p_instructor)` devuelve
+  `{total, por_grado, por_genero, por_rango_edad}` de los descendientes de `auth.uid()`;
+  `planilla_mesa_examen(p_mesa)` expone datos técnicos (nombre, edad, peso, grados) solo al maestro
+  examinador.
+- **Pagos = registro:** `pagos_cuota` (cuotas de alumnos) y `pagos_alquiler` (alquiler de
+  locaciones) solo registran monto/periodo; no hay pasarela.
 
 ## Notas del Motor de Emparejamiento (Fase 3, ítem 3)
 

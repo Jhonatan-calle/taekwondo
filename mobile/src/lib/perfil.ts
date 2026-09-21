@@ -87,22 +87,39 @@ export type Locacion = Pick<
 
 export type DatosNuevaLocacion = {
   nombre: string
-  direccion: string | null
+  direccion: string
+}
+
+export const ETIQUETAS_DIAS: Record<number, string> = {
+  1: 'Lunes',
+  2: 'Martes',
+  3: 'Miércoles',
+  4: 'Jueves',
+  5: 'Viernes',
+  6: 'Sábado',
+  7: 'Domingo',
+}
+
+export type HorarioGrupo = {
+  dia_semana: 1 | 2 | 3 | 4 | 5 | 6 | 7
+  hora_inicio: string
+  hora_fin: string
 }
 
 export type Grupo = {
   id: string
   nombre: string
-  horarios: string | null
+  horarios: HorarioGrupo[]
   locacion_id: string | null
   nombre_locacion: string | null
   cantidad_miembros: number
+  miembro_ids: string[]
 }
 
 export type DetalleGrupo = {
   id: string
   nombre: string
-  horarios: string | null
+  horarios: HorarioGrupo[]
   locacion_id: string | null
   nombre_locacion: string | null
   miembro_ids: string[]
@@ -110,17 +127,17 @@ export type DetalleGrupo = {
 
 export type DatosNuevoGrupo = {
   nombre: string
-  horarios: string
+  horarios: HorarioGrupo[]
   locacion_id: string | null
 }
 
 export type FilaGrupoConRelaciones = {
   id: string
   nombre: string
-  horarios: string | null
   locacion_id: string | null
   locaciones: { nombre: string } | null
   miembros_grupo: { alumno_id: string }[]
+  grupos_horarios: { dia_semana: number; hora_inicio: string; hora_fin: string }[]
 }
 
 export const MENSAJE_DNI_DUPLICADO = 'El DNI ya está registrado.'
@@ -207,8 +224,20 @@ export function esNombreValido(nombre: string): boolean {
   return nombre.trim().length >= 2
 }
 
-export function esHorarioValido(horario: string): boolean {
-  return horario.trim().length >= 2
+export function esDireccionValida(direccion: string): boolean {
+  return direccion.trim().length >= 2
+}
+
+export function esHorarioGrupoValido(horario: HorarioGrupo): boolean {
+  if (horario.dia_semana < 1 || horario.dia_semana > 7) return false
+  return esHoraValida(horario.hora_inicio) && esHoraValida(horario.hora_fin) && horaFinPosterior(horario.hora_inicio, horario.hora_fin)
+}
+
+export function formatearHorarios(horarios: HorarioGrupo[] | null | undefined): string {
+  if (horarios == null || horarios.length === 0) return ''
+  return horarios
+    .map((h) => `${ETIQUETAS_DIAS[h.dia_semana]} ${h.hora_inicio}–${h.hora_fin}`)
+    .join(' · ')
 }
 
 export type ClaseItem = {

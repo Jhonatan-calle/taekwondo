@@ -28,7 +28,7 @@ erDiagram
     LOCACIONES {
         uuid id PK
         string nombre
-        string direccion
+        string direccion "NOT NULL (obligatoria)"
         uuid creado_por FK "RLS: dueño gestiona; superiores auditan"
         timestamptz creado_en
     }
@@ -59,15 +59,22 @@ erDiagram
         uuid profesor_id FK "RLS: dueño (profesor) + miembros del grupo"
         string nombre
         string ubicacion
-        string horarios
-        string codigo_invitacion UK "código único de vinculación"
+        string codigo_invitacion UK "código único de vinculación (nullable; fuera de alcance móvil v1)"
         uuid locacion_id FK "locación físico-geográfica del grupo"
         timestamptz creado_en
     }
 
+    GRUPOS_HORARIOS {
+        uuid id PK
+        uuid grupo_id FK "on delete cascade"
+        int dia_semana "1=Lunes … 7=Domingo (check)"
+        time hora_inicio
+        time hora_fin "check hora_fin > hora_inicio"
+    }
+
     MIEMBROS_GRUPO {
         uuid grupo_id FK "RLS: alumno solo a sí mismo; profesor a su grupo"
-        uuid alumno_id FK
+        uuid alumno_id FK "ÍNDICE ÚNICO PARCIAL: un solo grupo activo por alumno (estado = 'activo')"
         string estado "activo | pendiente_aprobacion"
         timestamptz creado_en
     }
@@ -212,6 +219,7 @@ erDiagram
     PROFILES ||--o| PAGOS_CUOTA : profesor_id
     PROFILES ||--o| GRUPOS : profesor_id
     GRUPOS }o--|| LOCACIONES : locacion_id
+    GRUPOS ||--o| GRUPOS_HORARIOS : grupo_id
     GRUPOS ||--o| MIEMBROS_GRUPO : grupo_id
     PROFILES ||--o| MIEMBROS_GRUPO : alumno_id
     GRUPOS ||--o| CLASES : grupo_id
@@ -267,6 +275,12 @@ erDiagram
   examinador.
 - **Pagos = registro:** `pagos_cuota` (cuotas de alumnos) y `pagos_alquiler` (alquiler de
   locaciones) solo registran monto/periodo; no hay pasarela.
+- **Horarios 📋 y membresía única:** los horarios de un grupo viven en `grupos_horarios` (día
+  1..7 + `hora_inicio`/`hora_fin` con `hora_fin > hora_inicio`, RLS del profesor dueño via
+  helpers `es_profesor_del_grupo`); la columna texto `grupos.horarios` fue eliminada. Un alumno
+  solo puede estar **activo en un único grupo** (índice único parcial `miembros_grupo(alumno_id)
+  where estado='activo'`); al reasignarlo, el RPC `editar_miembros_grupo` lo mueve atómicamente
+  entre los grupos del mismo profesor. `locaciones.direccion` es obligatoria (NOT NULL).
 
 ## Notas del Motor de Emparejamiento (Fase 3, ítem 3)
 

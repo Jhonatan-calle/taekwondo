@@ -4,7 +4,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 import { useErrorGlobal } from '@/contextos/ErrorGlobal';
 import { MENSAJE_ERROR_GENERICO } from '@/lib/errores';
-import type { Grupo } from '@/lib/perfil';
+import { formatearHorarios, type Grupo } from '@/lib/perfil';
 
 function FilaGrupo({ grupo, onPresionar }: { grupo: Grupo; onPresionar: () => void }) {
   return (
@@ -17,7 +17,7 @@ function FilaGrupo({ grupo, onPresionar }: { grupo: Grupo; onPresionar: () => vo
         <Text style={styles.nombre}>{grupo.nombre}</Text>
         <Text style={styles.datos}>
           {grupo.nombre_locacion ?? 'Sin locación'}
-          {grupo.horarios ? ` · ${grupo.horarios}` : ''}
+          {formatearHorarios(grupo.horarios) ? ` · ${formatearHorarios(grupo.horarios)}` : ''}
         </Text>
       </View>
       <View style={styles.filaDerecha}>

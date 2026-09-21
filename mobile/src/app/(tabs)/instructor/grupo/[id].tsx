@@ -5,21 +5,33 @@ import { etiquetaGrado } from '@/constants/grados';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 import { useErrorGlobal } from '@/contextos/ErrorGlobal';
 import { MENSAJE_ERROR_GENERICO } from '@/lib/errores';
-import type { AlumnoDirecto, DetalleGrupo } from '@/lib/perfil';
+import { formatearHorarios, type AlumnoDirecto, type DetalleGrupo, type Grupo } from '@/lib/perfil';
 
 function alternar<T>(lista: T[], elemento: T): T[] {
   return lista.includes(elemento) ? lista.filter((item) => item !== elemento) : [...lista, elemento];
 }
 
+function armarMapaGrupoDeAlumno(grupos: Grupo[], grupoActualId: string): Record<string, string> {
+  const mapa: Record<string, string> = {};
+  for (const g of grupos) {
+    if (g.id === grupoActualId) continue;
+    for (const alumnoId of g.miembro_ids) {
+      if (mapa[alumnoId] == null) mapa[alumnoId] = g.nombre;
+    }
+  }
+  return mapa;
+}
+
 export default function GrupoDetalleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { obtenerGrupoDetalle, listarAlumnosDirectos, editarMiembrosGrupo } = useAuthGlobal();
+  const { obtenerGrupoDetalle, listarAlumnosDirectos, listarGrupos, editarMiembrosGrupo } = useAuthGlobal();
   const { reportarError } = useErrorGlobal();
 
   const [grupo, setGrupo] = useState<DetalleGrupo | null>(null);
   const [alumnos, setAlumnos] = useState<AlumnoDirecto[]>([]);
   const [seleccionados, setSeleccionados] = useState<string[]>([]);
+  const [grupoDeAlumno, setGrupoDeAlumno] = useState<Record<string, string>>({});
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(false);
   const [enviando, setEnviando] = useState(false);
@@ -31,20 +43,24 @@ export default function GrupoDetalleScreen() {
       return;
     }
     setCargando(true);
-    const [resultadoGrupo, resultadoAlumnos] = await Promise.all([
+    const [resultadoGrupo, resultadoAlumnos, resultadoGrupos] = await Promise.all([
       obtenerGrupoDetalle(id),
       listarAlumnosDirectos(),
+      listarGrupos(),
     ]);
     if (
       resultadoGrupo.error != null ||
       resultadoGrupo.data == null ||
       resultadoAlumnos.error != null ||
-      resultadoAlumnos.data == null
+      resultadoAlumnos.data == null ||
+      resultadoGrupos.error != null ||
+      resultadoGrupos.data == null
     ) {
       setError(true);
       if (
         resultadoGrupo.error === MENSAJE_ERROR_GENERICO ||
-        resultadoAlumnos.error === MENSAJE_ERROR_GENERICO
+        resultadoAlumnos.error === MENSAJE_ERROR_GENERICO ||
+        resultadoGrupos.error === MENSAJE_ERROR_GENERICO
       ) {
         reportarError();
       }
@@ -52,10 +68,11 @@ export default function GrupoDetalleScreen() {
       setGrupo(resultadoGrupo.data);
       setAlumnos(resultadoAlumnos.data);
       setSeleccionados(resultadoGrupo.data.miembro_ids);
+      setGrupoDeAlumno(armarMapaGrupoDeAlumno(resultadoGrupos.data, resultadoGrupo.data.id));
       setError(false);
     }
     setCargando(false);
-  }, [id, obtenerGrupoDetalle, listarAlumnosDirectos, reportarError]);
+  }, [id, obtenerGrupoDetalle, listarAlumnosDirectos, listarGrupos, reportarError]);
 
   useEffect(() => {
     void cargar();
@@ -82,6 +99,7 @@ export default function GrupoDetalleScreen() {
 
   const renderItem: ListRenderItem<AlumnoDirecto> = ({ item }) => {
     const seleccionado = seleccionados.includes(item.id);
+    const otroGrupo = grupoDeAlumno[item.id];
     return (
       <Pressable
         onPress={() => setSeleccionados((actual) => alternar(actual, item.id))}
@@ -95,6 +113,11 @@ export default function GrupoDetalleScreen() {
           <Text style={styles.datos}>
             {item.dni ?? 'Sin DNI'} · {etiquetaGrado(item.grado_actual)}
           </Text>
+          {otroGrupo != null && seleccionado ? (
+            <View style={styles.badge}>
+              <Text style={styles.badgeTexto}>Se trasladará desde "{otroGrupo}"</Text>
+            </View>
+          ) : null}
         </View>
       </Pressable>
     );
@@ -137,7 +160,7 @@ export default function GrupoDetalleScreen() {
             <Text style={styles.nombreGrupo}>{grupo.nombre}</Text>
             <Text style={styles.datosGrupo}>
               {grupo.nombre_locacion ?? 'Sin locación'}
-              {grupo.horarios ? ` · ${grupo.horarios}` : ''}
+              {formatearHorarios(grupo.horarios) ? ` · ${formatearHorarios(grupo.horarios)}` : ''}
             </Text>
           </View>
           <Pressable
@@ -148,7 +171,10 @@ export default function GrupoDetalleScreen() {
             <Text style={styles.botonPlanificarClaseTexto}>+ Clase</Text>
           </Pressable>
         </View>
-        <Text style={styles.sugerencia}>Marcá a los alumnos que integran este grupo (estado activo).</Text>
+        <Text style={styles.sugerencia}>
+          Marcá a los alumnos que integran este grupo (estado activo). Al guardar, un alumno que esté en otro
+          grupo se trasladará a este.
+        </Text>
       </View>
 
       <FlatList
@@ -264,6 +290,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#666',
     marginTop: 2,
+  },
+  badge: {
+    alignSelf: 'flex-start',
+    marginTop: 6,
+    backgroundColor: '#fdf0f0',
+    borderWidth: 1,
+    borderColor: '#f5c6cb',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  badgeTexto: {
+    fontSize: 12,
+    color: '#C62828',
+    fontWeight: '600',
   },
   pie: {
     padding: 16,

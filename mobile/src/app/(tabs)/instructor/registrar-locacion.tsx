@@ -5,9 +5,9 @@ import { CampoTexto } from '@/components/CampoTexto';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 import { useErrorGlobal } from '@/contextos/ErrorGlobal';
 import { MENSAJE_ERROR_GENERICO } from '@/lib/errores';
-import { esNombreValido } from '@/lib/perfil';
+import { esDireccionValida, esNombreValido } from '@/lib/perfil';
 
-type ErroresFormulario = Partial<Record<'nombre', string>>;
+type ErroresFormulario = Partial<Record<'nombre' | 'direccion', string>>;
 
 export default function RegistrarLocacionScreen() {
   const { crearLocacion } = useAuthGlobal();
@@ -24,6 +24,7 @@ export default function RegistrarLocacionScreen() {
     if (enviando) return;
     const e: ErroresFormulario = {};
     if (!esNombreValido(nombre)) e.nombre = 'Ingresá el nombre de la locación.';
+    if (!esDireccionValida(direccion)) e.direccion = 'Ingresá la dirección de la locación.';
     setErrores(e);
     setError(null);
     if (Object.keys(e).length > 0) return;
@@ -32,7 +33,7 @@ export default function RegistrarLocacionScreen() {
     try {
       const resultado = await crearLocacion({
         nombre: nombre.trim(),
-        direccion: direccion.trim() === '' ? null : direccion.trim(),
+        direccion: direccion.trim(),
       });
       if (resultado.error) {
         setError(resultado.error);
@@ -69,10 +70,11 @@ export default function RegistrarLocacionScreen() {
           error={errores.nombre}
         />
         <CampoTexto
-          label="Dirección (opcional)"
+          label="Dirección *"
           placeholder="Ej. Av. Siempre Viva 742"
           value={direccion}
           onChangeText={setDireccion}
+          error={errores.direccion}
         />
 
         {error ? <Text style={styles.error}>{error}</Text> : null}

@@ -18,7 +18,7 @@
 3. **Seguridad de Datos y Linaje:** La relacion `maestro_id` en `profiles` no es auto-modificable; solo un administrador (Service Role) o RPC especifico la edita.
 4. **Grado Unificado:** Utilizar el enum `public.grado` que incluye los 10 Gups y los 9 Dans de manera secuencial para validaciones directas.
 5. **No Procesar Dinero:** Los pagos son puramente de caracter de registro de informacion (periodo, monto, fecha, comprobante de alquiler), sin integraciones de pasarelas de pago.
-6. **Alta de Locacion sin Monto:** La tabla `locaciones` solo almacena `nombre`, `direccion`, `creado_por` y `creado_en`. No solicitar "valor mensual del alquiler" al dar de alta; el monto se registra unicamente en `pagos_alquiler` (`monto`, `periodo`, `fecha_pago`) cuando se ejecuta el pago.
+6. **Alta de Locacion sin Monto:** La tabla `locaciones` solo almacena `nombre`, `direccion` (obligatoria), `creado_por` y `creado_en`. No solicitar "valor mensual del alquiler" al dar de alta; el monto se registra unicamente en `pagos_alquiler` (`monto`, `periodo`, `fecha_pago`) cuando se ejecuta el pago.
 7. **Campos Omitidos del Perfil:** `profiles` incluye `altura_cm`, `telefono`, `contacto_emergencia` y `datos_salud`; estan contemplados en el onboarding y en el perfil (y el formato de grado se muestra por color, sin "Gup") aunque el SRS §3.1 no los liste como obligatorios.
 8. **Clase Previa a Asistencia:** Todo registro en `asistencia` requiere una clase existente en `clases` con `hora_inicio`, `hora_fin`, `objetivo`, `contenido_tuls` y `preparacion_fisica` documentados; no se puede tomar asistencia sin crear antes la sesion.
 9. **Alumnos no son usuarios (decision v1):** la app movil es de uso exclusivo del staff (profesores y maestros). Los alumnos regulares no inician sesion ni tienen vistas en la app; son registros de `profiles` administrados por su profesor (**alta de alumno**, Fase 4). No existen flujos "del alumno": sin consulta de cuotas, sin historial academico, sin auto-linaje. La BD conserva la capacidad de usuarios alumnos (`profiles` + `auth.users`) para el futuro; el codigo no debe asumir sesion de alumno.
@@ -74,10 +74,11 @@
    - Al crear la ficha, `profiles.maestro_id` queda fijado al profesor que la da de alta (linaje asignado en el alta; no modificable por el alumno).
    - **Implementado:** RPC `alta_alumno` (SECURITY DEFINER; valida `es_profesor`; elimina la FK `profiles.id -> auth.users` para alumnos sin cuenta) + pantallas `instructor/alumnos`, `instructor/alta-alumno` e `instructor/alumno/[id]` (detalle solo-lectura). Referencia: `documentacion/planes/mobile-directorio-alta-alumnos.md`.
 2. **Creacion de Grupos y Horarios:** *(Implementado — Fase 4, ítem 2)*
-   - Formulario para crear un grupo de entrenamiento asociandolo a una locacion fisica, indicando nombre y horarios de clase.
+   - Formulario para crear un grupo de entrenamiento asociandolo a una locacion fisica, indicando nombre y **horarios de clase estructurados** (dia de la semana + hora inicio/fin; sin texto libre). Los horarios viven en la tabla normalizada `grupos_horarios` con RLS del profesor dueño del grupo.
    - **Sin codigo de invitacion en el flujo movil:** el profesor asigna directamente a sus alumnos directos al grupo (fila `miembros_grupo` en estado activo). El campo `codigo_invitacion` de la BD queda para uso futuro y fuera de alcance v1.
-   - **Nota (dependencia locaciones):** se anticipa el **paso minimo de la Fase 5.1** (alta de locacion con nombre y direccion, sin monto) para poder asociar el grupo a una locacion fisica; alquileres y auditoria quedan para la Fase 5.
-   - **Implementado:** migracion `grupos_flujo_movil` (codigo_invitacion nullable + RPC `editar_miembros_grupo`) + pantallas `instructor/grupos`, `instructor/nuevo-grupo`, `instructor/registrar-locacion` e `instructor/grupo/[id]` (asignacion de miembros activos). Referencia: `documentacion/planes/mobile-grupos-horarios.md`.
+   - **Un solo grupo activo por alumno:** la membresia activa es unica por alumno (indice unico parcial); al asignar a un alumno a otro grupo, el RPC `editar_miembros_grupo` lo MUEVE atómicamente (sale del grupo anterior y queda solo en el nuevo), restringido a grupos del mismo profesor.
+   - **Nota (dependencia locaciones):** se anticipa el **paso minimo de la Fase 5.1** (alta de locacion con nombre y **direccion obligatoria**, sin monto) para poder asociar el grupo a una locacion fisica; alquileres y auditoria quedan para la Fase 5.
+   - **Implementado (v1.1):** migraciones `grupos_flujo_movil` + `grupos_horarios_y_reglas` (tabla `grupos_horarios` con RLS, drop de `grupos.horarios` texto, `locaciones.direccion` NOT NULL, indice unico `miembros_grupo(alumno_id) where estado='activo'`, RPC `crear_grupo_con_horarios` y RPC `editar_miembros_grupo` con movimiento) + pantallas `instructor/grupos`, `instructor/nuevo-grupo` (editor de horarios), `instructor/registrar-locacion` (direccion obligatoria) e `instructor/grupo/[id]` (asignacion de miembros activos con badge de traslado). Referencia: `documentacion/planes/mobile-grupos-horarios.md`.
 3. **Creacion de Clase:** *(Implementado — Fase 4, ítem 3)*
    - Antes de registrar asistencias, el profesor crea la sesion particular en `clases` vinculada al grupo y la fecha, documentando obligatoriamente **hora_inicio**, **hora_fin**, **objetivo**, **contenido_tuls** y **preparacion_fisica**.
    - Cada clase creada queda como sesion activa en el selector, y los presentes/ausentes se vincularan a ella mediante `clase_id` en `asistencia` (Fase 4.4).
@@ -88,7 +89,7 @@
 
 ### Fase 5: Locaciones, Alquileres e Infraestructura
 1. **Registro de Locacion:**
-   - Permitir a profesores y maestros dar de alta centros de entrenamiento registrando **solo** nombre y direccion (la tabla `locaciones` no posee campo de monto).
+   - Permitir a profesores y maestros dar de alta centros de entrenamiento registrando **solo** nombre y **direccion (obligatoria)** (la tabla `locaciones` no posee campo de monto).
    - El valor del alquiler no se solicita en este paso: el monto se registra unicamente en `pagos_alquiler` al ejecutar el pago del periodo correspondiente.
 2. **Pagos de Alquiler y Storage:**
    - Formulario para registrar el pago de alquiler mensual de la locacion: periodo (ej. '2026-09'), monto pagado y fecha.

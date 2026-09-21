@@ -20,6 +20,7 @@ import {
   type Grupo,
   type DetalleGrupo,
   type DatosNuevoGrupo,
+  type HorarioGrupo,
   type Locacion,
   type DatosNuevaLocacion,
   type FilaGrupoConRelaciones,
@@ -73,16 +74,25 @@ const CAMPOS_PERFIL_SELECT =
   'nombre_completo, dni, fecha_nacimiento, peso_kg, genero, altura_cm, telefono, contacto_emergencia, datos_salud, grado_actual, es_maestro, es_profesor, maestro_id'
 
 const SELECT_GRUPO =
-  'id, nombre, horarios, locacion_id, locaciones(nombre), miembros_grupo(alumno_id)'
+  'id, nombre, locacion_id, locaciones(nombre), miembros_grupo(alumno_id), grupos_horarios(dia_semana, hora_inicio, hora_fin)'
+
+function mapearHorarios(fila: FilaGrupoConRelaciones['grupos_horarios']): HorarioGrupo[] {
+  return (fila ?? []).map((h) => ({
+    dia_semana: h.dia_semana as HorarioGrupo['dia_semana'],
+    hora_inicio: h.hora_inicio,
+    hora_fin: h.hora_fin,
+  }))
+}
 
 function mapearGrupo(fila: FilaGrupoConRelaciones): Grupo {
   return {
     id: fila.id,
     nombre: fila.nombre,
-    horarios: fila.horarios,
+    horarios: mapearHorarios(fila.grupos_horarios),
     locacion_id: fila.locacion_id,
     nombre_locacion: fila.locaciones?.nombre ?? null,
     cantidad_miembros: fila.miembros_grupo?.length ?? 0,
+    miembro_ids: fila.miembros_grupo?.map((miembro) => miembro.alumno_id) ?? [],
   }
 }
 
@@ -420,24 +430,19 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
     async (datos: DatosNuevoGrupo): Promise<ResultadoCreacion> => {
       const usuarioId = sesion?.user?.id
       if (usuarioId == null) return { error: MENSAJE_ERROR_GENERICO }
-      const { data, error } = await ejecutarConsulta<{ id: string } | null>(
+      const { data, error } = await ejecutarConsulta<string | null>(
         Promise.resolve(
-          supabase
-            .from('grupos')
-            .insert({
-              nombre: datos.nombre.trim(),
-              horarios: datos.horarios.trim(),
-              locacion_id: datos.locacion_id,
-              profesor_id: usuarioId,
-            })
-            .select('id')
-            .single(),
+          supabase.rpc('crear_grupo_con_horarios', {
+            p_nombre: datos.nombre.trim(),
+            p_locacion_id: datos.locacion_id ?? undefined,
+            p_horarios: datos.horarios,
+          }),
         ),
         { modulo: 'grupos', contexto: 'crearGrupo' },
       )
       return error != null || data == null
         ? { error: MENSAJE_ERROR_GENERICO }
-        : { error: null, nuevoId: data.id }
+        : { error: null, nuevoId: data }
     },
     [sesion?.user?.id],
   )
@@ -461,7 +466,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
               data: {
                 id: data.id,
                 nombre: data.nombre,
-                horarios: data.horarios,
+                horarios: mapearHorarios(data.grupos_horarios),
                 locacion_id: data.locacion_id,
                 nombre_locacion: data.locaciones?.nombre ?? null,
                 miembro_ids: data.miembros_grupo?.map((miembro) => miembro.alumno_id) ?? [],
@@ -511,14 +516,13 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
     async (datos: DatosNuevaLocacion): Promise<ResultadoCreacion> => {
       const usuarioId = sesion?.user?.id
       if (usuarioId == null) return { error: MENSAJE_ERROR_GENERICO }
-      const direccion = datos.direccion?.trim() ?? ''
       const { data, error } = await ejecutarConsulta<{ id: string } | null>(
         Promise.resolve(
           supabase
             .from('locaciones')
             .insert({
               nombre: datos.nombre.trim(),
-              direccion: direccion === '' ? null : direccion,
+              direccion: datos.direccion.trim(),
               creado_por: usuarioId,
             })
             .select('id')

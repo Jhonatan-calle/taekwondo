@@ -323,7 +323,6 @@ export type Database = {
         Row: {
           codigo_invitacion: string | null
           creado_en: string
-          horarios: string | null
           id: string
           locacion_id: string | null
           nombre: string
@@ -333,7 +332,6 @@ export type Database = {
         Insert: {
           codigo_invitacion?: string | null
           creado_en?: string
-          horarios?: string | null
           id?: string
           locacion_id?: string | null
           nombre: string
@@ -343,7 +341,6 @@ export type Database = {
         Update: {
           codigo_invitacion?: string | null
           creado_en?: string
-          horarios?: string | null
           id?: string
           locacion_id?: string | null
           nombre?: string
@@ -363,6 +360,38 @@ export type Database = {
             columns: ["profesor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grupos_horarios: {
+        Row: {
+          dia_semana: number
+          grupo_id: string
+          hora_fin: string
+          hora_inicio: string
+          id: string
+        }
+        Insert: {
+          dia_semana: number
+          grupo_id: string
+          hora_fin: string
+          hora_inicio: string
+          id?: string
+        }
+        Update: {
+          dia_semana?: number
+          grupo_id?: string
+          hora_fin?: string
+          hora_inicio?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grupos_horarios_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "grupos"
             referencedColumns: ["id"]
           },
         ]
@@ -537,7 +566,7 @@ export type Database = {
         Row: {
           creado_en: string
           creado_por: string
-          direccion: string | null
+          direccion: string
           id: string
           nombre: string
           valor_alquiler: number | null
@@ -545,7 +574,7 @@ export type Database = {
         Insert: {
           creado_en?: string
           creado_por: string
-          direccion?: string | null
+          direccion: string
           id?: string
           nombre: string
           valor_alquiler?: number | null
@@ -553,7 +582,7 @@ export type Database = {
         Update: {
           creado_en?: string
           creado_por?: string
-          direccion?: string | null
+          direccion?: string
           id?: string
           nombre?: string
           valor_alquiler?: number | null
@@ -1042,6 +1071,14 @@ export type Database = {
       conceder_faceta_maestro: {
         Args: { p_perfil: string }
         Returns: undefined
+      }
+      crear_grupo_con_horarios: {
+        Args: {
+          p_horarios: Json
+          p_locacion_id?: string
+          p_nombre: string
+        }
+        Returns: string
       }
       crear_llave_tul: {
         Args: {

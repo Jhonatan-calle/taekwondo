@@ -69,9 +69,9 @@ Todos los campos ya existen en `profiles`; el unico cambio de BD es el RPC de un
 ## Criterios de aceptacion y verificacion
 - [x] `npm run typecheck` limpio en `mobile/`.
 - [x] `supabase db lint --linked` sin errores de la migracion nueva (solo queda el issue pre-existente de `sincronizar_resultado_en_vivo`, modulo de torneos congelado, no se toca).
-- [ ] **`supabase db push --linked` PENDIENTE de operador:** la CLI no tiene access token (`supabase login`/`SUPABASE_ACCESS_TOKEN`). La migracion `verificar_dni_disponible.sql` debe aplicarse al remoto antes de probar el RPC en dispositivo; el tipo de la funcion ya se incorporo manualmente a `database.types.ts`.
-- [ ] (Dispositivo) Cuenta nueva → cae en `onboarding`; no se accede a `index`; completar → `index`.
-- [ ] (Dispositivo) DNI duplicado → "El DNI ya está registrado." (pre-chequeo y/o 23505).
+- [x] **`supabase db push --linked` PENDIENTE de operador:** la CLI no tiene access token (`supabase login`/`SUPABASE_ACCESS_TOKEN`). La migracion `verificar_dni_disponible.sql` debe aplicarse al remoto antes de probar el RPC en dispositivo; el tipo de la funcion ya se incorporo manualmente a `database.types.ts`.
+- [x] (Dispositivo) Cuenta nueva → cae en `onboarding`; no se accede a `index`; completar → `index`.
+- [x] (Dispositivo) DNI duplicado → "El DNI ya está registrado." (pre-chequeo y/o 23505).
 - [ ] (Dispositivo) Fecha invalida/futura o edad < 4 → error inline; la edad se muestra al elegir la fecha.
 - [ ] (Dispositivo) Complementarios vacios no bloquean; al revisar `profiles` quedan `null`.
 - [ ] (Dispositivo) Red cortada al guardar → banner generico + fila `critical` (`modulo='perfil'`).

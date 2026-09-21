@@ -71,8 +71,8 @@ Persistir `profiles.maestro_id` del usuario nuevo **con confirmación del instru
 - [x] `npm run typecheck` limpio en `mobile/`.
 - [x] `supabase db lint --linked` sin errores nuevos (queda el issue pre-existente de torneos congelado).
 - [x] `supabase db push --linked` aplicado a la BD remota (junto con `verificar_dni_disponible`).
-- [ ] (Dispositivo) Nuevo alumno elige instructor → queda solicitud pendiente en `solicitudes_linaje`; `maestro_id` sigue `null`; entra a `index` con banner de confirmación pendiente.
-- [ ] (Dispositivo) El instructor ve la solicitud en su pantalla; **Aceptar** → `maestro_id` setado (única vez) y el banner del alumno desaparece al refrescar; **Rechazar** → el alumno vuelve al onboarding a elegir de nuevo.
+- [x] (Dispositivo) Nuevo alumno elige instructor → queda solicitud pendiente en `solicitudes_linaje`; `maestro_id` sigue `null`; entra a `index` con banner de confirmación pendiente.
+- [x] (Dispositivo) El instructor ve la solicitud en su pantalla; **Aceptar** → `maestro_id` setado (única vez) y el banner del alumno desaparece al refrescar; **Rechazar** → el alumno vuelve al onboarding a elegir de nuevo.
 - [ ] (Dispositivo) Maestro (`es_maestro`) completa onboarding sin elegir instructor y entra a `index`.
 - [ ] (Dispositivo) Lista vacía → aviso bloqueante; luego de conferir un instructor, aparece.
 - [ ] (Dispositivo) Un usuario con `maestro_id` no puede modificarlo (trigger + UI no lo expone).

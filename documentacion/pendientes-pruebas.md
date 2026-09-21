@@ -74,6 +74,16 @@
 - `esMaestro` refleja la bandera; la sección "Solicitudes de alumnos" sigue apareciendo para profesores (con Dan) y maestros (`esInstructor`), sin regresión en el flujo de linaje.
 - **Referencia:** `documentacion/planes/mobile-analisis-perfil-inicio.md`.
 
+### 8. Rutas condicionales / tabs por árbol de poder (dispositivo)
+- Usuario sin facetas (`!es_profesor` y `!es_maestro`) → solo pestaña "Inicio" con el aviso "Tu cuenta todavía no tiene habilitadas las pestañas de gestión...".
+- Profesor (`es_profesor = true` y `grado_actual >= 'dan_1'`) → pestañas "Inicio" + "Instructor".
+- Maestro sin `es_profesor` → "Inicio" + "Instructor" (por `esInstructor`) + "Maestro".
+- Deep link directo a `/instructor` (cuenta no autorizada) o `/maestro` (no maestro) → redirige a "Inicio" vía `<Redirect>`, sin renderizar la pantalla.
+- La barra inferior muestra solo las tabs habilitadas (layout no roto declarando los 3 `Tabs.Screen`).
+- "Solicitudes de alumnos" (flujo de linaje) sigue operando desde "Inicio" sin regresión.
+- Las opciones de cada menú aparecen deshabilitadas como "Próximamente".
+- **Referencia:** `documentacion/planes/mobile-rutas-condicionales-navegacion.md`.
+
 ---
 
 🗒️ Actualizar este archivo (tachar items, agregar folow-ups de fecha) cada vez que se haga una

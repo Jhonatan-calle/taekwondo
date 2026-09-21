@@ -8,6 +8,7 @@ export default function HomeScreen() {
   const {
     sesion,
     esMaestro,
+    esProfesor,
     esInstructor,
     linajeEstablecido,
     listarSolicitudesPendientes,
@@ -17,6 +18,7 @@ export default function HomeScreen() {
 
   const email = sesion?.user?.email;
   const sinConfirmar = !esMaestro && !linajeEstablecido;
+  const sinFacetasGestion = !esProfesor && !esMaestro;
 
   const [solicitudes, setSolicitudes] = useState<SolicitudLinaje[]>([]);
   const [cargandoSolicitudes, setCargandoSolicitudes] = useState(false);
@@ -58,6 +60,15 @@ export default function HomeScreen() {
         <View style={styles.avisoPendiente}>
           <Text style={styles.avisoPendienteTexto}>
             Tu instructor todavía no confirmó tu registro. Una vez que lo haga, ya no aparecerá este aviso.
+          </Text>
+        </View>
+      ) : null}
+
+      {sinFacetasGestion ? (
+        <View style={styles.avisoPendiente}>
+          <Text style={styles.avisoPendienteTexto}>
+            Tu cuenta todavía no tiene habilitadas las pestañas de gestión. Un superior o la administración debe
+            otorgarte las facetas.
           </Text>
         </View>
       ) : null}

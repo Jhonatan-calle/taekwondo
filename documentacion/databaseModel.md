@@ -50,7 +50,7 @@ erDiagram
         date fecha_pago
         uuid profesor_id FK "profesor directo que registra"
         timestamptz creado_en
-        unico "(alumno_id, periodo)"
+        string unico "(alumno_id, periodo)"
     }
 
     GRUPOS {
@@ -111,7 +111,7 @@ erDiagram
         uuid evaluado_por FK
         timestamptz evaluado_en
         timestamptz creado_en
-        unico "(mesa_id, alumno_id)"
+        string unico "(mesa_id, alumno_id)"
     }
 
     GRADUACIONES {

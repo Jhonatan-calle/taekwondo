@@ -26,7 +26,7 @@
 ## Estructura del repo
 - `supabase/` → **migraciones canónicas** (`supabase/migrations/`), `config.toml`, `.temp/` (gitignored).
 - `web/` → **CONGELADA**. No modificar ni mantener.
-- `mobile/` → futura app Expo (aún no creada).
+- `mobile/` → app Expo (React Native + Expo Router + TypeScript) creada en 2026-09. Scaffold inicial: `src/app` (rutas), `src/lib`, `src/constants`, `src/components`; alias `@/* → ./src/*`; scheme `taekwondo`.
 - `documentacion/` → SRS, reglas, modelo de datos, índice, planes vigentes y `descartado-web/`.
 
 ## Reglas generales

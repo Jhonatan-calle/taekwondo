@@ -1,4 +1,5 @@
 import type { Database } from '@/lib/database.types'
+import { esGradoDan } from '@/constants/grados'
 
 type PerfilRow = Database['public']['Tables']['profiles']['Row']
 export type Genero = Database['public']['Enums']['genero']
@@ -13,6 +14,7 @@ export type PerfilOnboarding = Pick<
   | 'altura_cm'
   | 'contacto_emergencia'
   | 'datos_salud'
+  | 'grado_actual'
   | 'es_maestro'
   | 'es_profesor'
   | 'maestro_id'
@@ -54,6 +56,14 @@ export function perfilCompleto(perfil: PerfilOnboarding | null): boolean {
     perfil.peso_kg != null &&
     perfil.genero != null
   )
+}
+
+export function esProfesorActivo(perfil: PerfilOnboarding | null): boolean {
+  return perfil?.es_profesor === true && esGradoDan(perfil.grado_actual)
+}
+
+export function esInstructor(perfil: PerfilOnboarding | null): boolean {
+  return esProfesorActivo(perfil) || perfil?.es_maestro === true
 }
 
 export function aIsoLocal(fecha: Date): string {

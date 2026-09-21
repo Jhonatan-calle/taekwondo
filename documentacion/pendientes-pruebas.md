@@ -68,6 +68,12 @@
   `ExpoRoot.js`/`ContextNavigator`/`NavigationContainer` → `useLinking.native.js:127`; no pasa por
   `AuthGlobal`, `_layout`, `onboarding` ni ningun archivo de `mobile/src/`.
 
+### 7. Análisis del perfil al iniciar (dispositivo)
+- Al iniciar sesión (o restaurarla), el contexto `AuthGlobal` expone `gradoActual` con el grado real del perfil (ej. un maestro sembrado con `dan_X`).
+- `esProfesor` es `true` solo si `es_profesor = true` **y** `grado_actual >= 'dan_1'` (un perfil con `es_profesor` pero grado Gup queda `false`).
+- `esMaestro` refleja la bandera; la sección "Solicitudes de alumnos" sigue apareciendo para profesores (con Dan) y maestros (`esInstructor`), sin regresión en el flujo de linaje.
+- **Referencia:** `documentacion/planes/mobile-analisis-perfil-inicio.md`.
+
 ---
 
 🗒️ Actualizar este archivo (tachar items, agregar folow-ups de fecha) cada vez que se haga una

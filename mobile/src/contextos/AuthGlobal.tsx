@@ -7,12 +7,15 @@ import { esRechazoEsperado, mensajeAmigableDeErrorAuth, MENSAJE_USUARIO_YA_EXIST
 import { ejecutarConsulta, type ResultadoConsulta } from '@/lib/consulta-supabase'
 import {
   MENSAJE_DNI_DUPLICADO,
+  esInstructor as esInstructorDePerfil,
+  esProfesorActivo as esProfesorActivoDePerfil,
   perfilCompleto as esPerfilCompleto,
   type DatosPerfilACompletar,
   type InstructorLinaje,
   type PerfilOnboarding,
   type SolicitudLinaje,
 } from '@/lib/perfil'
+import type { Grado } from '@/constants/grados'
 
 export type ResultadoAuth = { error: string | null; pendienteConfirmacion?: boolean }
 
@@ -21,7 +24,10 @@ type AuthGlobalValue = {
   cargando: boolean
   perfil: PerfilOnboarding | null
   perfilCompleto: boolean
+  gradoActual: Grado | null
+  esProfesor: boolean
   esMaestro: boolean
+  esInstructor: boolean
   linajeEstablecido: boolean
   linajeEnCurso: boolean
   onboardingCompleto: boolean
@@ -38,7 +44,7 @@ type AuthGlobalValue = {
 }
 
 const CAMPOS_PERFIL_SELECT =
-  'nombre_completo, dni, fecha_nacimiento, peso_kg, genero, altura_cm, contacto_emergencia, datos_salud, es_maestro, es_profesor, maestro_id'
+  'nombre_completo, dni, fecha_nacimiento, peso_kg, genero, altura_cm, contacto_emergencia, datos_salud, grado_actual, es_maestro, es_profesor, maestro_id'
 
 const AuthContext = createContext<AuthGlobalValue | null>(null)
 
@@ -295,7 +301,10 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
   }, [])
 
   const perfilCompleto = useMemo(() => esPerfilCompleto(perfil), [perfil])
+  const gradoActual = useMemo(() => perfil?.grado_actual ?? null, [perfil])
+  const esProfesor = useMemo(() => esProfesorActivoDePerfil(perfil), [perfil])
   const esMaestro = perfil?.es_maestro === true
+  const esInstructor = useMemo(() => esInstructorDePerfil(perfil), [perfil])
   const linajeEstablecido = perfil?.maestro_id != null
   const onboardingCompleto = perfilCompleto && (esMaestro || linajeEstablecido || linajeEnCurso)
 
@@ -305,7 +314,10 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       cargando,
       perfil,
       perfilCompleto,
+      gradoActual,
+      esProfesor,
       esMaestro,
+      esInstructor,
       linajeEstablecido,
       linajeEnCurso,
       onboardingCompleto,
@@ -325,7 +337,10 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       cargando,
       perfil,
       perfilCompleto,
+      gradoActual,
+      esProfesor,
       esMaestro,
+      esInstructor,
       linajeEstablecido,
       linajeEnCurso,
       onboardingCompleto,

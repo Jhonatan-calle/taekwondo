@@ -7,8 +7,8 @@ import type { SolicitudLinaje } from '@/lib/perfil';
 export default function HomeScreen() {
   const {
     sesion,
-    perfil,
     esMaestro,
+    esInstructor,
     linajeEstablecido,
     listarSolicitudesPendientes,
     resolverSolicitudLinaje,
@@ -16,7 +16,6 @@ export default function HomeScreen() {
   } = useAuthGlobal();
 
   const email = sesion?.user?.email;
-  const esInstructor = perfil?.es_profesor === true || perfil?.es_maestro === true;
   const sinConfirmar = !esMaestro && !linajeEstablecido;
 
   const [solicitudes, setSolicitudes] = useState<SolicitudLinaje[]>([]);

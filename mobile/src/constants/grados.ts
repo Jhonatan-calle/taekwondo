@@ -11,7 +11,7 @@ const GRADOS_GUP = [
   'rojo_punta_negra',
 ] as const;
 
-const GRADOS_DAN = [
+export const GRADOS_DAN = [
   'dan_1',
   'dan_2',
   'dan_3',
@@ -26,6 +26,10 @@ const GRADOS_DAN = [
 export const GRADOS = [...GRADOS_GUP, ...GRADOS_DAN] as const;
 
 export type Grado = (typeof GRADOS)[number];
+
+export function esGradoDan(grado: Grado | null): boolean {
+  return grado != null && GRADOS.indexOf(grado) >= GRADOS.indexOf('dan_1');
+}
 
 export function gradoSiguiente(grado: Grado): Grado | null {
   const indice = GRADOS.indexOf(grado);

@@ -23,6 +23,9 @@ export default function InstructorLayout() {
       <Stack.Screen name="nuevo-grupo" options={{ title: 'Nuevo grupo' }} />
       <Stack.Screen name="grupo/[id]" options={{ title: 'Detalle del grupo' }} />
       <Stack.Screen name="registrar-locacion" options={{ title: 'Registrar locación' }} />
+      <Stack.Screen name="clases" options={{ title: 'Clases' }} />
+      <Stack.Screen name="nueva-clase" options={{ title: 'Nueva clase' }} />
+      <Stack.Screen name="clase/[id]" options={{ title: 'Detalle de la clase' }} />
     </Stack>
   );
 }

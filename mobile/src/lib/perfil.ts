@@ -210,3 +210,42 @@ export function esNombreValido(nombre: string): boolean {
 export function esHorarioValido(horario: string): boolean {
   return horario.trim().length >= 2
 }
+
+export type ClaseItem = {
+  id: string
+  grupo_id: string
+  nombre_grupo?: string | null
+  fecha: string
+  hora_inicio: string
+  hora_fin: string
+  objetivo: string | null
+  contenido_tuls: string | null
+  preparacion_fisica: string | null
+}
+
+export type DatosNuevaClase = {
+  grupo_id: string
+  fecha: string
+  hora_inicio: string
+  hora_fin: string
+  objetivo: string
+  contenido_tuls: string
+  preparacion_fisica: string
+}
+
+export function esHoraValida(hora: string): boolean {
+  return /^([01]\d|2[0-3]):([0-5]\d)(:([0-5]\d))?$/.test(hora.trim())
+}
+
+export function horaFinPosterior(inicio: string, fin: string): boolean {
+  if (!esHoraValida(inicio) || !esHoraValida(fin)) return false
+  const [hI, mI] = inicio.split(':').map(Number)
+  const [hF, mF] = fin.split(':').map(Number)
+  const minI = hI * 60 + mI
+  const minF = hF * 60 + mF
+  return minF > minI
+}
+
+export function esTextoRequerido(texto: string, min = 2): boolean {
+  return texto.trim().length >= min
+}

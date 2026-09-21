@@ -23,6 +23,8 @@ import {
   type Locacion,
   type DatosNuevaLocacion,
   type FilaGrupoConRelaciones,
+  type ClaseItem,
+  type DatosNuevaClase,
 } from '@/lib/perfil'
 import type { Grado } from '@/constants/grados'
 
@@ -61,6 +63,9 @@ type AuthGlobalValue = {
   editarMiembrosGrupo(grupoId: string, alumnoIds: string[]): Promise<{ error: string | null }>
   listarLocaciones(): Promise<ResultadoConsulta<Locacion[] | null>>
   crearLocacion(datos: DatosNuevaLocacion): Promise<ResultadoCreacion>
+  listarClases(grupoId?: string): Promise<ResultadoConsulta<ClaseItem[] | null>>
+  obtenerClaseDetalle(claseId: string): Promise<ResultadoConsulta<ClaseItem | null>>
+  crearClase(datos: DatosNuevaClase): Promise<ResultadoCreacion>
   cerrarSesion(): Promise<void>
 }
 
@@ -528,6 +533,140 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
     [sesion?.user?.id],
   )
 
+  const listarClases = useCallback(
+    async (grupoId?: string): Promise<ResultadoConsulta<ClaseItem[] | null>> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { data: null, error: MENSAJE_ERROR_GENERICO }
+
+      let consulta = supabase
+        .from('clases')
+        .select('id, grupo_id, fecha, hora_inicio, hora_fin, objetivo, contenido_tuls, preparacion_fisica, grupos!inner(nombre, profesor_id)')
+        .eq('grupos.profesor_id', usuarioId)
+        .order('fecha', { ascending: false })
+        .order('hora_inicio', { ascending: false })
+
+      if (grupoId != null && grupoId !== '') {
+        consulta = consulta.eq('grupo_id', grupoId)
+      }
+
+      type FilaClaseConGrupo = {
+        id: string
+        grupo_id: string
+        fecha: string
+        hora_inicio: string
+        hora_fin: string
+        objetivo: string | null
+        contenido_tuls: string | null
+        preparacion_fisica: string | null
+        grupos: { nombre: string } | null
+      }
+
+      return ejecutarConsulta<ClaseItem[] | null>(
+        Promise.resolve(
+          consulta.returns<FilaClaseConGrupo[]>().then(({ data, error }) => ({
+            data:
+              data?.map((fila) => ({
+                id: fila.id,
+                grupo_id: fila.grupo_id,
+                nombre_grupo: fila.grupos?.nombre ?? null,
+                fecha: fila.fecha,
+                hora_inicio: fila.hora_inicio,
+                hora_fin: fila.hora_fin,
+                objetivo: fila.objetivo,
+                contenido_tuls: fila.contenido_tuls,
+                preparacion_fisica: fila.preparacion_fisica,
+              })) ?? null,
+            error,
+          })),
+        ),
+        { modulo: 'clases', contexto: 'listarClases' },
+      )
+    },
+    [sesion?.user?.id],
+  )
+
+  const obtenerClaseDetalle = useCallback(
+    async (claseId: string): Promise<ResultadoConsulta<ClaseItem | null>> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { data: null, error: MENSAJE_ERROR_GENERICO }
+
+      type FilaClaseDetalle = {
+        id: string
+        grupo_id: string
+        fecha: string
+        hora_inicio: string
+        hora_fin: string
+        objetivo: string | null
+        contenido_tuls: string | null
+        preparacion_fisica: string | null
+        grupos: { nombre: string } | null
+      }
+
+      const promesa = supabase
+        .from('clases')
+        .select('id, grupo_id, fecha, hora_inicio, hora_fin, objetivo, contenido_tuls, preparacion_fisica, grupos!inner(nombre, profesor_id)')
+        .eq('id', claseId)
+        .eq('grupos.profesor_id', usuarioId)
+        .maybeSingle()
+        .returns<FilaClaseDetalle | null>()
+
+      return ejecutarConsulta<ClaseItem | null>(
+        Promise.resolve(
+          promesa.then(({ data, error }) => {
+            if (error != null || data == null) return { data: null, error }
+            return {
+              data: {
+                id: data.id,
+                grupo_id: data.grupo_id,
+                nombre_grupo: data.grupos?.nombre ?? null,
+                fecha: data.fecha,
+                hora_inicio: data.hora_inicio,
+                hora_fin: data.hora_fin,
+                objetivo: data.objetivo,
+                contenido_tuls: data.contenido_tuls,
+                preparacion_fisica: data.preparacion_fisica,
+              },
+              error: null,
+            }
+          }),
+        ),
+        { modulo: 'clases', contexto: 'obtenerClaseDetalle' },
+      )
+    },
+    [sesion?.user?.id],
+  )
+
+  const crearClase = useCallback(
+    async (datos: DatosNuevaClase): Promise<ResultadoCreacion> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { error: MENSAJE_ERROR_GENERICO }
+
+      const { data, error } = await ejecutarConsulta<{ id: string } | null>(
+        Promise.resolve(
+          supabase
+            .from('clases')
+            .insert({
+              grupo_id: datos.grupo_id,
+              fecha: datos.fecha,
+              hora_inicio: datos.hora_inicio.trim(),
+              hora_fin: datos.hora_fin.trim(),
+              objetivo: datos.objetivo.trim(),
+              contenido_tuls: datos.contenido_tuls.trim(),
+              preparacion_fisica: datos.preparacion_fisica.trim(),
+            })
+            .select('id')
+            .single(),
+        ),
+        { modulo: 'clases', contexto: 'crearClase' },
+      )
+
+      return error != null || data == null
+        ? { error: MENSAJE_ERROR_GENERICO }
+        : { error: null, nuevoId: data.id }
+    },
+    [sesion?.user?.id],
+  )
+
   const cerrarSesion = useCallback(async (): Promise<void> => {
     try {
       await supabase.auth.signOut()
@@ -580,6 +719,9 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       editarMiembrosGrupo,
       listarLocaciones,
       crearLocacion,
+      listarClases,
+      obtenerClaseDetalle,
+      crearClase,
       cerrarSesion,
     }),
     [
@@ -613,6 +755,9 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       editarMiembrosGrupo,
       listarLocaciones,
       crearLocacion,
+      listarClases,
+      obtenerClaseDetalle,
+      crearClase,
       cerrarSesion,
     ],
   )

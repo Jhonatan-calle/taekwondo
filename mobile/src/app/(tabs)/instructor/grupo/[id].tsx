@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View, type ListRenderItem } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { etiquetaGrado } from '@/constants/grados';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 import { useErrorGlobal } from '@/contextos/ErrorGlobal';
@@ -13,6 +13,7 @@ function alternar<T>(lista: T[], elemento: T): T[] {
 
 export default function GrupoDetalleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const { obtenerGrupoDetalle, listarAlumnosDirectos, editarMiembrosGrupo } = useAuthGlobal();
   const { reportarError } = useErrorGlobal();
 
@@ -131,11 +132,22 @@ export default function GrupoDetalleScreen() {
   return (
     <View style={styles.pantalla}>
       <View style={styles.cabecera}>
-        <Text style={styles.nombreGrupo}>{grupo.nombre}</Text>
-        <Text style={styles.datosGrupo}>
-          {grupo.nombre_locacion ?? 'Sin locación'}
-          {grupo.horarios ? ` · ${grupo.horarios}` : ''}
-        </Text>
+        <View style={styles.cabeceraFila}>
+          <View style={styles.cabeceraInfo}>
+            <Text style={styles.nombreGrupo}>{grupo.nombre}</Text>
+            <Text style={styles.datosGrupo}>
+              {grupo.nombre_locacion ?? 'Sin locación'}
+              {grupo.horarios ? ` · ${grupo.horarios}` : ''}
+            </Text>
+          </View>
+          <Pressable
+            onPress={() => router.push(`/instructor/nueva-clase?grupo_id=${grupo.id}`)}
+            style={styles.botonPlanificarClase}
+            accessibilityRole="button"
+          >
+            <Text style={styles.botonPlanificarClaseTexto}>+ Clase</Text>
+          </Pressable>
+        </View>
         <Text style={styles.sugerencia}>Marcá a los alumnos que integran este grupo (estado activo).</Text>
       </View>
 
@@ -173,10 +185,29 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   cabecera: {
-    padding: 20,
-    paddingBottom: 12,
+    padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
+  },
+  cabeceraFila: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  cabeceraInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  botonPlanificarClase: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#C62828',
+    borderRadius: 6,
+  },
+  botonPlanificarClaseTexto: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
   },
   nombreGrupo: {
     fontSize: 22,

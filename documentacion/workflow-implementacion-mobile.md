@@ -78,9 +78,10 @@
    - **Sin codigo de invitacion en el flujo movil:** el profesor asigna directamente a sus alumnos directos al grupo (fila `miembros_grupo` en estado activo). El campo `codigo_invitacion` de la BD queda para uso futuro y fuera de alcance v1.
    - **Nota (dependencia locaciones):** se anticipa el **paso minimo de la Fase 5.1** (alta de locacion con nombre y direccion, sin monto) para poder asociar el grupo a una locacion fisica; alquileres y auditoria quedan para la Fase 5.
    - **Implementado:** migracion `grupos_flujo_movil` (codigo_invitacion nullable + RPC `editar_miembros_grupo`) + pantallas `instructor/grupos`, `instructor/nuevo-grupo`, `instructor/registrar-locacion` e `instructor/grupo/[id]` (asignacion de miembros activos). Referencia: `documentacion/planes/mobile-grupos-horarios.md`.
-3. **Creacion de Clase:**
+3. **Creacion de Clase:** *(Implementado — Fase 4, ítem 3)*
    - Antes de registrar asistencias, el profesor crea la sesion particular en `clases` vinculada al grupo y la fecha, documentando obligatoriamente **hora_inicio**, **hora_fin**, **objetivo**, **contenido_tuls** y **preparacion_fisica**.
-   - Cada clase creada queda como sesion activa en el selector, y los presentes/ausentes se vinculan a ella mediante `clase_id` en `asistencia`.
+   - Cada clase creada queda como sesion activa en el selector, y los presentes/ausentes se vincularan a ella mediante `clase_id` en `asistencia` (Fase 4.4).
+   - **Implementado:** migracion RLS `clases_politicas_rls` + pantallas `instructor/clases` (listado y selector por grupo), `instructor/nueva-clase` (formulario con validaciones obligatorias) e `instructor/clase/[id]` (detalle de sesión planificada); opción "Toma de asistencia" habilitada en el menú instructor. Referencia: `documentacion/planes/mobile-creacion-clase.md`.
 4. **Control de Asistencia:**
    - Selector de clase activa por fecha (sesion creada en el paso anterior).
    - Interfaz con listado de estudiantes inscritos en el grupo para marcar asistencia (Presente/Ausente) con un toque, impactando directamente en la tabla `asistencia` de manera atomica.

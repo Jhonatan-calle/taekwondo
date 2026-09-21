@@ -12,6 +12,7 @@
 | `ReglasyRestricciones-SistemaTaekwondoITF.md` | Reglas de negocio, permisos y restricciones (escuela). |
 | `databaseModel.md` | Modelo de datos (ER) + notas del módulo de torneos (congelado). |
 | `planes/bd-gestion-escuela.md` | Plan vigente: adaptación de la BD al SRS (aplicado y verificado). |
+| `planes/mobile-control-errores-fail-gracefully.md` | Plan vigente: mecanismo global de control de errores (fail gracefully) en la app móvil (implementado). |
 | `workflow-implementacion-mobile.md` | Guía de pasos secuenciales y workflow de desarrollo de la app móvil. |
 | `README.md` (este archivo) | Índice de documentación. |
 

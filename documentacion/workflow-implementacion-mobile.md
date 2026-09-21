@@ -61,7 +61,7 @@
 1. **Analisis del Perfil al Iniciar:**
    - Recuperar las banderas tecnicas de la tabla `profiles` para el usuario autenticado: `grado_actual`, `es_profesor` y `es_maestro`.
 2. **Rutas Condicionales en la UI:**
-   - **Vista Profesor (exige `es_profesor = true` y `grado_actual >= 'dan_1'`):** Habilita la pestaña "Instructor" con opciones de gestion de sus alumnos directos (incluido el alta de alumnos), creacion de grupos, toma de asistencia, administracion de locaciones, registro de alquileres y postulacion de alumnos directos a examen.
+   - **Vista Profesor:** Habilita la pestaña "Instructor" con opciones de gestion de sus alumnos directos (incluido el alta de alumnos), creacion de grupos, toma de asistencia, administracion de locaciones, registro de alquileres y postulacion de alumnos directos a examen. **Nota (v1.2 plan rutas condicionales):** la **visibilidad de la tab** depende de la bandera cruda `es_profesor`; el gate de Dan (`grado_actual >= 'dan_1'`) queda solo en el derivado `esProfesor` para la logica de negocio (el SRS exige Dan para ejercer la faceta).
    - **Vista Maestro (exige `es_maestro = true`):** Habilita la pestaña "Maestro" que incluye la planificacion y apertura de mesas de examen, acceso a la planilla tecnica de evaluacion y visualizacion de estadisticas/auditoria en cascada.
    - **No existe la Vista Alumno Regular:** los alumnos no tienen sesion ni navegacion propia en la app; son filas de `profiles` sin cuenta de usuario, administradas por su profesor.
    - Un usuario autenticado sin `es_profesor` ni `es_maestro` no accede a pestañas de gestion; el otorgamiento de facetas lo efectua un superior o el Service Role.

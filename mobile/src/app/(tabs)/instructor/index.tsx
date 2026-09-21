@@ -4,9 +4,9 @@ import { FilaOpcionMenu } from '@/components/FilaOpcionMenu';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 
 export default function InstructorScreen() {
-  const { esInstructor } = useAuthGlobal();
+  const { esProfesorBandera } = useAuthGlobal();
 
-  if (!esInstructor) {
+  if (!esProfesorBandera) {
     return <Redirect href="/" />;
   }
 

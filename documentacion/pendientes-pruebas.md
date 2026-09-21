@@ -76,8 +76,10 @@
 
 ### 8. Rutas condicionales / tabs por árbol de poder (dispositivo)
 - Usuario sin facetas (`!es_profesor` y `!es_maestro`) → solo pestaña "Inicio" con el aviso "Tu cuenta todavía no tiene habilitadas las pestañas de gestión...".
-- Profesor (`es_profesor = true` y `grado_actual >= 'dan_1'`) → pestañas "Inicio" + "Instructor".
-- Maestro sin `es_profesor` → "Inicio" + "Instructor" (por `esInstructor`) + "Maestro".
+- Profesor (`es_profesor = true`, con o sin grado Dan) → pestañas "Inicio" + "Instructor" (v1.2: la tab depende de la bandera cruda `es_profesor`, no del gate de Dan).
+- Usuario con `es_profesor=true` y `es_maestro=true` (sin Dan) → "Inicio" + "Instructor" + "Maestro" (caso que motivó la v1.2).
+- Maestro sin `es_profesor` → "Inicio" + "Maestro" (sin "Instructor").
+- La barra muestra solo etiquetas (sin glifo `MissingIcon` `|x|`): `tabBarIcon: () => null` en `screenOptions`.
 - Deep link directo a `/instructor` (cuenta no autorizada) o `/maestro` (no maestro) → redirige a "Inicio" vía `<Redirect>`, sin renderizar la pantalla.
 - La barra inferior muestra solo las tabs habilitadas (layout no roto declarando los 3 `Tabs.Screen`).
 - "Solicitudes de alumnos" (flujo de linaje) sigue operando desde "Inicio" sin regresión.

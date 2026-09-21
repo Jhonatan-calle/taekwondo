@@ -26,6 +26,7 @@ type AuthGlobalValue = {
   perfilCompleto: boolean
   gradoActual: Grado | null
   esProfesor: boolean
+  esProfesorBandera: boolean
   esMaestro: boolean
   esInstructor: boolean
   linajeEstablecido: boolean
@@ -303,6 +304,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
   const perfilCompleto = useMemo(() => esPerfilCompleto(perfil), [perfil])
   const gradoActual = useMemo(() => perfil?.grado_actual ?? null, [perfil])
   const esProfesor = useMemo(() => esProfesorActivoDePerfil(perfil), [perfil])
+  const esProfesorBandera = perfil?.es_profesor === true
   const esMaestro = perfil?.es_maestro === true
   const esInstructor = useMemo(() => esInstructorDePerfil(perfil), [perfil])
   const linajeEstablecido = perfil?.maestro_id != null
@@ -316,6 +318,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       perfilCompleto,
       gradoActual,
       esProfesor,
+      esProfesorBandera,
       esMaestro,
       esInstructor,
       linajeEstablecido,
@@ -339,6 +342,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       perfilCompleto,
       gradoActual,
       esProfesor,
+      esProfesorBandera,
       esMaestro,
       esInstructor,
       linajeEstablecido,

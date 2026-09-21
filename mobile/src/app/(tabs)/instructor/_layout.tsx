@@ -22,7 +22,10 @@ export default function InstructorLayout() {
       <Stack.Screen name="grupos" options={{ title: 'Mis grupos' }} />
       <Stack.Screen name="nuevo-grupo" options={{ title: 'Nuevo grupo' }} />
       <Stack.Screen name="grupo/[id]" options={{ title: 'Detalle del grupo' }} />
+      <Stack.Screen name="grupo/[id]/editar" options={{ title: 'Editar grupo' }} />
       <Stack.Screen name="registrar-locacion" options={{ title: 'Registrar locación' }} />
+      <Stack.Screen name="locaciones" options={{ title: 'Mis locaciones' }} />
+      <Stack.Screen name="locacion/[id]" options={{ title: 'Detalle de la locación' }} />
       <Stack.Screen name="clases" options={{ title: 'Clases' }} />
       <Stack.Screen name="nueva-clase" options={{ title: 'Nueva clase' }} />
       <Stack.Screen name="clase/[id]/index" options={{ title: 'Detalle de la clase' }} />

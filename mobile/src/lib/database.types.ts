@@ -569,7 +569,7 @@ export type Database = {
           direccion: string
           id: string
           nombre: string
-          valor_alquiler: number | null
+          valor_alquiler: number
         }
         Insert: {
           creado_en?: string
@@ -577,7 +577,7 @@ export type Database = {
           direccion: string
           id?: string
           nombre: string
-          valor_alquiler?: number | null
+          valor_alquiler: number
         }
         Update: {
           creado_en?: string
@@ -585,7 +585,7 @@ export type Database = {
           direccion?: string
           id?: string
           nombre?: string
-          valor_alquiler?: number | null
+          valor_alquiler?: number
         }
         Relationships: [
           {
@@ -1089,6 +1089,10 @@ export type Database = {
         Returns: undefined
       }
       descendientes: { Args: { p_ancestro: string }; Returns: string[] }
+      eliminar_locacion_segura: {
+        Args: { p_locacion_id: string }
+        Returns: boolean
+      }
       es_alumno_del_grupo: {
         Args: { p_grupo_id: string; p_perfil_id: string }
         Returns: boolean
@@ -1103,6 +1107,15 @@ export type Database = {
       }
       es_subordinado_de: {
         Args: { p_jefe: string; p_perfil: string }
+        Returns: boolean
+      }
+      editar_grupo: {
+        Args: {
+          p_grupo_id: string
+          p_horarios?: Json
+          p_locacion_id?: string
+          p_nombre: string
+        }
         Returns: boolean
       }
       editar_miembros_grupo: {

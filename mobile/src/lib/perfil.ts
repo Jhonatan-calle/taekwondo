@@ -82,12 +82,17 @@ export type SolicitudLinaje = Pick<
 
 export type Locacion = Pick<
   Database['public']['Tables']['locaciones']['Row'],
-  'id' | 'nombre' | 'direccion'
+  'id' | 'nombre' | 'direccion' | 'valor_alquiler'
 >
 
 export type DatosNuevaLocacion = {
   nombre: string
   direccion: string
+  valor_alquiler: number
+}
+
+export type LocacionDetalle = Locacion & {
+  grupos: { id: string; nombre: string }[]
 }
 
 export const ETIQUETAS_DIAS: Record<number, string> = {
@@ -226,6 +231,16 @@ export function esNombreValido(nombre: string): boolean {
 
 export function esDireccionValida(direccion: string): boolean {
   return direccion.trim().length >= 2
+}
+
+export function esMontoValido(monto: string): boolean {
+  const numero = parsearNumero(monto)
+  return numero != null && numero > 0 && numero <= 99999999
+}
+
+export function formatearMonto(monto: number | null | undefined): string {
+  if (monto == null || !Number.isFinite(monto)) return 'Sin definir'
+  return `$ ${monto.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
 export function esHorarioGrupoValido(horario: HorarioGrupo): boolean {

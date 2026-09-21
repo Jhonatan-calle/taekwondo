@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 import { useErrorGlobal } from '@/contextos/ErrorGlobal';
 import { MENSAJE_ERROR_GENERICO } from '@/lib/errores';
@@ -45,9 +45,11 @@ export default function ClaseDetalleScreen() {
     setCargando(false);
   }, [id, obtenerClaseDetalle, reportarError]);
 
-  useEffect(() => {
-    void cargar();
-  }, [cargar]);
+  useFocusEffect(
+    useCallback(() => {
+      void cargar();
+    }, [cargar]),
+  );
 
   if (cargando) {
     return (

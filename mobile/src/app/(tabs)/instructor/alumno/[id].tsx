@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { etiquetaGrado } from '@/constants/grados';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 import { useErrorGlobal } from '@/contextos/ErrorGlobal';
@@ -60,9 +60,11 @@ export default function AlumnoDetalleScreen() {
     setCargando(false);
   }, [id, obtenerAlumnoDetalle, reportarError]);
 
-  useEffect(() => {
-    void cargar();
-  }, [cargar]);
+  useFocusEffect(
+    useCallback(() => {
+      void cargar();
+    }, [cargar]),
+  );
 
   if (cargando) {
     return (

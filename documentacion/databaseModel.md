@@ -29,6 +29,7 @@ erDiagram
         uuid id PK
         string nombre
         string direccion "NOT NULL (obligatoria)"
+        numeric valor_alquiler "NOT NULL, check >= 0 (valor PACTO del contrato, SRS §3.3)"
         uuid creado_por FK "RLS: dueño gestiona; superiores auditan"
         timestamptz creado_en
     }
@@ -284,6 +285,13 @@ erDiagram
   `raise exception 'Uno o más alumnos ya pertenecen a otro grupo.'`). La reasignación explícita de
   grupo queda pendiente como plan aparte (`mobile-asignacion-alumno-un-grupo.md`).
   `locaciones.direccion` es obligatoria (NOT NULL).
+- **Grupo editable y locación protegida 🔗:** un grupo es **editable** (nombre, `locacion_id` y
+  horarios) vía RPC `editar_grupo` (`SECURITY DEFINER`; mismas validaciones que
+  `crear_grupo_con_horarios`; reemplaza los `grupos_horarios` en una transacción). La FK
+  `grupos.locacion_id on delete set null` se mantiene como red de seguridad —un grupo **nunca** se
+  borra en cascada— pero el borrado de una locación con grupos asociados queda **bloqueado** por el
+  RPC `eliminar_locacion_segura` (y deshabilitado en la UI), evitando grupos huérfanos
+  "Sin locación" sin forma de reasignarlos.
 - **Asistencia 🔑:** `asistencia` tiene **PK compuesta `(clase_id, alumno_id)`** (`asistencia_pkey`),
   que es el índice único que habilita el `insert ... on conflict (clase_id, alumno_id) do update`
   del RPC `guardar_asistencia_clase(p_clase_id, p_registros jsonb)`. FKs `clase_id → clases(id)` y

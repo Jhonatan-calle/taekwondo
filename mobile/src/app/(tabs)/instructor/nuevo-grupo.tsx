@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -8,7 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { CampoTexto } from "@/components/CampoTexto";
 import { useAuthGlobal } from "@/contextos/AuthGlobal";
 import { useErrorGlobal } from "@/contextos/ErrorGlobal";
@@ -77,9 +77,13 @@ function contieneFecha(slot: SlotEditable): boolean {
 }
 
 export default function NuevoGrupoScreen() {
-  const { listarLocaciones, crearGrupo } = useAuthGlobal();
+  const params = useLocalSearchParams<{ grupo_id?: string; id?: string }>();
+  const grupoIdParam = params.grupo_id ?? params.id;
+  const { listarLocaciones, crearGrupo, editarGrupo, obtenerGrupoDetalle } = useAuthGlobal();
   const { reportarError } = useErrorGlobal();
   const router = useRouter();
+
+  const esEdicion = grupoIdParam != null && grupoIdParam !== "";
 
   const [nombre, setNombre] = useState("");
   const [slots, setSlots] = useState<SlotEditable[]>([
@@ -92,9 +96,39 @@ export default function NuevoGrupoScreen() {
   const [locacionId, setLocacionId] = useState<string | null>(null);
   const [locaciones, setLocaciones] = useState<Locacion[]>([]);
   const [cargandoLocaciones, setCargandoLocaciones] = useState(true);
+  const [cargandoGrupo, setCargandoGrupo] = useState(esEdicion);
   const [errores, setErrores] = useState<ErroresFormulario>({});
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+
+  const cargarGrupo = useCallback(async () => {
+    if (!esEdicion || grupoIdParam == null) return;
+    setCargandoGrupo(true);
+    const { data, error: err } = await obtenerGrupoDetalle(grupoIdParam);
+    if (err != null || data == null) {
+      setError(MENSAJE_ERROR_GENERICO);
+      if (err === MENSAJE_ERROR_GENERICO) reportarError();
+    } else {
+      setNombre(data.nombre);
+      setLocacionId(data.locacion_id);
+      setSlots(
+        data.horarios.length > 0
+          ? data.horarios.map((h) => ({
+              dia_semana: h.dia_semana,
+              hora_inicio: h.hora_inicio.slice(0, 5),
+              hora_fin: h.hora_fin.slice(0, 5),
+            }))
+          : [{ dia_semana: 1, hora_inicio: HORA_INICIO_DEFECTO, hora_fin: HORA_FIN_DEFECTO }],
+      );
+    }
+    setCargandoGrupo(false);
+  }, [esEdicion, grupoIdParam, obtenerGrupoDetalle, reportarError]);
+
+  useEffect(() => {
+    // Carga inicial en modo edición.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void cargarGrupo();
+  }, [cargarGrupo]);
 
   const cargarLocaciones = useCallback(async () => {
     setCargandoLocaciones(true);
@@ -103,17 +137,21 @@ export default function NuevoGrupoScreen() {
       if (errorConsulta === MENSAJE_ERROR_GENERICO) reportarError();
     } else {
       setLocaciones(data);
-      setLocacionId((actual) => {
-        if (
-          actual == null ||
-          data.some((locacion) => locacion.id === actual)
-        )
-          return actual;
-        return data.length > 0 ? data[0].id : null;
-      });
+      // En alta, si no hay selección previa se elige la primera locación;
+      // en edición se respeta la locación actual del grupo (puede ser null).
+      if (!esEdicion) {
+        setLocacionId((actual) => {
+          if (
+            actual == null ||
+            data.some((locacion) => locacion.id === actual)
+          )
+            return actual;
+          return data.length > 0 ? data[0].id : null;
+        });
+      }
     }
     setCargandoLocaciones(false);
-  }, [listarLocaciones, reportarError]);
+  }, [listarLocaciones, reportarError, esEdicion]);
 
   useFocusEffect(
     useCallback(() => {
@@ -169,21 +207,29 @@ export default function NuevoGrupoScreen() {
 
     setEnviando(true);
     try {
-      const resultado = await crearGrupo({
+      const datos = {
         nombre: nombre.trim(),
         horarios: aHorarioGrupo(slots),
         locacion_id: locacionId,
-      });
+      };
+      const resultado =
+        esEdicion && grupoIdParam != null
+          ? await editarGrupo(grupoIdParam, datos)
+          : await crearGrupo(datos);
       if (resultado.error) {
         setError(resultado.error);
         if (resultado.error === MENSAJE_ERROR_GENERICO)
           reportarError();
         return;
       }
-      router.replace({
-        pathname: "/instructor/grupo/[id]",
-        params: { id: resultado.nuevoId as string },
-      });
+      if (esEdicion && grupoIdParam != null) {
+        router.back();
+      } else {
+        router.replace({
+          pathname: "/instructor/grupo/[id]",
+          params: { id: (resultado as { nuevoId?: string }).nuevoId as string },
+        });
+      }
     } catch {
       setError(MENSAJE_ERROR_GENERICO);
       reportarError();
@@ -191,6 +237,14 @@ export default function NuevoGrupoScreen() {
       setEnviando(false);
     }
   };
+
+  if (cargandoGrupo) {
+    return (
+      <View style={styles.centro}>
+        <Text style={styles.avisoLocal}>Cargando grupo…</Text>
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -203,9 +257,9 @@ export default function NuevoGrupoScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.subtitulo}>
-          Creá un grupo de entrenamiento vinculado a una locación y
-          definí sus horarios. Después asignás a tus alumnos directos
-          como miembros.
+          {esEdicion
+            ? "Actualizá el nombre, la locación y los horarios del grupo. Los alumnos asignados no se modifican."
+            : "Creá un grupo de entrenamiento vinculado a una locación y definí sus horarios. Después asignás a tus alumnos directos como miembros."}
         </Text>
 
         <CampoTexto
@@ -407,7 +461,13 @@ export default function NuevoGrupoScreen() {
           accessibilityRole="button"
         >
           <Text style={styles.botonTexto}>
-            {enviando ? "Creando…" : "Crear grupo"}
+            {enviando
+              ? esEdicion
+                ? "Guardando…"
+                : "Creando…"
+              : esEdicion
+                ? "Guardar cambios"
+                : "Crear grupo"}
           </Text>
         </Pressable>
       </ScrollView>
@@ -522,6 +582,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
     marginBottom: 8,
+  },
+  centro: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 32,
+    backgroundColor: "#fff",
   },
   sinLocaciones: {
     borderWidth: 1,

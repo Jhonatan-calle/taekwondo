@@ -23,6 +23,7 @@ import {
   type HorarioGrupo,
   type Locacion,
   type DatosNuevaLocacion,
+  type LocacionDetalle,
   type FilaGrupoConRelaciones,
   type ClaseItem,
   type DatosNuevaClase,
@@ -63,9 +64,13 @@ type AuthGlobalValue = {
   listarGrupos(): Promise<ResultadoConsulta<Grupo[] | null>>
   crearGrupo(datos: DatosNuevoGrupo): Promise<ResultadoCreacion>
   obtenerGrupoDetalle(grupoId: string): Promise<ResultadoConsulta<DetalleGrupo | null>>
+  editarGrupo(grupoId: string, datos: DatosNuevoGrupo): Promise<{ error: string | null }>
   editarMiembrosGrupo(grupoId: string, alumnoIds: string[]): Promise<{ error: string | null }>
   listarLocaciones(): Promise<ResultadoConsulta<Locacion[] | null>>
+  obtenerLocacionDetalle(locacionId: string): Promise<ResultadoConsulta<LocacionDetalle | null>>
   crearLocacion(datos: DatosNuevaLocacion): Promise<ResultadoCreacion>
+  editarLocacion(locacionId: string, datos: DatosNuevaLocacion): Promise<{ error: string | null }>
+  eliminarLocacion(locacionId: string): Promise<{ error: string | null }>
   listarClases(grupoId?: string): Promise<ResultadoConsulta<ClaseItem[] | null>>
   obtenerClaseDetalle(claseId: string): Promise<ResultadoConsulta<ClaseItem | null>>
   crearClase(datos: DatosNuevaClase): Promise<ResultadoCreacion>
@@ -452,6 +457,26 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
     [sesion?.user?.id],
   )
 
+  const editarGrupo = useCallback(
+    async (grupoId: string, datos: DatosNuevoGrupo): Promise<{ error: string | null }> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { error: MENSAJE_ERROR_GENERICO }
+      const { data, error } = await ejecutarConsulta<boolean | null>(
+        Promise.resolve(
+          supabase.rpc('editar_grupo', {
+            p_grupo_id: grupoId,
+            p_nombre: datos.nombre.trim(),
+            p_locacion_id: datos.locacion_id ?? undefined,
+            p_horarios: datos.horarios,
+          }),
+        ),
+        { modulo: 'grupos', contexto: 'editarGrupo' },
+      )
+      return error != null || data !== true ? { error: MENSAJE_ERROR_GENERICO } : { error: null }
+    },
+    [sesion?.user?.id],
+  )
+
   const obtenerGrupoDetalle = useCallback(
     async (grupoId: string): Promise<ResultadoConsulta<DetalleGrupo | null>> => {
       const usuarioId = sesion?.user?.id
@@ -507,11 +532,54 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
         Promise.resolve(
           supabase
             .from('locaciones')
-            .select('id, nombre, direccion')
+            .select('id, nombre, direccion, valor_alquiler')
             .eq('creado_por', usuarioId)
             .order('nombre', { ascending: true }),
         ),
         { modulo: 'locaciones', contexto: 'listarLocaciones' },
+      )
+    },
+    [sesion?.user?.id],
+  )
+
+  const obtenerLocacionDetalle = useCallback(
+    async (locacionId: string): Promise<ResultadoConsulta<LocacionDetalle | null>> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { data: null, error: MENSAJE_ERROR_GENERICO }
+
+      type FilaLocacionConGrupos = {
+        id: string
+        nombre: string
+        direccion: string
+        valor_alquiler: number
+        grupos: { id: string; nombre: string }[]
+      }
+
+      const promesa = supabase
+        .from('locaciones')
+        .select('id, nombre, direccion, valor_alquiler, grupos(id, nombre)')
+        .eq('id', locacionId)
+        .eq('creado_por', usuarioId)
+        .maybeSingle()
+        .returns<FilaLocacionConGrupos | null>()
+
+      return ejecutarConsulta<LocacionDetalle | null>(
+        Promise.resolve(
+          promesa.then(({ data, error }) => {
+            if (error != null || data == null) return { data: null, error }
+            return {
+              data: {
+                id: data.id,
+                nombre: data.nombre,
+                direccion: data.direccion,
+                valor_alquiler: data.valor_alquiler,
+                grupos: (data.grupos ?? []).sort((a, b) => a.nombre.localeCompare(b.nombre)),
+              },
+              error: null,
+            }
+          }),
+        ),
+        { modulo: 'locaciones', contexto: 'obtenerLocacionDetalle' },
       )
     },
     [sesion?.user?.id],
@@ -528,6 +596,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
             .insert({
               nombre: datos.nombre.trim(),
               direccion: datos.direccion.trim(),
+              valor_alquiler: datos.valor_alquiler,
               creado_por: usuarioId,
             })
             .select('id')
@@ -538,6 +607,44 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       return error != null || data == null
         ? { error: MENSAJE_ERROR_GENERICO }
         : { error: null, nuevoId: data.id }
+    },
+    [sesion?.user?.id],
+  )
+
+  const editarLocacion = useCallback(
+    async (locacionId: string, datos: DatosNuevaLocacion): Promise<{ error: string | null }> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { error: MENSAJE_ERROR_GENERICO }
+      const { data, error } = await ejecutarConsulta<{ id: string } | null>(
+        Promise.resolve(
+          supabase
+            .from('locaciones')
+            .update({
+              nombre: datos.nombre.trim(),
+              direccion: datos.direccion.trim(),
+              valor_alquiler: datos.valor_alquiler,
+            })
+            .eq('id', locacionId)
+            .eq('creado_por', usuarioId)
+            .select('id')
+            .maybeSingle(),
+        ),
+        { modulo: 'locaciones', contexto: 'editarLocacion' },
+      )
+      return error != null || data == null ? { error: MENSAJE_ERROR_GENERICO } : { error: null }
+    },
+    [sesion?.user?.id],
+  )
+
+  const eliminarLocacion = useCallback(
+    async (locacionId: string): Promise<{ error: string | null }> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { error: MENSAJE_ERROR_GENERICO }
+      const { data, error } = await ejecutarConsulta<boolean | null>(
+        Promise.resolve(supabase.rpc('eliminar_locacion_segura', { p_locacion_id: locacionId })),
+        { modulo: 'locaciones', contexto: 'eliminarLocacion' },
+      )
+      return error != null || data !== true ? { error: MENSAJE_ERROR_GENERICO } : { error: null }
     },
     [sesion?.user?.id],
   )
@@ -803,9 +910,13 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       listarGrupos,
       crearGrupo,
       obtenerGrupoDetalle,
+      editarGrupo,
       editarMiembrosGrupo,
       listarLocaciones,
+      obtenerLocacionDetalle,
       crearLocacion,
+      editarLocacion,
+      eliminarLocacion,
       listarClases,
       obtenerClaseDetalle,
       crearClase,
@@ -842,9 +953,13 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       listarGrupos,
       crearGrupo,
       obtenerGrupoDetalle,
+      editarGrupo,
       editarMiembrosGrupo,
       listarLocaciones,
+      obtenerLocacionDetalle,
       crearLocacion,
+      editarLocacion,
+      eliminarLocacion,
       listarClases,
       obtenerClaseDetalle,
       crearClase,

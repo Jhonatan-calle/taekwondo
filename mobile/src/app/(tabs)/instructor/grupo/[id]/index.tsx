@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View, type ListRenderItem } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { etiquetaGrado } from '@/constants/grados';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 import { useErrorGlobal } from '@/contextos/ErrorGlobal';
@@ -73,9 +73,11 @@ export default function GrupoDetalleScreen() {
     setCargando(false);
   }, [id, obtenerGrupoDetalle, listarAlumnosDirectos, listarGrupos, reportarError]);
 
-  useEffect(() => {
-    void cargar();
-  }, [cargar]);
+  useFocusEffect(
+    useCallback(() => {
+      void cargar();
+    }, [cargar]),
+  );
 
   const guardarMiembros = async () => {
     if (enviando || id == null) return;
@@ -179,6 +181,13 @@ export default function GrupoDetalleScreen() {
             </Text>
           </View>
           <Pressable
+            onPress={() => router.push(`/instructor/grupo/${grupo.id}/editar`)}
+            style={styles.botonEditarGrupo}
+            accessibilityRole="button"
+          >
+            <Text style={styles.botonEditarGrupoTexto}>Editar</Text>
+          </Pressable>
+          <Pressable
             onPress={() => router.push(`/instructor/nueva-clase?grupo_id=${grupo.id}`)}
             style={styles.botonPlanificarClase}
             accessibilityRole="button"
@@ -239,11 +248,24 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 12,
   },
+  botonEditarGrupo: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#C62828',
+    borderRadius: 6,
+  },
+  botonEditarGrupoTexto: {
+    color: '#C62828',
+    fontSize: 13,
+    fontWeight: '600',
+  },
   botonPlanificarClase: {
     paddingHorizontal: 12,
     paddingVertical: 8,
     backgroundColor: '#C62828',
     borderRadius: 6,
+    marginLeft: 8,
   },
   botonPlanificarClaseTexto: {
     color: '#fff',

@@ -122,6 +122,17 @@
 - **Implicancia técnica:** requiere un RPC propio (p. ej. `reasignar_alumno_a_grupo`), porque `editar_miembros_grupo` ya no mueve. Debe ser atómico (baja del origen + alta en el destino) respetando el índice único parcial.
 - **Acción:** crear un plan aparte cuando se defina el diseño.
 
+### 13. Editar grupo y bloquear borrado de locación (dispositivo)
+- **Referencia:** `documentacion/planes/mobile-editar-grupo-locacion.md`.
+- Detalle del grupo (`/instructor/grupo/[id]`) → botón **"Editar"** → cambiar nombre, locación y horarios → "Guardar cambios"; al volver se reflejan los cambios.
+- Reasignar un grupo a otra locación y verificar que aparece en el detalle de la **nueva** locación y desaparece de la anterior.
+- Dejar un grupo **sin locación** (no aplica en la UI: la locación es obligatoria en el formulario; verificar el comportamiento al venir un grupo heredado con `locacion_id = null`).
+- En el detalle de una locación **con grupos asociados**: el botón "Eliminar locación" está deshabilitado y el aviso invita a reasignar; tocar un grupo lleva a su detalle.
+- En el detalle de una locación **sin grupos**: eliminar funciona normalmente.
+- Probar el bloqueo a nivel servidor: llamar al RPC `eliminar_locacion_segura` con una locación con grupos → debe lanzar excepción.
+- Verificar que ningún grupo se borra en cascada al eliminar la locación (`on delete set null`).
+- **Refresco:** editar el grupo y volver → el detalle debe reflejar los cambios **sin reiniciar** la app (ver `documentacion/planes/mobile-refresco-detalle-foco.md`). Mismo chequeo al editar una locación.
+
 ---
 
 🗒️ Actualizar este archivo (tachar items, agregar folow-ups de fecha) cada vez que se haga una

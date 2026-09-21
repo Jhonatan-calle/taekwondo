@@ -1,13 +1,16 @@
 import 'react-native-get-random-values'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as SecureStore from 'expo-secure-store'
+import { Platform } from 'react-native'
 import { ModeOfOperation, Counter, utils } from 'aes-js'
 
 const CLAVE_PREFIX = 'supabase.segura.'
 const DATOS_PREFIX = 'supabase.auth.'
+const esWeb = Platform.OS === 'web'
 
 export class LargeSecureStore {
   async getItem(key: string): Promise<string | null> {
+    if (esWeb) return globalThis.localStorage?.getItem(key) ?? null
     const claveId = CLAVE_PREFIX + key
     const claveHex = await SecureStore.getItemAsync(claveId)
     if (claveHex == null) return null
@@ -21,6 +24,10 @@ export class LargeSecureStore {
   }
 
   async setItem(key: string, value: string): Promise<void> {
+    if (esWeb) {
+      globalThis.localStorage?.setItem(key, value)
+      return
+    }
     const claveId = CLAVE_PREFIX + key
     const clave = crypto.getRandomValues(new Uint8Array(32))
     await SecureStore.setItemAsync(claveId, utils.hex.fromBytes(clave))
@@ -29,6 +36,10 @@ export class LargeSecureStore {
   }
 
   async removeItem(key: string): Promise<void> {
+    if (esWeb) {
+      globalThis.localStorage?.removeItem(key)
+      return
+    }
     await SecureStore.deleteItemAsync(CLAVE_PREFIX + key)
     await AsyncStorage.removeItem(DATOS_PREFIX + key)
   }

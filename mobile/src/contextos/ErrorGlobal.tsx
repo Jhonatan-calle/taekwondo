@@ -53,7 +53,7 @@ export function ErrorGlobalProvider({ children }: PropsWithChildren) {
   return (
     <ErrorContext.Provider value={valor}>
       {children}
-      <BannerError />
+      <BannerError mensaje={mensaje} onCerrar={ocultarError} />
     </ErrorContext.Provider>
   )
 }

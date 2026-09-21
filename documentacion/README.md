@@ -13,6 +13,11 @@
 | `databaseModel.md` | Modelo de datos (ER) + notas del módulo de torneos (congelado). |
 | `planes/bd-gestion-escuela.md` | Plan vigente: adaptación de la BD al SRS (aplicado y verificado). |
 | `planes/mobile-control-errores-fail-gracefully.md` | Plan vigente: mecanismo global de control de errores (fail gracefully) en la app móvil (implementado). |
+| `planes/mobile-flujo-acceso-auth.md` | Plan vigente: flujo de acceso (registro, inicio de sesión y recuperación de contraseña) en el grupo de rutas `(auth)` (implementado). |
+| `planes/mobile-arreglos-auth-require-cycle.md` | Plan vigente: detección de email duplicado en registro y ruptura del require cycle `ErrorGlobal <-> BannerError` (implementado). |
+| `planes/db-purga-datos-seed.md` | Registro: purga de datos seed y baja de usuarios en la BD remota de Supabase (datos únicamente, schema intacto; conserva `jhonatancallegaleano@gmail.com` y `errores_runtime`). |
+| `planes/mobile-deeplink-recuperacion-fix.md` | Plan vigente: deep link de recuperación — `LargeSecureStore` web-safe (crash en navegador) + paso de dashboard para redirect `exp://` en Expo Go (implementado). |
+| `pendientes-pruebas.md` | Checklist de validaciones E2E/en dispositivo pendientes (deep link de recuperación, email duplicado, guards). |
 | `workflow-implementacion-mobile.md` | Guía de pasos secuenciales y workflow de desarrollo de la app móvil. |
 | `README.md` (este archivo) | Índice de documentación. |
 

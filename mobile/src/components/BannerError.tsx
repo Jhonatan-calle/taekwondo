@@ -1,10 +1,13 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { MENSAJE_ERROR_GENERICO } from '@/lib/errores'
-import { useErrorGlobal } from '@/contextos/ErrorGlobal'
 
-export function BannerError() {
-  const { mensaje, ocultarError } = useErrorGlobal()
+type BannerErrorProps = {
+  mensaje: string | null
+  onCerrar(): void
+}
+
+export function BannerError({ mensaje, onCerrar }: BannerErrorProps) {
   const insets = useSafeAreaInsets()
 
   if (mensaje == null) return null
@@ -13,7 +16,7 @@ export function BannerError() {
     <View style={[styles.banner, { paddingTop: insets.top + 12 }]}>
       <Text style={styles.texto}>{mensaje ?? MENSAJE_ERROR_GENERICO}</Text>
       <Pressable
-        onPress={ocultarError}
+        onPress={onCerrar}
         hitSlop={8}
         accessibilityRole="button"
         accessibilityLabel="Cerrar aviso"

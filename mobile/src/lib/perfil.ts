@@ -95,6 +95,25 @@ export type LocacionDetalle = Locacion & {
   grupos: { id: string; nombre: string }[]
 }
 
+export type PagoAlquiler = Pick<
+  Database['public']['Tables']['pagos_alquiler']['Row'],
+  'id' | 'locacion_id' | 'monto' | 'periodo' | 'fecha_pago' | 'comprobante_url'
+>
+
+export type ArchivoAdjunto = {
+  uri: string
+  nombre: string
+  mimeType: string
+}
+
+export type DatosPagoAlquiler = {
+  locacion_id: string
+  monto: number
+  periodo: string
+  fecha_pago: string
+  archivo: ArchivoAdjunto | null
+}
+
 export const ETIQUETAS_DIAS: Record<number, string> = {
   1: 'Lunes',
   2: 'Martes',
@@ -241,6 +260,32 @@ export function esMontoValido(monto: string): boolean {
 export function formatearMonto(monto: number | null | undefined): string {
   if (monto == null || !Number.isFinite(monto)) return 'Sin definir'
   return `$ ${monto.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+// Periodo mensual en formato 'AAAA-MM' (ej. '2026-09').
+export function esPeriodoValido(periodo: string): boolean {
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(periodo.trim())
+}
+
+export function mesActual(): string {
+  const hoy = new Date()
+  return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`
+}
+
+export function formatearPeriodo(periodo: string): string {
+  if (!esPeriodoValido(periodo)) return periodo
+  const [anio, mes] = periodo.split('-')
+  return `${mes}/${anio}`
+}
+
+export function esFechaValida(fechaISO: string): boolean {
+  if (fechaISO == null || fechaISO.trim() === '') return false
+  const partes = fechaISO.split('-').map((parte) => Number(parte))
+  if (partes.length !== 3 || partes.some((parte) => !Number.isInteger(parte))) return false
+  const [anio, mes, dia] = partes
+  const fecha = new Date(anio, mes - 1, dia)
+  if (fecha.getFullYear() !== anio || fecha.getMonth() !== mes - 1 || fecha.getDate() !== dia) return false
+  return fecha <= new Date()
 }
 
 export function esHorarioGrupoValido(horario: HorarioGrupo): boolean {

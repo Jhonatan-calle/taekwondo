@@ -122,6 +122,18 @@
 - **Implicancia técnica:** requiere un RPC propio (p. ej. `reasignar_alumno_a_grupo`), porque `editar_miembros_grupo` ya no mueve. Debe ser atómico (baja del origen + alta en el destino) respetando el índice único parcial.
 - **Acción:** crear un plan aparte cuando se defina el diseño.
 
+### 14. Pagos de alquiler y comprobantes (dispositivo + RLS)
+- **Referencia:** `documentacion/planes/mobile-pagos-alquiler.md`.
+- En el detalle de una locación (`/instructor/locacion/[id]`) → "+ Registrar pago" → cargar periodo (por defecto el mes actual), monto (prellenado con el valor pactado) y fecha; adjuntar foto (cámara y galería) y un PDF.
+- El pago aparece en el historial con periodo formateado, monto y fecha.
+- "Comprobante" abre el archivo con el **visor del sistema** (enlace firmado de 1 h); verificar con foto y con PDF.
+- Intentar registrar **dos pagos del mismo `(locación, periodo)`** → debe bloquearse por el índice único con mensaje amigable.
+- **RLS auditoría (superior jerárquico):** con la cuenta del superior, verificar que **ve los pagos** y **puede abrir el comprobante** del subordinado (excepción SRS §2).
+- **RLS aislamiento:** con una cuenta **sin linaje**, verificar que **no** ve los pagos y que el enlace firmado **falla**.
+- **RLS escritura:** verificar que solo el dueño puede subir/borrar el archivo del bucket (`owner = auth.uid()`) y editar el pago.
+- Borrar un pago → debe eliminar también el archivo del bucket (sin huérfanos).
+- Cortar la red al guardar → banner genérico + fila en `errores_runtime` (`modulo='pagos_alquiler'`).
+
 ### 13. Editar grupo y bloquear borrado de locación (dispositivo)
 - **Referencia:** `documentacion/planes/mobile-editar-grupo-locacion.md`.
 - Detalle del grupo (`/instructor/grupo/[id]`) → botón **"Editar"** → cambiar nombre, locación y horarios → "Guardar cambios"; al volver se reflejan los cambios.

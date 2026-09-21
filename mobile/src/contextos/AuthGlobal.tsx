@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react'
 import type { Session } from '@supabase/supabase-js'
+import { File } from 'expo-file-system'
 import * as Linking from 'expo-linking'
 import { supabase } from '@/lib/supabase'
 import { MENSAJE_ERROR_GENERICO, esErrorDeRed, registrarError } from '@/lib/errores'
@@ -24,6 +25,8 @@ import {
   type Locacion,
   type DatosNuevaLocacion,
   type LocacionDetalle,
+  type PagoAlquiler,
+  type DatosPagoAlquiler,
   type FilaGrupoConRelaciones,
   type ClaseItem,
   type DatosNuevaClase,
@@ -71,6 +74,10 @@ type AuthGlobalValue = {
   crearLocacion(datos: DatosNuevaLocacion): Promise<ResultadoCreacion>
   editarLocacion(locacionId: string, datos: DatosNuevaLocacion): Promise<{ error: string | null }>
   eliminarLocacion(locacionId: string): Promise<{ error: string | null }>
+  listarPagosAlquiler(locacionId: string): Promise<ResultadoConsulta<PagoAlquiler[] | null>>
+  registrarPagoAlquiler(datos: DatosPagoAlquiler): Promise<{ error: string | null }>
+  obtenerUrlComprobante(path: string): Promise<ResultadoConsulta<string | null>>
+  eliminarPagoAlquiler(pagoId: string, comprobantePath: string | null): Promise<{ error: string | null }>
   listarClases(grupoId?: string): Promise<ResultadoConsulta<ClaseItem[] | null>>
   obtenerClaseDetalle(claseId: string): Promise<ResultadoConsulta<ClaseItem | null>>
   crearClase(datos: DatosNuevaClase): Promise<ResultadoCreacion>
@@ -473,6 +480,156 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
         { modulo: 'grupos', contexto: 'editarGrupo' },
       )
       return error != null || data !== true ? { error: MENSAJE_ERROR_GENERICO } : { error: null }
+    },
+    [sesion?.user?.id],
+  )
+
+  const obtenerUrlComprobante = useCallback(
+    async (path: string): Promise<ResultadoConsulta<string | null>> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { data: null, error: MENSAJE_ERROR_GENERICO }
+      // El bucket es privado: se genera un enlace temporal (1 hora).
+      // El RLS de storage decide si el usuario puede firmarlo.
+      try {
+        const { data, error } = await supabase.storage
+          .from('comprobantes')
+          .createSignedUrl(path, 3600)
+        if (error != null || data == null) {
+          void registrarError({
+            modulo: 'pagos_alquiler',
+            contexto: 'obtenerUrlComprobante',
+            error,
+          })
+          return { data: null, error: MENSAJE_ERROR_GENERICO }
+        }
+        return { data: data.signedUrl, error: null }
+      } catch (error) {
+        void registrarError({
+          modulo: 'pagos_alquiler',
+          contexto: 'obtenerUrlComprobante',
+          error,
+        })
+        return { data: null, error: MENSAJE_ERROR_GENERICO }
+      }
+    },
+    [sesion?.user?.id],
+  )
+
+  const listarPagosAlquiler = useCallback(
+    async (locacionId: string): Promise<ResultadoConsulta<PagoAlquiler[] | null>> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { data: null, error: MENSAJE_ERROR_GENERICO }
+      return ejecutarConsulta<PagoAlquiler[] | null>(
+        Promise.resolve(
+          supabase
+            .from('pagos_alquiler')
+            .select('id, locacion_id, monto, periodo, fecha_pago, comprobante_url')
+            .eq('locacion_id', locacionId)
+            .order('periodo', { ascending: false }),
+        ),
+        { modulo: 'pagos_alquiler', contexto: 'listarPagosAlquiler' },
+      )
+    },
+    [sesion?.user?.id],
+  )
+
+  const registrarPagoAlquiler = useCallback(
+    async (datos: DatosPagoAlquiler): Promise<{ error: string | null }> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { error: MENSAJE_ERROR_GENERICO }
+
+      let pathSubido: string | null = null
+      try {
+        // 1. Subir el comprobante al bucket privado (si se adjuntó).
+        if (datos.archivo != null) {
+          const { uri, nombre, mimeType } = datos.archivo
+          const extension = nombre.includes('.') ? nombre.split('.').pop() : 'bin'
+          const path = `${usuarioId}/${Date.now()}-${datos.periodo}.${extension}`
+
+          const archivo = new File(uri)
+          const { error: errorSubida } = await supabase.storage
+            .from('comprobantes')
+            .upload(path, archivo, { contentType: mimeType, upsert: false })
+          if (errorSubida != null) {
+            void registrarError({
+              modulo: 'pagos_alquiler',
+              contexto: 'subirComprobante',
+              error: errorSubida,
+            })
+            return { error: MENSAJE_ERROR_GENERICO }
+          }
+          pathSubido = path
+        }
+
+        // 2. Registrar el pago referenciando el path (no una URL pública).
+        const { error } = await ejecutarConsulta<{ id: string } | null>(
+          Promise.resolve(
+            supabase
+              .from('pagos_alquiler')
+              .insert({
+                locacion_id: datos.locacion_id,
+                monto: datos.monto,
+                periodo: datos.periodo.trim(),
+                fecha_pago: datos.fecha_pago,
+                comprobante_url: pathSubido,
+                creado_por: usuarioId,
+              })
+              .select('id')
+              .single(),
+          ),
+          { modulo: 'pagos_alquiler', contexto: 'registrarPagoAlquiler' },
+        )
+
+        if (error != null) {
+          // 3. Sin fila no debe quedar archivo huérfano en el bucket.
+          if (pathSubido != null) {
+            await supabase.storage.from('comprobantes').remove([pathSubido])
+          }
+          return { error: MENSAJE_ERROR_GENERICO }
+        }
+        return { error: null }
+      } catch (error) {
+        if (pathSubido != null) {
+          try {
+            await supabase.storage.from('comprobantes').remove([pathSubido])
+          } catch {
+            // Limpieza best-effort.
+          }
+        }
+        void registrarError({
+          modulo: 'pagos_alquiler',
+          contexto: 'registrarPagoAlquiler',
+          error,
+        })
+        return { error: MENSAJE_ERROR_GENERICO }
+      }
+    },
+    [sesion?.user?.id],
+  )
+
+  const eliminarPagoAlquiler = useCallback(
+    async (pagoId: string, comprobantePath: string | null): Promise<{ error: string | null }> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { error: MENSAJE_ERROR_GENERICO }
+
+      const { error } = await ejecutarConsulta<null>(
+        Promise.resolve(supabase.from('pagos_alquiler').delete().eq('id', pagoId)),
+        { modulo: 'pagos_alquiler', contexto: 'eliminarPagoAlquiler' },
+      )
+      if (error != null) return { error: MENSAJE_ERROR_GENERICO }
+
+      if (comprobantePath != null) {
+        try {
+          await supabase.storage.from('comprobantes').remove([comprobantePath])
+        } catch (errorLimpieza) {
+          void registrarError({
+            modulo: 'pagos_alquiler',
+            contexto: 'eliminarPagoAlquilerArchivo',
+            error: errorLimpieza,
+          })
+        }
+      }
+      return { error: null }
     },
     [sesion?.user?.id],
   )
@@ -917,6 +1074,10 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       crearLocacion,
       editarLocacion,
       eliminarLocacion,
+      listarPagosAlquiler,
+      registrarPagoAlquiler,
+      obtenerUrlComprobante,
+      eliminarPagoAlquiler,
       listarClases,
       obtenerClaseDetalle,
       crearClase,
@@ -960,6 +1121,10 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       crearLocacion,
       editarLocacion,
       eliminarLocacion,
+      listarPagosAlquiler,
+      registrarPagoAlquiler,
+      obtenerUrlComprobante,
+      eliminarPagoAlquiler,
       listarClases,
       obtenerClaseDetalle,
       crearClase,

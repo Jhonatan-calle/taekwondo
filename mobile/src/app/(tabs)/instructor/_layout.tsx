@@ -26,6 +26,7 @@ export default function InstructorLayout() {
       <Stack.Screen name="registrar-locacion" options={{ title: 'Registrar locación' }} />
       <Stack.Screen name="locaciones" options={{ title: 'Mis locaciones' }} />
       <Stack.Screen name="locacion/[id]" options={{ title: 'Detalle de la locación' }} />
+      <Stack.Screen name="locacion/[id]/pago" options={{ title: 'Registrar pago de alquiler' }} />
       <Stack.Screen name="clases" options={{ title: 'Clases' }} />
       <Stack.Screen name="nueva-clase" options={{ title: 'Nueva clase' }} />
       <Stack.Screen name="clase/[id]/index" options={{ title: 'Detalle de la clase' }} />

@@ -1,18 +1,20 @@
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 import { useErrorGlobal } from '@/contextos/ErrorGlobal';
 import { MENSAJE_ERROR_GENERICO } from '@/lib/errores';
-import { formatearMonto, type LocacionDetalle } from '@/lib/perfil';
+import { formatearMonto, formatearPeriodo, type LocacionDetalle, type PagoAlquiler } from '@/lib/perfil';
 
 export default function LocacionDetalleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { obtenerLocacionDetalle, eliminarLocacion } = useAuthGlobal();
+  const { obtenerLocacionDetalle, eliminarLocacion, listarPagosAlquiler, obtenerUrlComprobante, eliminarPagoAlquiler } =
+    useAuthGlobal();
   const { reportarError } = useErrorGlobal();
   const router = useRouter();
 
   const [locacion, setLocacion] = useState<LocacionDetalle | null>(null);
+  const [pagos, setPagos] = useState<PagoAlquiler[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(false);
   const [eliminando, setEliminando] = useState(false);
@@ -24,22 +26,64 @@ export default function LocacionDetalleScreen() {
       return;
     }
     setCargando(true);
-    const { data, error: err } = await obtenerLocacionDetalle(id);
-    if (err != null || data == null) {
+    const [resultadoLocacion, resultadoPagos] = await Promise.all([
+      obtenerLocacionDetalle(id),
+      listarPagosAlquiler(id),
+    ]);
+    if (resultadoLocacion.error != null || resultadoLocacion.data == null) {
       setError(true);
-      if (err === MENSAJE_ERROR_GENERICO) reportarError();
+      if (resultadoLocacion.error === MENSAJE_ERROR_GENERICO) reportarError();
     } else {
-      setLocacion(data);
+      setLocacion(resultadoLocacion.data);
+      setPagos(resultadoPagos.data ?? []);
       setError(false);
     }
     setCargando(false);
-  }, [id, obtenerLocacionDetalle, reportarError]);
+  }, [id, obtenerLocacionDetalle, listarPagosAlquiler, reportarError]);
 
   useFocusEffect(
     useCallback(() => {
       void cargar();
     }, [cargar]),
   );
+
+  const verComprobante = async (pago: PagoAlquiler) => {
+    if (pago.comprobante_url == null) return;
+    const { data, error: err } = await obtenerUrlComprobante(pago.comprobante_url);
+    if (err != null || data == null) {
+      if (err === MENSAJE_ERROR_GENERICO) reportarError();
+      Alert.alert('No pudimos abrir el comprobante', 'Intentá de nuevo en unos minutos.');
+      return;
+    }
+    // Se abre con el visor nativo del dispositivo (imagen o PDF).
+    try {
+      await Linking.openURL(data);
+    } catch {
+      reportarError();
+      Alert.alert('No pudimos abrir el comprobante', 'No hay una app disponible para ver este archivo.');
+    }
+  };
+
+  const confirmarEliminarPago = (pago: PagoAlquiler) => {
+    Alert.alert(
+      'Eliminar pago',
+      `¿Seguro que querés eliminar el pago del periodo ${formatearPeriodo(pago.periodo)}? También se borrará el comprobante adjunto.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Eliminar', style: 'destructive', onPress: () => void borrarPago(pago) },
+      ],
+    );
+  };
+
+  const borrarPago = async (pago: PagoAlquiler) => {
+    const resultado = await eliminarPagoAlquiler(pago.id, pago.comprobante_url);
+    if (resultado.error != null) {
+      if (resultado.error === MENSAJE_ERROR_GENERICO) reportarError();
+      Alert.alert('No pudimos eliminar', 'Intentá de nuevo en unos minutos.');
+      return;
+    }
+    setPagos((actual) => actual.filter((item) => item.id !== pago.id));
+  };
 
   const confirmarEliminar = () => {
     if (locacion == null) return;
@@ -106,6 +150,53 @@ export default function LocacionDetalleScreen() {
         <Text style={styles.tarjetaNota}>
           Es el valor acordado del contrato. El monto efectivamente pagado se registra por periodo.
         </Text>
+      </View>
+
+      <View style={styles.tarjeta}>
+        <View style={styles.tarjetaCabecera}>
+          <Text style={styles.tarjetaTitulo}>Pagos de alquiler</Text>
+          <Pressable
+            onPress={() =>
+              router.push(
+                `/instructor/locacion/${locacion.id}/pago?valor_alquiler=${locacion.valor_alquiler}`,
+              )
+            }
+            style={styles.botonChico}
+            accessibilityRole="button"
+          >
+            <Text style={styles.botonChicoTexto}>+ Registrar pago</Text>
+          </Pressable>
+        </View>
+        {pagos.length === 0 ? (
+          <Text style={styles.tarjetaContenido}>Todavía no registraste pagos para esta locación.</Text>
+        ) : (
+          pagos.map((pago) => (
+            <View key={pago.id} style={styles.filaPago}>
+              <View style={styles.pagoInfo}>
+                <Text style={styles.pagoPeriodo}>{formatearPeriodo(pago.periodo)}</Text>
+                <Text style={styles.pagoDatos}>
+                  {formatearMonto(pago.monto)} · {pago.fecha_pago}
+                </Text>
+              </View>
+              {pago.comprobante_url != null ? (
+                <Pressable
+                  onPress={() => void verComprobante(pago)}
+                  style={styles.botonChicoSecundario}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.botonChicoSecundarioTexto}>Comprobante</Text>
+                </Pressable>
+              ) : null}
+              <Pressable
+                onPress={() => confirmarEliminarPago(pago)}
+                accessibilityRole="button"
+                accessibilityLabel={`Eliminar pago del periodo ${pago.periodo}`}
+              >
+                <Text style={styles.quitarPago}>✕</Text>
+              </Pressable>
+            </View>
+          ))
+        )}
       </View>
 
       <View style={styles.tarjeta}>
@@ -198,6 +289,62 @@ const styles = StyleSheet.create({
     color: '#888',
     marginBottom: 8,
     letterSpacing: 0.5,
+  },
+  tarjetaCabecera: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  botonChico: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: '#C62828',
+    borderRadius: 6,
+  },
+  botonChicoTexto: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  botonChicoSecundario: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: '#C62828',
+    borderRadius: 6,
+    marginRight: 10,
+  },
+  botonChicoSecundarioTexto: {
+    color: '#C62828',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  filaPago: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  pagoInfo: {
+    flex: 1,
+  },
+  pagoPeriodo: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#222',
+  },
+  pagoDatos: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 2,
+  },
+  quitarPago: {
+    fontSize: 15,
+    color: '#C62828',
+    fontWeight: '700',
+    paddingHorizontal: 4,
   },
   tarjetaMonto: {
     fontSize: 20,

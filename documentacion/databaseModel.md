@@ -40,6 +40,7 @@ erDiagram
         numeric monto
         string periodo "ej '2026-09'"
         date fecha_pago
+        string comprobante_url "path en el bucket privado `comprobantes` (no URL pública)"
         uuid creado_por FK
         timestamptz creado_en
     }
@@ -276,6 +277,13 @@ erDiagram
   examinador.
 - **Pagos = registro:** `pagos_cuota` (cuotas de alumnos) y `pagos_alquiler` (alquiler de
   locaciones) solo registran monto/periodo; no hay pasarela.
+- **Pagos de alquiler y comprobantes 📎:** `pagos_alquiler` guarda `locacion_id`, `monto`, `periodo`
+  (único por locación: `pagos_alquiler_locacion_periodo_unico_idx`), `fecha_pago` y
+  `comprobante_url`. El comprobante vive en el **bucket privado `comprobantes`** y en la fila se
+  guarda el **path**, nunca una URL pública; al visualizarlo se genera un **enlace firmado**
+  temporal (1 h). RLS de storage: sube/lee/borra el dueño (`owner = auth.uid()`) y **lee su superior
+  jerárquico** (`es_subordinado_de`, excepción de auditoría SRS §2). Distinto del
+  `locaciones.valor_alquiler` (valor **pactado** del contrato).
 - **Horarios 📋 y membresía única:** los horarios de un grupo viven en `grupos_horarios` (día
   1..7 + `hora_inicio`/`hora_fin` con `hora_fin > hora_inicio`, RLS del profesor dueño via
   helpers `es_profesor_del_grupo`); la columna texto `grupos.horarios` fue eliminada. Un alumno

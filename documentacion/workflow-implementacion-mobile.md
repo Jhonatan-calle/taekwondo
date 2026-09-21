@@ -94,9 +94,11 @@
    - Permitir a profesores y maestros dar de alta centros de entrenamiento registrando **nombre**, **direccion (obligatoria)** y el **valor de alquiler pactado** (SRS §3.3; `locaciones.valor_alquiler` NOT NULL con `check >= 0`).
    - Gestion completa: listado, detalle con grupos asociados, edicion y eliminacion, ademas del alta. La fila "Locaciones" del menu Instructor queda habilitada. Referencia: `documentacion/planes/mobile-registro-locaciones.md`.
    - El valor del alquiler no se solicita en este paso: el monto se registra unicamente en `pagos_alquiler` al ejecutar el pago del periodo correspondiente.
-2. **Pagos de Alquiler y Storage:**
-   - Formulario para registrar el pago de alquiler mensual de la locacion: periodo (ej. '2026-09'), monto pagado y fecha.
-   - Permitir adjuntar fotos o archivos PDF del comprobante de pago, subiendolos al bucket privado de storage `comprobantes` y enlazando la URL publica en la fila correspondiente en `pagos_alquiler`.
+2. **Pagos de Alquiler y Storage:** *(Implementado — Fase 5, ítem 2)*
+   - Formulario para registrar el pago de alquiler mensual de la locacion: periodo (ej. '2026-09'), monto pagado y fecha. Un periodo no puede pagarse dos veces por locacion (indice unico `locacion_id, periodo`).
+   - Permitir adjuntar fotos (camara/galeria) o archivos PDF del comprobante de pago, subiendolos al bucket privado de storage `comprobantes` y guardando el **path** en `pagos_alquiler.comprobante_url`.
+   - **No hay URL publica** (bucket privado, decision de privacidad/auditoria): al visualizar se genera un **enlace firmado temporal** (1 hora). El dueño sube/lee/borra; el **superior jerarquico** lee (excepcion de auditoria SRS §2).
+   - **Implementado:** migracion `pagos_alquiler_reglas` (indice unico) + pantallas `instructor/locacion/[id]/pago` (formulario con periodo/monto/fecha y adjunto camara-galeria-PDF) y seccion "Pagos de alquiler" en `instructor/locacion/[id]` (historial, ver comprobante, eliminar). Referencia: `documentacion/planes/mobile-pagos-alquiler.md`.
 3. **Auditoria en Cascada para Superiores:**
    - El Maestro puede acceder a la pestaña de Auditoria para consultar las locaciones, montos, vencimientos y adjuntos de todas las locaciones que pertenecen a sus instructores subordinados.
 

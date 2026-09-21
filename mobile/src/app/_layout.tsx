@@ -5,7 +5,7 @@ import { ErrorGlobalProvider } from '@/contextos/ErrorGlobal';
 import { AuthGlobalProvider, useAuthGlobal } from '@/contextos/AuthGlobal';
 
 function RootNavigator() {
-  const { sesion, cargando } = useAuthGlobal();
+  const { sesion, cargando, onboardingCompleto } = useAuthGlobal();
 
   if (cargando) {
     return (
@@ -17,8 +17,11 @@ function RootNavigator() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={sesion != null}>
+      <Stack.Protected guard={sesion != null && onboardingCompleto}>
         <Stack.Screen name="index" />
+      </Stack.Protected>
+      <Stack.Protected guard={sesion != null && !onboardingCompleto}>
+        <Stack.Screen name="onboarding" />
       </Stack.Protected>
       <Stack.Protected guard={sesion == null}>
         <Stack.Screen name="(auth)" />

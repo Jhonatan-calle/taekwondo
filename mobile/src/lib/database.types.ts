@@ -932,6 +932,51 @@ export type Database = {
           },
         ]
       }
+      solicitudes_linaje: {
+        Row: {
+          alumno_id: string
+          creado_en: string
+          estado: string
+          id: string
+          instructor_id: string
+          nombre_alumno: string
+          resuelto_en: string | null
+        }
+        Insert: {
+          alumno_id: string
+          creado_en?: string
+          estado?: string
+          id?: string
+          instructor_id: string
+          nombre_alumno?: string
+          resuelto_en?: string | null
+        }
+        Update: {
+          alumno_id?: string
+          creado_en?: string
+          estado?: string
+          id?: string
+          instructor_id?: string
+          nombre_alumno?: string
+          resuelto_en?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitudes_linaje_alumno_id_fkey"
+            columns: ["alumno_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitudes_linaje_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       torneos: {
         Row: {
           creado_en: string
@@ -1038,6 +1083,21 @@ export type Database = {
         }[]
       }
       puede_activar_profesor: { Args: never; Returns: boolean }
+      lista_instructores_linaje: {
+        Args: never
+        Returns: {
+          es_maestro: boolean
+          es_profesor: boolean
+          grado_actual: Database["public"]["Enums"]["grado"] | null
+          id: string
+          nombre_completo: string
+        }[]
+      }
+      solicitar_linaje: { Args: { p_instructor: string }; Returns: boolean }
+      resolver_solicitud_linaje: {
+        Args: { p_resultado: string; p_solicitud: string }
+        Returns: boolean
+      }
       registrar_grado_verificado: {
         Args: {
           p_grado: Database["public"]["Enums"]["grado"]
@@ -1058,6 +1118,10 @@ export type Database = {
           p_torneo_id: string
         }
         Returns: undefined
+      }
+      verificar_dni_disponible: {
+        Args: { p_dni: string }
+        Returns: boolean
       }
     }
     Enums: {

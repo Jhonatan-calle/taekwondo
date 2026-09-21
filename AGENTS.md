@@ -32,7 +32,7 @@
 ## Reglas generales
 - **Idioma:** código y comentarios en español.
 - **Git:** NO hacer commits ni push automáticos; solo si el usuario lo pide explícitamente.
-- **Archivos protegidos (no tocar):** `.env*`, `.obsidian/` (vault), `credenciales.txt`, builds y
+- **Archivos protegidos (no tocar):** `.env*`, `.obsidian/` (vault), builds y
   archivos locales de entorno.
 - **No reinventar:** antes de escribir código revisar si ya existen helpers/utilidades/librerías
   del proyecto (especialmente los RPCs y helpers SQL de `supabase/migrations/`); no reimplementar

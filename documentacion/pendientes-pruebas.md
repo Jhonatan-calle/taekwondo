@@ -30,6 +30,44 @@
 - Sin sesion: `/` y `(auth)` accesibles; con sesion: un deep link a `iniciar-sesion` redirige a `index`.
 - **Referencia:** `documentacion/planes/mobile-flujo-acceso-auth.md`.
 
+### 4. Onboarding de perfil (dispositivo)
+- Cuenta nueva → cae en `/onboarding` y no se accede a `index` hasta completar el perfil.
+- Completar (nombre, DNI, fecha nacimiento, peso, genero) → navega a `index`; el perfil queda guardado y el onboarding no reaparece al reiniciar.
+- DNI duplicado (registrar dos cuentas con el mismo DNI) → "El DNI ya está registrado." (pre-chequeo del RPC y/o 23505).
+- Fecha no valida / futura / edad < 4 → error inline; ver la edad calculada al elegir la fecha.
+- Complementarios vacios (altura, contacto de emergencia, datos de salud) no bloquean; quedan `null` en `profiles`.
+- Red cortada al guardar → banner generico + fila `critical` (`modulo='perfil'`) en `errores_runtime`.
+- **Referencia:** `documentacion/planes/mobile-onboarding-perfil.md`.
+
+### 5. Establecimiento del linaje (dispositivo)
+- Nuevo alumno elige instructor en el onboarding → queda solicitud pendiente en `solicitudes_linaje`; `profiles.maestro_id` sigue `null`; al entrar a la app se ve el banner "Tu instructor todavía no confirmó tu registro".
+- El instructor (con `es_profesor` o `es_maestro`) ve la sección "Solicitudes de alumnos" con el nombre del solicitante.
+  - **Aceptar** → `maestro_id` se setea (única vez, vía `resolver_solicitud_linaje` con `app.derivacion_linaje`); el banner del alumno desaparece al refrescar.
+  - **Rechazar** → el alumno vuelve al onboarding (datos personales ya prellenados) a elegir de nuevo; la solicitud queda `rechazada`.
+- Maestro (`es_maestro` seteado en Supabase) completa el onboarding sin elegir instructor y entra directo a la app.
+- Lista de instructores vacía → aviso bloqueante; luego de conferir un instructor a mano, aparece y permite completar.
+- Un usuario con `maestro_id` no puede modificarlo (trigger `bloquear_auto_cambio_maestro` + UI no lo expone).
+- **Referencia:** `documentacion/planes/mobile-establecimiento-linaje.md`.
+
+### 6. ERROR en consola de dev: "Can't perform a React state update on a component that hasn't mounted yet" — CONOCIDO / BENIGNO (ignorar)
+- **Fecha de registro:** 2026-09-20
+- **Qué es:** aparece en el log de Metro/Expo Go **solo al arrancar en Android (dev)** y dice `ERROR`
+  aunque no es una excepción crasheante.
+- **Origen:** internals de **expo-router**, no del codigo del proyecto:
+  - Android usa `getInitialURLWithTimeout()` (`Promise.race([Linking.getInitialURL(), timeout 150ms])`).
+  - Al resolver el URL inicial, `fork/useLinking.native.js` llama `onUnhandledLinking(...)` =
+    `setLastUnhandledLink()` de `NavigationContainer.js` **durante el montaje inicial**.
+  - Si la promise se resuelve antes de que el fiber termine de montar, React (solo dev) emite el
+    diagnóstico con `console.error()`; por eso el pipeline lo muestra como `ERROR`.
+- **Impacto:** nulo. No bloquea auth/onboarding/navegacion, no genera LogBox/RedBox fatal y **en
+  producción (`NODE_ENV=production`) esa verificacion no se ejecuta** (no aparece el mensaje).
+- **Decision:** se ignora. No parchear `node_modules`. Si en el futuro molesta, opciones: (a)
+  actualizar `expo-router` a un patch que corrija el warning, o (b) fork/patch del paquete
+  (no recomendado).
+- **Facil de verificar que no es nuestro codigo:** el stack siempre termina en
+  `ExpoRoot.js`/`ContextNavigator`/`NavigationContainer` → `useLinking.native.js:127`; no pasa por
+  `AuthGlobal`, `_layout`, `onboarding` ni ningun archivo de `mobile/src/`.
+
 ---
 
 🗒️ Actualizar este archivo (tachar items, agregar folow-ups de fecha) cada vez que se haga una

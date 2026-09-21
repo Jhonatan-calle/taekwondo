@@ -17,7 +17,9 @@
 | `planes/mobile-arreglos-auth-require-cycle.md` | Plan vigente: detección de email duplicado en registro y ruptura del require cycle `ErrorGlobal <-> BannerError` (implementado). |
 | `planes/db-purga-datos-seed.md` | Registro: purga de datos seed y baja de usuarios en la BD remota de Supabase (datos únicamente, schema intacto; conserva `jhonatancallegaleano@gmail.com` y `errores_runtime`). |
 | `planes/mobile-deeplink-recuperacion-fix.md` | Plan vigente: deep link de recuperación — `LargeSecureStore` web-safe (crash en navegador) + paso de dashboard para redirect `exp://` en Expo Go (implementado). |
-| `pendientes-pruebas.md` | Checklist de validaciones E2E/en dispositivo pendientes (deep link de recuperación, email duplicado, guards). |
+| `planes/mobile-onboarding-perfil.md` | Plan vigente: onboarding obligatorio de perfil — bloqueo de la app principal hasta completar `profiles` (nombre, DNI, fecha de nacimiento, peso, género) con RPC `verificar_dni_disponible` y campos complementarios no bloqueantes (implementado). |
+| `planes/mobile-establecimiento-linaje.md` | Plan vigente: establecimiento del linaje (Fase 2, ítem 3) — el alumno elige a su instructor/maestro de una lista, la solicitud queda pendiente y el instructor la acepta/rechaza desde su pantalla; `maestro_id` se persiste solo al aceptar, con el flag `app.derivacion_linaje` (implementado). |
+| `pendientes-pruebas.md` | Checklist de validaciones E2E/en dispositivo pendientes (deep link de recuperación, email duplicado, guards, onboarding). |
 | `workflow-implementacion-mobile.md` | Guía de pasos secuenciales y workflow de desarrollo de la app móvil. |
 | `README.md` (este archivo) | Índice de documentación. |
 

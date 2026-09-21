@@ -46,9 +46,12 @@
    - Bloquear el acceso a la aplicacion principal hasta que el usuario complete su perfil en `profiles`.
    - El formulario exige obligatoriamente: Nombre Completo, **DNI (unico, con validacion en la aplicacion movil antes de registrar)**, Fecha de Nacimiento (con calculo automatico de la edad cronologica), Peso (kg) y Genero.
    - Campos complementarios de `profiles` capturados en el mismo formulario: **Altura (cm)** (numeric, opcional, uso en ficha tecnica/competicion), **Contacto de Emergencia** (string, opcional) y **Datos de Salud** (string, opcional). No bloquean la finalizacion del perfil; si quedan vacios se completan luego desde el perfil sin repetir el onboarding.
-3. **Establecimiento del Linaje:**
-   - El nuevo usuario debe ingresar un codigo de invitacion o seleccionar a su instructor/maestro para inicializar su `maestro_id`.
-   - Una vez persistido, el sistema bloquea cualquier edicion posterior sobre esta columna desde el perfil del usuario.
+3. **Establecimiento del Linaje (implementado):**
+   - El nuevo usuario **selecciona a su instructor/maestro de una lista** (decisión: en v1 se descarta el código de invitación; la alternativa por código queda cubierta por `grupos.codigo_invitacion` + trigger `vincular_linaje_al_aprobar` en Fase 4).
+   - La selección genera una **solicitud pendiente** (`solicitudes_linaje`); el instructor/maestro debe **aceptarla o rechazarla desde su cuenta** (sección "Solicitudes de alumnos" en la pantalla principal).
+   - Al aceptar, el sistema persiste `profiles.maestro_id` (única vez, con `set_config('app.derivacion_linaje','on',true)`). Una vez persistido, el sistema bloquea cualquier edición posterior (trigger `bloquear_auto_cambio_maestro`).
+   - Salvo el Maestro raíz (`es_maestro = true`, sembrado por Service Role): no elige instructor ni envía solicitud.
+   - Referencia: `documentacion/planes/mobile-establecimiento-linaje.md`.
 
 ### Fase 3: Arquitectura de Navegacion Dinamica por "Arbol de Poder"
 1. **Analisis del Perfil al Iniciar:**

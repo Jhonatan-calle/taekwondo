@@ -29,7 +29,17 @@
     },
     "plugins": [
       "expo-router",
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Taekwondo ITF necesita acceso a tus fotos para adjuntar comprobantes de pago.",
+          "cameraPermission": "Taekwondo ITF necesita acceso a tu cámara para fotografiar comprobantes de pago.",
+          "microphonePermission": false
+        }
+      ],
+      "expo-document-picker"
     ]
   }
 }

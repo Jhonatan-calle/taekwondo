@@ -11,15 +11,14 @@ function alternar<T>(lista: T[], elemento: T): T[] {
   return lista.includes(elemento) ? lista.filter((item) => item !== elemento) : [...lista, elemento];
 }
 
-function armarMapaGrupoDeAlumno(grupos: Grupo[], grupoActualId: string): Record<string, string> {
-  const mapa: Record<string, string> = {};
+// Alumnos activos en OTRO grupo: no se ofrecen para asignar (un alumno = un grupo).
+function armarSetOcupadosEnOtroGrupo(grupos: Grupo[], grupoActualId: string): Set<string> {
+  const ocupados = new Set<string>();
   for (const g of grupos) {
     if (g.id === grupoActualId) continue;
-    for (const alumnoId of g.miembro_ids) {
-      if (mapa[alumnoId] == null) mapa[alumnoId] = g.nombre;
-    }
+    for (const alumnoId of g.miembro_ids) ocupados.add(alumnoId);
   }
-  return mapa;
+  return ocupados;
 }
 
 export default function GrupoDetalleScreen() {
@@ -31,7 +30,7 @@ export default function GrupoDetalleScreen() {
   const [grupo, setGrupo] = useState<DetalleGrupo | null>(null);
   const [alumnos, setAlumnos] = useState<AlumnoDirecto[]>([]);
   const [seleccionados, setSeleccionados] = useState<string[]>([]);
-  const [grupoDeAlumno, setGrupoDeAlumno] = useState<Record<string, string>>({});
+  const [ocupadosEnOtroGrupo, setOcupadosEnOtroGrupo] = useState<Set<string>>(new Set());
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(false);
   const [enviando, setEnviando] = useState(false);
@@ -68,7 +67,7 @@ export default function GrupoDetalleScreen() {
       setGrupo(resultadoGrupo.data);
       setAlumnos(resultadoAlumnos.data);
       setSeleccionados(resultadoGrupo.data.miembro_ids);
-      setGrupoDeAlumno(armarMapaGrupoDeAlumno(resultadoGrupos.data, resultadoGrupo.data.id));
+      setOcupadosEnOtroGrupo(armarSetOcupadosEnOtroGrupo(resultadoGrupos.data, resultadoGrupo.data.id));
       setError(false);
     }
     setCargando(false);
@@ -97,9 +96,12 @@ export default function GrupoDetalleScreen() {
     }
   };
 
+  // Solo se ofrecen los alumnos sin grupo asignado; los del propio grupo
+  // siguen listados para poder darlos de baja (desmarcar) o mantenerlos.
+  const alumnosAsignables = alumnos.filter((item) => !ocupadosEnOtroGrupo.has(item.id));
+
   const renderItem: ListRenderItem<AlumnoDirecto> = ({ item }) => {
     const seleccionado = seleccionados.includes(item.id);
-    const otroGrupo = grupoDeAlumno[item.id];
     return (
       <Pressable
         onPress={() => setSeleccionados((actual) => alternar(actual, item.id))}
@@ -113,11 +115,6 @@ export default function GrupoDetalleScreen() {
           <Text style={styles.datos}>
             {item.dni ?? 'Sin DNI'} · {etiquetaGrado(item.grado_actual)}
           </Text>
-          {otroGrupo != null && seleccionado ? (
-            <View style={styles.badge}>
-              <Text style={styles.badgeTexto}>Se trasladará desde "{otroGrupo}"</Text>
-            </View>
-          ) : null}
         </View>
       </Pressable>
     );
@@ -152,6 +149,24 @@ export default function GrupoDetalleScreen() {
     );
   }
 
+  if (alumnosAsignables.length === 0) {
+    return (
+      <View style={styles.centro}>
+        <Text style={styles.aviso}>
+          No hay alumnos libres para asignar a {grupo.nombre}. Todos tus alumnos ya pertenecen a otro grupo;
+          para mover a uno, primero quitalo de su grupo actual.
+        </Text>
+        <Pressable
+          onPress={() => router.push('/instructor/grupos')}
+          style={styles.reintentar}
+          accessibilityRole="button"
+        >
+          <Text style={styles.reintentarTexto}>Ver mis grupos</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.pantalla}>
       <View style={styles.cabecera}>
@@ -172,13 +187,13 @@ export default function GrupoDetalleScreen() {
           </Pressable>
         </View>
         <Text style={styles.sugerencia}>
-          Marcá a los alumnos que integran este grupo (estado activo). Al guardar, un alumno que esté en otro
-          grupo se trasladará a este.
+          Solo se listan los alumnos sin grupo asignado. Un alumno pertenece a un único grupo: para moverlo,
+          primero quitalo de su grupo actual.
         </Text>
       </View>
 
       <FlatList
-        data={alumnos}
+        data={alumnosAsignables}
         keyExtractor={(alumno) => alumno.id}
         renderItem={renderItem}
         contentContainerStyle={styles.lista}
@@ -290,21 +305,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#666',
     marginTop: 2,
-  },
-  badge: {
-    alignSelf: 'flex-start',
-    marginTop: 6,
-    backgroundColor: '#fdf0f0',
-    borderWidth: 1,
-    borderColor: '#f5c6cb',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  badgeTexto: {
-    fontSize: 12,
-    color: '#C62828',
-    fontWeight: '600',
   },
   pie: {
     padding: 16,

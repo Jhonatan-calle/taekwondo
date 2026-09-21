@@ -76,16 +76,17 @@
 2. **Creacion de Grupos y Horarios:** *(Implementado — Fase 4, ítem 2)*
    - Formulario para crear un grupo de entrenamiento asociandolo a una locacion fisica, indicando nombre y **horarios de clase estructurados** (dia de la semana + hora inicio/fin; sin texto libre). Los horarios viven en la tabla normalizada `grupos_horarios` con RLS del profesor dueño del grupo.
    - **Sin codigo de invitacion en el flujo movil:** el profesor asigna directamente a sus alumnos directos al grupo (fila `miembros_grupo` en estado activo). El campo `codigo_invitacion` de la BD queda para uso futuro y fuera de alcance v1.
-   - **Un solo grupo activo por alumno:** la membresia activa es unica por alumno (indice unico parcial); al asignar a un alumno a otro grupo, el RPC `editar_miembros_grupo` lo MUEVE atómicamente (sale del grupo anterior y queda solo en el nuevo), restringido a grupos del mismo profesor.
+   - **Un solo grupo activo por alumno:** la membresia activa es unica por alumno (indice unico parcial). Un alumno ya asignado a un grupo **no se ofrece** para asignar a otro: la UI lo oculta y el RPC `editar_miembros_grupo` **rechaza** la operacion (ya no lo mueve). La reasignacion explicita de grupo queda como plan aparte (ver `documentacion/planes/mobile-asignacion-alumno-un-grupo.md`).
    - **Nota (dependencia locaciones):** se anticipa el **paso minimo de la Fase 5.1** (alta de locacion con nombre y **direccion obligatoria**, sin monto) para poder asociar el grupo a una locacion fisica; alquileres y auditoria quedan para la Fase 5.
    - **Implementado (v1.1):** migraciones `grupos_flujo_movil` + `grupos_horarios_y_reglas` (tabla `grupos_horarios` con RLS, drop de `grupos.horarios` texto, `locaciones.direccion` NOT NULL, indice unico `miembros_grupo(alumno_id) where estado='activo'`, RPC `crear_grupo_con_horarios` y RPC `editar_miembros_grupo` con movimiento) + pantallas `instructor/grupos`, `instructor/nuevo-grupo` (editor de horarios), `instructor/registrar-locacion` (direccion obligatoria) e `instructor/grupo/[id]` (asignacion de miembros activos con badge de traslado). Referencia: `documentacion/planes/mobile-grupos-horarios.md`.
 3. **Creacion de Clase:** *(Implementado — Fase 4, ítem 3)*
    - Antes de registrar asistencias, el profesor crea la sesion particular en `clases` vinculada al grupo y la fecha, documentando obligatoriamente **hora_inicio**, **hora_fin**, **objetivo**, **contenido_tuls** y **preparacion_fisica**.
    - Cada clase creada queda como sesion activa en el selector, y los presentes/ausentes se vincularan a ella mediante `clase_id` en `asistencia` (Fase 4.4).
    - **Implementado:** migracion RLS `clases_politicas_rls` + pantallas `instructor/clases` (listado y selector por grupo), `instructor/nueva-clase` (formulario con validaciones obligatorias) e `instructor/clase/[id]` (detalle de sesión planificada); opción "Toma de asistencia" habilitada en el menú instructor. Referencia: `documentacion/planes/mobile-creacion-clase.md`.
-4. **Control de Asistencia:**
-   - Selector de clase activa por fecha (sesion creada en el paso anterior).
+4. **Control de Asistencia:** *(Implementado — Fase 4, ítem 4)*
+   - Selector de clase activa por fecha (sesion creada en el paso anterior); el listado `instructor/clases` marca con badge "Hoy" la sesión del día.
    - Interfaz con listado de estudiantes inscritos en el grupo para marcar asistencia (Presente/Ausente) con un toque, impactando directamente en la tabla `asistencia` de manera atomica.
+   - **Implementado:** migracion `control_asistencia` (policy de lectura `asistencia_select_profesor` + RPC atomico `guardar_asistencia_clase(p_clase_id, p_registros)` con `insert ... on conflict (clase_id, alumno_id) do update`) + pantalla `instructor/clase/[id]/asistencia` (todos Presente por defecto, contadores en vivo, "todos presentes/ausentes", guardado bulk con boton) y boton "Tomar asistencia" en el detalle de la clase; ruta reestructurada a `clase/[id]/index` + `clase/[id]/asistencia`. Referencia: `documentacion/planes/mobile-control-asistencia.md`.
 
 ### Fase 5: Locaciones, Alquileres e Infraestructura
 1. **Registro de Locacion:**

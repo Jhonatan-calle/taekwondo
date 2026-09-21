@@ -262,6 +262,13 @@ export type DatosNuevaClase = {
   preparacion_fisica: string
 }
 
+export type AlumnoGrupo = Pick<AlumnoDirecto, 'id' | 'nombre_completo' | 'grado_actual' | 'dni'>
+
+export type AsistenciaItem = {
+  alumno_id: string
+  presente: boolean
+}
+
 export function esHoraValida(hora: string): boolean {
   return /^([01]\d|2[0-3]):([0-5]\d)(:([0-5]\d))?$/.test(hora.trim())
 }

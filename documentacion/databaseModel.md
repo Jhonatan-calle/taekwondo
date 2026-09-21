@@ -92,8 +92,8 @@ erDiagram
     }
 
     ASISTENCIA {
-        uuid clase_id FK
-        uuid alumno_id FK
+        uuid clase_id PK, FK "clases(id), on delete cascade"
+        uuid alumno_id PK, FK "profiles(id), on delete cascade"
         bool presente
         timestamptz creado_en
     }
@@ -279,8 +279,19 @@ erDiagram
   1..7 + `hora_inicio`/`hora_fin` con `hora_fin > hora_inicio`, RLS del profesor dueño via
   helpers `es_profesor_del_grupo`); la columna texto `grupos.horarios` fue eliminada. Un alumno
   solo puede estar **activo en un único grupo** (índice único parcial `miembros_grupo(alumno_id)
-  where estado='activo'`); al reasignarlo, el RPC `editar_miembros_grupo` lo mueve atómicamente
-  entre los grupos del mismo profesor. `locaciones.direccion` es obligatoria (NOT NULL).
+  where estado='activo'`). Un alumno ya asignado **no se ofrece** para asignar a otro grupo: la UI
+  oculta a los ocupados y el RPC `editar_miembros_grupo` **rechaza** la operación (ya no lo mueve;
+  `raise exception 'Uno o más alumnos ya pertenecen a otro grupo.'`). La reasignación explícita de
+  grupo queda pendiente como plan aparte (`mobile-asignacion-alumno-un-grupo.md`).
+  `locaciones.direccion` es obligatoria (NOT NULL).
+- **Asistencia 🔑:** `asistencia` tiene **PK compuesta `(clase_id, alumno_id)`** (`asistencia_pkey`),
+  que es el índice único que habilita el `insert ... on conflict (clase_id, alumno_id) do update`
+  del RPC `guardar_asistencia_clase(p_clase_id, p_registros jsonb)`. FKs `clase_id → clases(id)` y
+  `alumno_id → profiles(id)`, ambas `on delete cascade`. **Lectura** por RLS para el profesor dueño
+  del grupo de la clase; **escritura solo por el RPC** (sin políticas de INSERT/UPDATE), que valida
+  `es_profesor`, la pertenencia de la clase y `es_alumno_directo_de` por alumno. El upsert es
+  atómico (todo o nada) y **no borra** filas omitidas (conserva el historial de alumnos que salieron
+  del grupo).
 
 ## Notas del Motor de Emparejamiento (Fase 3, ítem 3)
 

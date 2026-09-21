@@ -18,11 +18,13 @@
 4. **Fail gracefully:** toda comunicación con Supabase vía `ejecutarConsulta`/try-catch con `registrarError` y `MENSAJE_ERROR_GENERICO`; la UI nunca expone excepciones crudas.
 5. **Alta de locación sin monto:** `locaciones.valor_alquiler` no se solicita (el monto solo va a `pagos_alquiler`, Fase 5); solo `nombre` y **`direccion` (obligatoria)**.
 6. **Horarios NO son string libre (corrección v1.1):** el campo texto `grupos.horarios` se elimina; los horarios viven en `grupos_horarios` (día + `hora_inicio`/`hora_fin` con `hora_fin > hora_inicio`). No volver a ofrecer texto libre para horarios.
-7. **Un alumno = un solo grupo (corrección v1.1):** membresía `activa` única por alumno (índice único parcial); al asignar a un alumno a un grupo, el RPC lo MUEVE atómicamente desde cualquier otro grupo del mismo profesor. No se permiten múltiples miembros activos.
+7. **Un alumno = un solo grupo (corrección v1.1; semántica actualizada):** membresía `activa` única por alumno (índice único parcial). **Actualización posterior (plan `mobile-asignacion-alumno-un-grupo.md`):** el RPC `editar_miembros_grupo` ya **no mueve** al alumno; **rechaza** la asignación si el alumno ya está activo en otro grupo, y la UI oculta a los alumnos ya asignados. Ver ese plan para el comportamiento vigente.
 8. **Alumnos no son usuarios:** se asignan desde el listado del profesor (`maestro_id = auth.uid()`); no hay flujo de auto-alta ni de invitación.
 
 ## Contexto / objetivo
-Implementar el ítem 2 de la Fase 4 del workflow: el profesor crea un **grupo** vinculado a una **locación física** (con alta mínima de locación adelantada de Fase 5.1) indicando **nombre y horarios estructurados**, y asigna a **sus alumnos directos** como miembros en estado `activo` (un alumno solo en un grupo; al reasignarlo se mueve). Resoluciones tomadas por el usuario: incluir el alta mínima de locación para habilitar la asociación, flujo en dos pasos (creación + pantalla de detalle para asignar miembros), horarios modelados en tabla normalizada `grupos_horarios` y dirección obligatoria.
+Implementar el ítem 2 de la Fase 4 del workflow: el profesor crea un **grupo** vinculado a una **locación física** (con alta mínima de locación adelantada de Fase 5.1) indicando **nombre y horarios estructurados**, y asigna a **sus alumnos directos** como miembros en estado `activo` (un alumno solo en un grupo). Resoluciones tomadas por el usuario: incluir el alta mínima de locación para habilitar la asociación, flujo en dos pasos (creación + pantalla de detalle para asignar miembros), horarios modelados en tabla normalizada `grupos_horarios` y dirección obligatoria.
+
+> **Actualización posterior:** la reasignación automática (mover al alumno) fue reemplazada — ver `mobile-asignacion-alumno-un-grupo.md`.
 
 ## Cambios implementados
 

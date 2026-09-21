@@ -13,6 +13,14 @@ function formatearFecha(fechaISO: string): string {
   return `${dia}/${mes}/${anio}`;
 }
 
+function esFechaDeHoy(fechaISO: string): boolean {
+  const hoy = new Date();
+  const anio = hoy.getFullYear();
+  const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+  const dia = String(hoy.getDate()).padStart(2, '0');
+  return fechaISO === `${anio}-${mes}-${dia}`;
+}
+
 function limpiarHora(hora: string): string {
   return hora.slice(0, 5);
 }
@@ -26,7 +34,14 @@ function FilaClase({ clase, onPresionar }: { clase: ClaseItem; onPresionar: () =
     >
       <View style={styles.filaContenido}>
         <View style={styles.filaHeader}>
-          <Text style={styles.fecha}>{formatearFecha(clase.fecha)}</Text>
+          <View style={styles.filaFecha}>
+            <Text style={styles.fecha}>{formatearFecha(clase.fecha)}</Text>
+            {esFechaDeHoy(clase.fecha) ? (
+              <View style={styles.badgeHoy}>
+                <Text style={styles.badgeHoyTexto}>Hoy</Text>
+              </View>
+            ) : null}
+          </View>
           <Text style={styles.horario}>
             {limpiarHora(clase.hora_inicio)} - {limpiarHora(clase.hora_fin)}
           </Text>
@@ -242,6 +257,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 4,
+  },
+  filaFecha: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  badgeHoy: {
+    backgroundColor: '#C62828',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  badgeHoyTexto: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
   },
   fecha: {
     fontSize: 14,

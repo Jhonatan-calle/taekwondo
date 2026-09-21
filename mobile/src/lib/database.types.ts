@@ -1117,6 +1117,10 @@ export type Database = {
         Args: { p_categorias: Json; p_torneo_id: string }
         Returns: undefined
       }
+      guardar_asistencia_clase: {
+        Args: { p_clase_id: string; p_registros: Json }
+        Returns: boolean
+      }
       guardar_llaves_manuales: {
         Args: { p_categorias: Json; p_torneo_id: string }
         Returns: undefined

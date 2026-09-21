@@ -33,7 +33,7 @@ export default function InstructorScreen() {
         />
         <FilaOpcionMenu
           titulo="Toma de asistencia"
-          descripcion="Crear clases y registrar presentes"
+          descripcion="Registrar presentes y ausentes"
           habilitada
           onPresionar={() => router.push('/instructor/clases')}
         />

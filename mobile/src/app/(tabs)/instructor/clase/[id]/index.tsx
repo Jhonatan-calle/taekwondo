@@ -94,10 +94,14 @@ export default function ClaseDetalleScreen() {
 
       <View style={styles.acciones}>
         <Pressable
-          onPress={() => {
-            // Conexión con Fase 4 ítem 4 (Control de Asistencia)
-            router.push(`/instructor/grupos`);
-          }}
+          onPress={() => router.push(`/instructor/clase/${clase.id}/asistencia`)}
+          style={styles.botonPrimario}
+          accessibilityRole="button"
+        >
+          <Text style={styles.botonPrimarioTexto}>Tomar asistencia</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => router.push(`/instructor/grupo/${clase.grupo_id}`)}
           style={styles.botonSecundario}
           accessibilityRole="button"
         >
@@ -157,6 +161,18 @@ const styles = StyleSheet.create({
   },
   acciones: {
     marginTop: 8,
+    gap: 12,
+  },
+  botonPrimario: {
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderRadius: 8,
+    backgroundColor: '#C62828',
+  },
+  botonPrimarioTexto: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
   },
   botonSecundario: {
     paddingVertical: 14,

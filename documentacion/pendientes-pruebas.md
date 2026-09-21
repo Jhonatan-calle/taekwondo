@@ -97,6 +97,31 @@
 - Aplicar migración y regenerar types: `npx supabase db push --linked`, `npx supabase lint --linked`, `npx supabase gen types typescript --linked > mobile/src/lib/database.types.ts`.
 - **Referencia:** `documentacion/planes/mobile-directorio-alta-alumnos.md`.
 
+### 10. Control de asistencia (dispositivo)
+- **Referencia:** `documentacion/planes/mobile-control-asistencia.md`.
+- Flujo completo: crear clase (`/instructor/nueva-clase`) → abrir el detalle (`/instructor/clase/[id]`) → **"Tomar asistencia"**.
+- La pantalla lista **solo** los alumnos activos del grupo; arranca con **todos Presente**; un toque alterna a Ausente; los contadores "Presentes / Ausentes" se actualizan en vivo.
+- "Todos presentes" / "Todos ausentes" marcan el conjunto completo de una vez.
+- **"Guardar asistencia"** persiste todo el set en una transacción (upsert atómico); reabrir la clase refleja lo guardado.
+- El selector `/instructor/clases` muestra el badge **"Hoy"** en la sesión de la fecha actual.
+- RLS: con otro profesor, no se leen ni se registran asistencias de clases ajenas.
+- Red cortada al guardar → banner genérico + fila en `errores_runtime` (`modulo='asistencia'`).
+
+### 11. Asignación de un alumno a un solo grupo (dispositivo)
+- **Referencia:** `documentacion/planes/mobile-asignacion-alumno-un-grupo.md`.
+- En el detalle de un grupo (`/instructor/grupo/[id]`), un alumno que ya pertenece a otro grupo **no aparece** en el listado de asignables (ya no hay badge "Se trasladará desde…").
+- Los alumnos del propio grupo siguen visibles y pre-marcados; desmarcarlo + "Guardar miembros" lo da de baja del grupo.
+- Quitar a un alumno de su grupo lo vuelve a ofrecer como libre en el resto de los grupos (verificar recarga al volver a la pantalla con `useFocusEffect`/foco).
+- Probar que un alumno nunca queda en dos grupos activos (índice único parcial `miembros_grupo_un_grupo_activo_idx`).
+- El RPC `editar_miembros_grupo` **rechaza** con excepción la asignación directa (llamada a la API) de un alumno ya activo en otro grupo.
+
+### 12. Reasignación explícita de grupo — PENDIENTE DE DISEÑO
+- **Fecha de registro:** 2026-09-21
+- **Contexto:** al pasar a "un alumno = un grupo" con rechazo en el RPC (plan `mobile-asignacion-alumno-un-grupo.md`), el traslado dejó de ser automático. Falta una forma explícita de **mover a un alumno de un grupo a otro**.
+- **Pendiente:** definir el flujo con el usuario (opciones evaluadas: selector "Grupo actual" en el detalle del alumno; botón "Mover a otro grupo" desde el detalle del grupo; acción de traslado en la lista de alumnos).
+- **Implicancia técnica:** requiere un RPC propio (p. ej. `reasignar_alumno_a_grupo`), porque `editar_miembros_grupo` ya no mueve. Debe ser atómico (baja del origen + alta en el destino) respetando el índice único parcial.
+- **Acción:** crear un plan aparte cuando se defina el diseño.
+
 ---
 
 🗒️ Actualizar este archivo (tachar items, agregar folow-ups de fecha) cada vez que se haga una

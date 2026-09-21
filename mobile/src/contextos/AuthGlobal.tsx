@@ -26,6 +26,8 @@ import {
   type FilaGrupoConRelaciones,
   type ClaseItem,
   type DatosNuevaClase,
+  type AlumnoGrupo,
+  type AsistenciaItem,
 } from '@/lib/perfil'
 import type { Grado } from '@/constants/grados'
 
@@ -67,6 +69,9 @@ type AuthGlobalValue = {
   listarClases(grupoId?: string): Promise<ResultadoConsulta<ClaseItem[] | null>>
   obtenerClaseDetalle(claseId: string): Promise<ResultadoConsulta<ClaseItem | null>>
   crearClase(datos: DatosNuevaClase): Promise<ResultadoCreacion>
+  listarAlumnosDeGrupo(grupoId: string): Promise<ResultadoConsulta<AlumnoGrupo[] | null>>
+  listarAsistenciaClase(claseId: string): Promise<ResultadoConsulta<AsistenciaItem[] | null>>
+  guardarAsistenciaClase(claseId: string, registros: AsistenciaItem[]): Promise<{ error: string | null }>
   cerrarSesion(): Promise<void>
 }
 
@@ -671,6 +676,84 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
     [sesion?.user?.id],
   )
 
+  const listarAlumnosDeGrupo = useCallback(
+    async (grupoId: string): Promise<ResultadoConsulta<AlumnoGrupo[] | null>> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { data: null, error: MENSAJE_ERROR_GENERICO }
+
+      type FilaMiembroConPerfil = {
+        alumno_id: string
+        profiles: {
+          id: string
+          nombre_completo: string
+          dni: string | null
+          grado_actual: AlumnoGrupo['grado_actual']
+        } | null
+      }
+
+      const promesa = supabase
+        .from('miembros_grupo')
+        .select(
+          'alumno_id, profiles!miembros_grupo_alumno_id_fkey(id, nombre_completo, dni, grado_actual)',
+        )
+        .eq('grupo_id', grupoId)
+        .eq('estado', 'activo')
+        .returns<FilaMiembroConPerfil[]>()
+
+      return ejecutarConsulta<AlumnoGrupo[] | null>(
+        Promise.resolve(
+          promesa.then(({ data, error }) => ({
+            data:
+              data
+                ?.filter((fila) => fila.profiles != null)
+                .map((fila) => ({
+                  id: fila.profiles!.id,
+                  nombre_completo: fila.profiles!.nombre_completo,
+                  dni: fila.profiles!.dni,
+                  grado_actual: fila.profiles!.grado_actual,
+                }))
+                .sort((a, b) => a.nombre_completo.localeCompare(b.nombre_completo)) ?? null,
+            error,
+          })),
+        ),
+        { modulo: 'asistencia', contexto: 'listarAlumnosDeGrupo' },
+      )
+    },
+    [sesion?.user?.id],
+  )
+
+  const listarAsistenciaClase = useCallback(
+    async (claseId: string): Promise<ResultadoConsulta<AsistenciaItem[] | null>> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { data: null, error: MENSAJE_ERROR_GENERICO }
+      return ejecutarConsulta<AsistenciaItem[] | null>(
+        Promise.resolve(
+          supabase.from('asistencia').select('alumno_id, presente').eq('clase_id', claseId),
+        ),
+        { modulo: 'asistencia', contexto: 'listarAsistenciaClase' },
+      )
+    },
+    [sesion?.user?.id],
+  )
+
+  const guardarAsistenciaClase = useCallback(
+    async (claseId: string, registros: AsistenciaItem[]): Promise<{ error: string | null }> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { error: MENSAJE_ERROR_GENERICO }
+      const { data, error } = await ejecutarConsulta<boolean | null>(
+        Promise.resolve(
+          supabase.rpc('guardar_asistencia_clase', {
+            p_clase_id: claseId,
+            p_registros: registros,
+          }),
+        ),
+        { modulo: 'asistencia', contexto: 'guardarAsistenciaClase' },
+      )
+      return error != null || data !== true ? { error: MENSAJE_ERROR_GENERICO } : { error: null }
+    },
+    [sesion?.user?.id],
+  )
+
   const cerrarSesion = useCallback(async (): Promise<void> => {
     try {
       await supabase.auth.signOut()
@@ -726,6 +809,9 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       listarClases,
       obtenerClaseDetalle,
       crearClase,
+      listarAlumnosDeGrupo,
+      listarAsistenciaClase,
+      guardarAsistenciaClase,
       cerrarSesion,
     }),
     [
@@ -762,6 +848,9 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       listarClases,
       obtenerClaseDetalle,
       crearClase,
+      listarAlumnosDeGrupo,
+      listarAsistenciaClase,
+      guardarAsistenciaClase,
       cerrarSesion,
     ],
   )

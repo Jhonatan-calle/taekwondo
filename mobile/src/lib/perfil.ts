@@ -80,6 +80,49 @@ export type SolicitudLinaje = Pick<
   'id' | 'nombre_alumno' | 'estado' | 'creado_en'
 >
 
+export type Locacion = Pick<
+  Database['public']['Tables']['locaciones']['Row'],
+  'id' | 'nombre' | 'direccion'
+>
+
+export type DatosNuevaLocacion = {
+  nombre: string
+  direccion: string | null
+}
+
+export type Grupo = {
+  id: string
+  nombre: string
+  horarios: string | null
+  locacion_id: string | null
+  nombre_locacion: string | null
+  cantidad_miembros: number
+}
+
+export type DetalleGrupo = {
+  id: string
+  nombre: string
+  horarios: string | null
+  locacion_id: string | null
+  nombre_locacion: string | null
+  miembro_ids: string[]
+}
+
+export type DatosNuevoGrupo = {
+  nombre: string
+  horarios: string
+  locacion_id: string | null
+}
+
+export type FilaGrupoConRelaciones = {
+  id: string
+  nombre: string
+  horarios: string | null
+  locacion_id: string | null
+  locaciones: { nombre: string } | null
+  miembros_grupo: { alumno_id: string }[]
+}
+
 export const MENSAJE_DNI_DUPLICADO = 'El DNI ya está registrado.'
 export const EDAD_MINIMA_ANIOS = 4
 
@@ -158,4 +201,12 @@ export function fechaValidaNacimiento(fechaISO: string | null): boolean {
   if (fecha > new Date()) return false
   const edad = calcularEdad(fechaISO)
   return edad != null && edad >= EDAD_MINIMA_ANIOS
+}
+
+export function esNombreValido(nombre: string): boolean {
+  return nombre.trim().length >= 2
+}
+
+export function esHorarioValido(horario: string): boolean {
+  return horario.trim().length >= 2
 }

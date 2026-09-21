@@ -321,7 +321,7 @@ export type Database = {
       }
       grupos: {
         Row: {
-          codigo_invitacion: string
+          codigo_invitacion: string | null
           creado_en: string
           horarios: string | null
           id: string
@@ -331,7 +331,7 @@ export type Database = {
           ubicacion: string | null
         }
         Insert: {
-          codigo_invitacion: string
+          codigo_invitacion?: string | null
           creado_en?: string
           horarios?: string | null
           id?: string
@@ -341,7 +341,7 @@ export type Database = {
           ubicacion?: string | null
         }
         Update: {
-          codigo_invitacion?: string
+          codigo_invitacion?: string | null
           creado_en?: string
           horarios?: string | null
           id?: string
@@ -1066,6 +1066,10 @@ export type Database = {
       }
       es_subordinado_de: {
         Args: { p_jefe: string; p_perfil: string }
+        Returns: boolean
+      }
+      editar_miembros_grupo: {
+        Args: { p_alumno_ids: string[]; p_grupo_id: string }
         Returns: boolean
       }
       finalizar_torneo: {

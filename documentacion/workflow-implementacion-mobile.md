@@ -73,9 +73,11 @@
    - **Alta de Alumno:** los alumnos no se registran solos; el profesor crea la ficha desde la app. Datos obligatorios: Nombre Completo, **DNI (unico, con validacion previa en la app)**, Fecha de Nacimiento (con calculo de la edad cronologica), Peso (kg), Genero y **Grado actual**. Opcionales: Altura (cm), Contacto de Emergencia y Datos de Salud.
    - Al crear la ficha, `profiles.maestro_id` queda fijado al profesor que la da de alta (linaje asignado en el alta; no modificable por el alumno).
    - **Implementado:** RPC `alta_alumno` (SECURITY DEFINER; valida `es_profesor`; elimina la FK `profiles.id -> auth.users` para alumnos sin cuenta) + pantallas `instructor/alumnos`, `instructor/alta-alumno` e `instructor/alumno/[id]` (detalle solo-lectura). Referencia: `documentacion/planes/mobile-directorio-alta-alumnos.md`.
-2. **Creacion de Grupos y Horarios:**
+2. **Creacion de Grupos y Horarios:** *(Implementado — Fase 4, ítem 2)*
    - Formulario para crear un grupo de entrenamiento asociandolo a una locacion fisica, indicando nombre y horarios de clase.
    - **Sin codigo de invitacion en el flujo movil:** el profesor asigna directamente a sus alumnos directos al grupo (fila `miembros_grupo` en estado activo). El campo `codigo_invitacion` de la BD queda para uso futuro y fuera de alcance v1.
+   - **Nota (dependencia locaciones):** se anticipa el **paso minimo de la Fase 5.1** (alta de locacion con nombre y direccion, sin monto) para poder asociar el grupo a una locacion fisica; alquileres y auditoria quedan para la Fase 5.
+   - **Implementado:** migracion `grupos_flujo_movil` (codigo_invitacion nullable + RPC `editar_miembros_grupo`) + pantallas `instructor/grupos`, `instructor/nuevo-grupo`, `instructor/registrar-locacion` e `instructor/grupo/[id]` (asignacion de miembros activos). Referencia: `documentacion/planes/mobile-grupos-horarios.md`.
 3. **Creacion de Clase:**
    - Antes de registrar asistencias, el profesor crea la sesion particular en `clases` vinculada al grupo y la fecha, documentando obligatoriamente **hora_inicio**, **hora_fin**, **objetivo**, **contenido_tuls** y **preparacion_fisica**.
    - Cada clase creada queda como sesion activa en el selector, y los presentes/ausentes se vinculan a ella mediante `clase_id` en `asistencia`.

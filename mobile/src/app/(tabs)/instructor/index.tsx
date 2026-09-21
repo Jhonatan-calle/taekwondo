@@ -25,7 +25,12 @@ export default function InstructorScreen() {
           habilitada
           onPresionar={() => router.push('/instructor/alta-alumno')}
         />
-        <FilaOpcionMenu titulo="Grupos y horarios" descripcion="Crear grupos y asignar tus alumnos" />
+        <FilaOpcionMenu
+          titulo="Grupos y horarios"
+          descripcion="Crear grupos y asignar tus alumnos"
+          habilitada
+          onPresionar={() => router.push('/instructor/grupos')}
+        />
         <FilaOpcionMenu titulo="Toma de asistencia" descripcion="Crear clases y registrar presentes" />
         <FilaOpcionMenu titulo="Cuotas de alumnos" descripcion="Registrar los pagos mensuales" />
         <FilaOpcionMenu titulo="Locaciones" descripcion="Administrar los centros de entrenamiento" />

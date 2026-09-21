@@ -17,10 +17,18 @@ import {
   type AlumnoDirecto,
   type AlumnoDetalle,
   type DatosAltaAlumno,
+  type Grupo,
+  type DetalleGrupo,
+  type DatosNuevoGrupo,
+  type Locacion,
+  type DatosNuevaLocacion,
+  type FilaGrupoConRelaciones,
 } from '@/lib/perfil'
 import type { Grado } from '@/constants/grados'
 
 export type ResultadoAuth = { error: string | null; pendienteConfirmacion?: boolean }
+
+export type ResultadoCreacion = { error: string | null; nuevoId?: string }
 
 type AuthGlobalValue = {
   sesion: Session | null
@@ -47,11 +55,31 @@ type AuthGlobalValue = {
   solicitarLinaje(maestroId: string): Promise<{ error: string | null }>
   listarSolicitudesPendientes(): Promise<ResultadoConsulta<SolicitudLinaje[] | null>>
   resolverSolicitudLinaje(solicitudId: string, resultado: 'aceptada' | 'rechazada'): Promise<{ error: string | null }>
+  listarGrupos(): Promise<ResultadoConsulta<Grupo[] | null>>
+  crearGrupo(datos: DatosNuevoGrupo): Promise<ResultadoCreacion>
+  obtenerGrupoDetalle(grupoId: string): Promise<ResultadoConsulta<DetalleGrupo | null>>
+  editarMiembrosGrupo(grupoId: string, alumnoIds: string[]): Promise<{ error: string | null }>
+  listarLocaciones(): Promise<ResultadoConsulta<Locacion[] | null>>
+  crearLocacion(datos: DatosNuevaLocacion): Promise<ResultadoCreacion>
   cerrarSesion(): Promise<void>
 }
 
 const CAMPOS_PERFIL_SELECT =
   'nombre_completo, dni, fecha_nacimiento, peso_kg, genero, altura_cm, telefono, contacto_emergencia, datos_salud, grado_actual, es_maestro, es_profesor, maestro_id'
+
+const SELECT_GRUPO =
+  'id, nombre, horarios, locacion_id, locaciones(nombre), miembros_grupo(alumno_id)'
+
+function mapearGrupo(fila: FilaGrupoConRelaciones): Grupo {
+  return {
+    id: fila.id,
+    nombre: fila.nombre,
+    horarios: fila.horarios,
+    locacion_id: fila.locacion_id,
+    nombre_locacion: fila.locaciones?.nombre ?? null,
+    cantidad_miembros: fila.miembros_grupo?.length ?? 0,
+  }
+}
 
 const AuthContext = createContext<AuthGlobalValue | null>(null)
 
@@ -360,6 +388,146 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
     [],
   )
 
+  const listarGrupos = useCallback(
+    async (): Promise<ResultadoConsulta<Grupo[] | null>> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { data: null, error: MENSAJE_ERROR_GENERICO }
+      const promesa = supabase
+        .from('grupos')
+        .select(SELECT_GRUPO)
+        .eq('profesor_id', usuarioId)
+        .order('nombre', { ascending: true })
+        .returns<FilaGrupoConRelaciones[]>()
+      return ejecutarConsulta<Grupo[] | null>(
+        Promise.resolve(
+          promesa.then(({ data, error }) => ({
+            data: data?.map((fila) => mapearGrupo(fila)) ?? null,
+            error,
+          })),
+        ),
+        { modulo: 'grupos', contexto: 'listarGrupos' },
+      )
+    },
+    [sesion?.user?.id],
+  )
+
+  const crearGrupo = useCallback(
+    async (datos: DatosNuevoGrupo): Promise<ResultadoCreacion> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { error: MENSAJE_ERROR_GENERICO }
+      const { data, error } = await ejecutarConsulta<{ id: string } | null>(
+        Promise.resolve(
+          supabase
+            .from('grupos')
+            .insert({
+              nombre: datos.nombre.trim(),
+              horarios: datos.horarios.trim(),
+              locacion_id: datos.locacion_id,
+              profesor_id: usuarioId,
+            })
+            .select('id')
+            .single(),
+        ),
+        { modulo: 'grupos', contexto: 'crearGrupo' },
+      )
+      return error != null || data == null
+        ? { error: MENSAJE_ERROR_GENERICO }
+        : { error: null, nuevoId: data.id }
+    },
+    [sesion?.user?.id],
+  )
+
+  const obtenerGrupoDetalle = useCallback(
+    async (grupoId: string): Promise<ResultadoConsulta<DetalleGrupo | null>> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { data: null, error: MENSAJE_ERROR_GENERICO }
+      const promesa = supabase
+        .from('grupos')
+        .select(SELECT_GRUPO)
+        .eq('id', grupoId)
+        .eq('profesor_id', usuarioId)
+        .maybeSingle()
+        .returns<FilaGrupoConRelaciones | null>()
+      return ejecutarConsulta<DetalleGrupo | null>(
+        Promise.resolve(
+          promesa.then(({ data, error }) => {
+            if (error != null || data == null) return { data: null, error }
+            return {
+              data: {
+                id: data.id,
+                nombre: data.nombre,
+                horarios: data.horarios,
+                locacion_id: data.locacion_id,
+                nombre_locacion: data.locaciones?.nombre ?? null,
+                miembro_ids: data.miembros_grupo?.map((miembro) => miembro.alumno_id) ?? [],
+              },
+              error: null,
+            }
+          }),
+        ),
+        { modulo: 'grupos', contexto: 'obtenerGrupoDetalle' },
+      )
+    },
+    [sesion?.user?.id],
+  )
+
+  const editarMiembrosGrupo = useCallback(
+    async (grupoId: string, alumnoIds: string[]): Promise<{ error: string | null }> => {
+      const { data, error } = await ejecutarConsulta<boolean | null>(
+        Promise.resolve(
+          supabase.rpc('editar_miembros_grupo', { p_grupo_id: grupoId, p_alumno_ids: alumnoIds }),
+        ),
+        { modulo: 'grupos', contexto: 'editarMiembrosGrupo' },
+      )
+      return error != null || data !== true ? { error: MENSAJE_ERROR_GENERICO } : { error: null }
+    },
+    [],
+  )
+
+  const listarLocaciones = useCallback(
+    async (): Promise<ResultadoConsulta<Locacion[] | null>> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { data: null, error: MENSAJE_ERROR_GENERICO }
+      return ejecutarConsulta<Locacion[] | null>(
+        Promise.resolve(
+          supabase
+            .from('locaciones')
+            .select('id, nombre, direccion')
+            .eq('creado_por', usuarioId)
+            .order('nombre', { ascending: true }),
+        ),
+        { modulo: 'locaciones', contexto: 'listarLocaciones' },
+      )
+    },
+    [sesion?.user?.id],
+  )
+
+  const crearLocacion = useCallback(
+    async (datos: DatosNuevaLocacion): Promise<ResultadoCreacion> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { error: MENSAJE_ERROR_GENERICO }
+      const direccion = datos.direccion?.trim() ?? ''
+      const { data, error } = await ejecutarConsulta<{ id: string } | null>(
+        Promise.resolve(
+          supabase
+            .from('locaciones')
+            .insert({
+              nombre: datos.nombre.trim(),
+              direccion: direccion === '' ? null : direccion,
+              creado_por: usuarioId,
+            })
+            .select('id')
+            .single(),
+        ),
+        { modulo: 'locaciones', contexto: 'crearLocacion' },
+      )
+      return error != null || data == null
+        ? { error: MENSAJE_ERROR_GENERICO }
+        : { error: null, nuevoId: data.id }
+    },
+    [sesion?.user?.id],
+  )
+
   const cerrarSesion = useCallback(async (): Promise<void> => {
     try {
       await supabase.auth.signOut()
@@ -406,6 +574,12 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       solicitarLinaje,
       listarSolicitudesPendientes,
       resolverSolicitudLinaje,
+      listarGrupos,
+      crearGrupo,
+      obtenerGrupoDetalle,
+      editarMiembrosGrupo,
+      listarLocaciones,
+      crearLocacion,
       cerrarSesion,
     }),
     [
@@ -433,6 +607,12 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       solicitarLinaje,
       listarSolicitudesPendientes,
       resolverSolicitudLinaje,
+      listarGrupos,
+      crearGrupo,
+      obtenerGrupoDetalle,
+      editarMiembrosGrupo,
+      listarLocaciones,
+      crearLocacion,
       cerrarSesion,
     ],
   )

@@ -823,6 +823,7 @@ export type Database = {
           maestro_id: string | null
           nombre_completo: string
           peso_kg: number | null
+          telefono: string | null
         }
         Insert: {
           altura_cm?: number | null
@@ -840,6 +841,7 @@ export type Database = {
           maestro_id?: string | null
           nombre_completo?: string
           peso_kg?: number | null
+          telefono?: string | null
         }
         Update: {
           altura_cm?: number | null
@@ -857,6 +859,7 @@ export type Database = {
           maestro_id?: string | null
           nombre_completo?: string
           peso_kg?: number | null
+          telefono?: string | null
         }
         Relationships: [
           {
@@ -1021,6 +1024,21 @@ export type Database = {
     }
     Functions: {
       activar_faceta_profesor: { Args: never; Returns: boolean }
+      alta_alumno: {
+        Args: {
+          p_altura_cm?: number
+          p_contacto_emergencia?: string
+          p_datos_salud?: string
+          p_dni: string
+          p_fecha_nacimiento: string
+          p_genero: Database["public"]["Enums"]["genero"]
+          p_grado_actual: Database["public"]["Enums"]["grado"]
+          p_nombre_completo: string
+          p_peso_kg: number
+          p_telefono?: string
+        }
+        Returns: string
+      }
       conceder_faceta_maestro: {
         Args: { p_perfil: string }
         Returns: undefined
@@ -1062,6 +1080,16 @@ export type Database = {
         Args: { p_categorias: Json; p_torneo_id: string }
         Returns: undefined
       }
+      lista_instructores_linaje: {
+        Args: never
+        Returns: {
+          es_maestro: boolean
+          es_profesor: boolean
+          grado_actual: Database["public"]["Enums"]["grado"]
+          id: string
+          nombre_completo: string
+        }[]
+      }
       marcar_en_curso: {
         Args: { p_enfrentamiento: string }
         Returns: undefined
@@ -1083,21 +1111,6 @@ export type Database = {
         }[]
       }
       puede_activar_profesor: { Args: never; Returns: boolean }
-      lista_instructores_linaje: {
-        Args: never
-        Returns: {
-          es_maestro: boolean
-          es_profesor: boolean
-          grado_actual: Database["public"]["Enums"]["grado"] | null
-          id: string
-          nombre_completo: string
-        }[]
-      }
-      solicitar_linaje: { Args: { p_instructor: string }; Returns: boolean }
-      resolver_solicitud_linaje: {
-        Args: { p_resultado: string; p_solicitud: string }
-        Returns: boolean
-      }
       registrar_grado_verificado: {
         Args: {
           p_grado: Database["public"]["Enums"]["grado"]
@@ -1107,6 +1120,10 @@ export type Database = {
       }
       registrar_resultado_examen: {
         Args: { p_postulacion: string; p_resultado: string }
+        Returns: boolean
+      }
+      resolver_solicitud_linaje: {
+        Args: { p_resultado: string; p_solicitud: string }
         Returns: boolean
       }
       sincronizar_resultado_en_vivo: {
@@ -1119,10 +1136,8 @@ export type Database = {
         }
         Returns: undefined
       }
-      verificar_dni_disponible: {
-        Args: { p_dni: string }
-        Returns: boolean
-      }
+      solicitar_linaje: { Args: { p_instructor: string }; Returns: boolean }
+      verificar_dni_disponible: { Args: { p_dni: string }; Returns: boolean }
     }
     Enums: {
       genero: "masculino" | "femenino" | "otro"

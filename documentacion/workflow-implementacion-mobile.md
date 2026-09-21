@@ -19,7 +19,7 @@
 4. **Grado Unificado:** Utilizar el enum `public.grado` que incluye los 10 Gups y los 9 Dans de manera secuencial para validaciones directas.
 5. **No Procesar Dinero:** Los pagos son puramente de caracter de registro de informacion (periodo, monto, fecha, comprobante de alquiler), sin integraciones de pasarelas de pago.
 6. **Alta de Locacion sin Monto:** La tabla `locaciones` solo almacena `nombre`, `direccion`, `creado_por` y `creado_en`. No solicitar "valor mensual del alquiler" al dar de alta; el monto se registra unicamente en `pagos_alquiler` (`monto`, `periodo`, `fecha_pago`) cuando se ejecuta el pago.
-7. **Campos Omitidos del Perfil:** `profiles` incluye `altura_cm`, `contacto_emergencia` y `datos_salud`; estan contemplados en el onboarding y en el perfil aunque el SRS §3.1 no los liste como obligatorios.
+7. **Campos Omitidos del Perfil:** `profiles` incluye `altura_cm`, `telefono`, `contacto_emergencia` y `datos_salud`; estan contemplados en el onboarding y en el perfil (y el formato de grado se muestra por color, sin "Gup") aunque el SRS §3.1 no los liste como obligatorios.
 8. **Clase Previa a Asistencia:** Todo registro en `asistencia` requiere una clase existente en `clases` con `hora_inicio`, `hora_fin`, `objetivo`, `contenido_tuls` y `preparacion_fisica` documentados; no se puede tomar asistencia sin crear antes la sesion.
 9. **Alumnos no son usuarios (decision v1):** la app movil es de uso exclusivo del staff (profesores y maestros). Los alumnos regulares no inician sesion ni tienen vistas en la app; son registros de `profiles` administrados por su profesor (**alta de alumno**, Fase 4). No existen flujos "del alumno": sin consulta de cuotas, sin historial academico, sin auto-linaje. La BD conserva la capacidad de usuarios alumnos (`profiles` + `auth.users`) para el futuro; el codigo no debe asumir sesion de alumno.
 
@@ -68,10 +68,11 @@
    - **Implementado (Fase 3, ítem 2):** navegacion por tabs (Inicio/Instructor/Maestro) en `(tabs)`; ocultamiento condicional con `href: null` y proteccion de deep links con `<Redirect>` en cada landing; menús con filas deshabilitadas que cada Fase 4-8 activara. Referencia: `documentacion/planes/mobile-rutas-condicionales-navegacion.md`.
 
 ### Fase 4: Modulo de Gestion de Alumnos, Grupos y Clases (Rol: Profesor)
-1. **Directorio y Alta de Alumnos Directos:**
+1. **Directorio y Alta de Alumnos Directos:** *(Implementado — Fase 4, ítem 1)*
    - Listar los estudiantes del instructor usando el filtro de RLS `maestro_id = auth.uid()`.
    - **Alta de Alumno:** los alumnos no se registran solos; el profesor crea la ficha desde la app. Datos obligatorios: Nombre Completo, **DNI (unico, con validacion previa en la app)**, Fecha de Nacimiento (con calculo de la edad cronologica), Peso (kg), Genero y **Grado actual**. Opcionales: Altura (cm), Contacto de Emergencia y Datos de Salud.
    - Al crear la ficha, `profiles.maestro_id` queda fijado al profesor que la da de alta (linaje asignado en el alta; no modificable por el alumno).
+   - **Implementado:** RPC `alta_alumno` (SECURITY DEFINER; valida `es_profesor`; elimina la FK `profiles.id -> auth.users` para alumnos sin cuenta) + pantallas `instructor/alumnos`, `instructor/alta-alumno` e `instructor/alumno/[id]` (detalle solo-lectura). Referencia: `documentacion/planes/mobile-directorio-alta-alumnos.md`.
 2. **Creacion de Grupos y Horarios:**
    - Formulario para crear un grupo de entrenamiento asociandolo a una locacion fisica, indicando nombre y horarios de clase.
    - **Sin codigo de invitacion en el flujo movil:** el profesor asigna directamente a sus alumnos directos al grupo (fila `miembros_grupo` en estado activo). El campo `codigo_invitacion` de la BD queda para uso futuro y fuera de alcance v1.

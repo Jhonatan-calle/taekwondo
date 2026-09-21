@@ -1,23 +1,30 @@
-import { Redirect } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { FilaOpcionMenu } from '@/components/FilaOpcionMenu';
-import { useAuthGlobal } from '@/contextos/AuthGlobal';
 
 export default function InstructorScreen() {
-  const { esProfesorBandera } = useAuthGlobal();
-
-  if (!esProfesorBandera) {
-    return <Redirect href="/" />;
-  }
+  const router = useRouter();
 
   return (
     <ScrollView style={styles.pantalla} contentContainerStyle={styles.contenido}>
       <Text style={styles.titulo}>Instructor</Text>
-      <Text style={styles.subtitulo}>Gestión de tus alumnos directos. Está disponible en próximas versiones.</Text>
+      <Text style={styles.subtitulo}>
+        Gestión de tus alumnos directos. El resto de las opciones estará disponible en próximas versiones.
+      </Text>
 
       <View style={styles.menu}>
-        <FilaOpcionMenu titulo="Mis alumnos" descripcion="Lista y detalle de tus alumnos directos" />
-        <FilaOpcionMenu titulo="Alta de alumno" descripcion="Crear la ficha de un alumno nuevo" />
+        <FilaOpcionMenu
+          titulo="Mis alumnos"
+          descripcion="Lista y detalle de tus alumnos directos"
+          habilitada
+          onPresionar={() => router.push('/instructor/alumnos')}
+        />
+        <FilaOpcionMenu
+          titulo="Alta de alumno"
+          descripcion="Crear la ficha de un alumno nuevo"
+          habilitada
+          onPresionar={() => router.push('/instructor/alta-alumno')}
+        />
         <FilaOpcionMenu titulo="Grupos y horarios" descripcion="Crear grupos y asignar tus alumnos" />
         <FilaOpcionMenu titulo="Toma de asistencia" descripcion="Crear clases y registrar presentes" />
         <FilaOpcionMenu titulo="Cuotas de alumnos" descripcion="Registrar los pagos mensuales" />

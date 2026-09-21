@@ -86,6 +86,17 @@
 - Las opciones de cada menú aparecen deshabilitadas como "Próximamente".
 - **Referencia:** `documentacion/planes/mobile-rutas-condicionales-navegacion.md`.
 
+### 9. Directorio y alta de alumnos directos (dispositivo)
+- Profesor (`es_profesor = true`) → "Mis alumnos" lista solo sus alumnos directos (RLS `maestro_id = auth.uid()`); sin alumnos muestra el CTA de alta.
+- Alta de alumno: los obligatorios (nombre, DNI, fecha de nacimiento + edad, peso, género, grado) validan por campo; el DNI duplicado se bloquea (`verificar_dni_disponible`); los opcionales (altura, teléfono, contacto, datos de salud) son opcionales.
+- Grado por color: listado, detalle, chips de alta y selección de instructor muestran "Blanco", "Amarillo punta verde", …, "Dan I"…"Dan IX" (sin "Gup"); `ETIQUETAS_GRADO` en `mobile/src/constants/grados.ts`.
+- Teléfono: se carga en onboarding/alta y se ve en el detalle (`alumno.telefono`); vacío queda `null`. Requiere migración `contacto_telefono` (`profiles.telefono` + `p_telefono` en `alta_alumno`).
+- Al guardar, la ficha aparece en el directorio con `maestro_id` = profesor; el alumno no tiene cuenta de usuario (`profiles.id` ya no referencia `auth.users`).
+- Detalle (`/instructor/alumno/[id]`) muestra la ficha completa en solo-lectura.
+- Deep link a `/instructor/alumnos` o `/instructor/alta-alumno` sin faceta → `<Redirect href="/" />`.
+- Aplicar migración y regenerar types: `npx supabase db push --linked`, `npx supabase lint --linked`, `npx supabase gen types typescript --linked > mobile/src/lib/database.types.ts`.
+- **Referencia:** `documentacion/planes/mobile-directorio-alta-alumnos.md`.
+
 ---
 
 🗒️ Actualizar este archivo (tachar items, agregar folow-ups de fecha) cada vez que se haga una

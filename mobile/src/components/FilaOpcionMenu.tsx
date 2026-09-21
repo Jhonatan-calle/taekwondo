@@ -3,16 +3,23 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 type FilaOpcionMenuProps = {
   titulo: string
   descripcion?: string
+  habilitada?: boolean
+  onPresionar?: () => void
 }
 
-export function FilaOpcionMenu({ titulo, descripcion }: FilaOpcionMenuProps) {
+export function FilaOpcionMenu({ titulo, descripcion, habilitada = false, onPresionar }: FilaOpcionMenuProps) {
   return (
-    <Pressable disabled style={styles.fila} accessibilityRole="button">
+    <Pressable
+      disabled={!habilitada}
+      onPress={onPresionar}
+      style={[styles.fila, habilitada ? styles.filaHabilitada : null]}
+      accessibilityRole="button"
+    >
       <View style={styles.contenido}>
         <Text style={styles.titulo}>{titulo}</Text>
         {descripcion ? <Text style={styles.descripcion}>{descripcion}</Text> : null}
       </View>
-      <Text style={styles.etiqueta}>Próximamente</Text>
+      {habilitada ? <Text style={styles.chevron}>›</Text> : <Text style={styles.etiqueta}>Próximamente</Text>}
     </Pressable>
   )
 }
@@ -28,6 +35,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     marginBottom: 10,
     opacity: 0.75,
+  },
+  filaHabilitada: {
+    opacity: 1,
   },
   contenido: {
     flex: 1,
@@ -46,6 +56,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#999',
+    marginLeft: 8,
+  },
+  chevron: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#C62828',
     marginLeft: 8,
   },
 })

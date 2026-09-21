@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { CampoTexto } from '@/components/CampoTexto';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 import { useErrorGlobal } from '@/contextos/ErrorGlobal';
-import { etiquetaGrado } from '@/constants/grados';
+import { GRADOS, etiquetaGrado, type Grado } from '@/constants/grados';
 import { MENSAJE_ERROR_GENERICO } from '@/lib/errores';
 import {
   aIsoLocal,
@@ -17,9 +17,8 @@ import {
   fechaValidaNacimiento,
   MENSAJE_DNI_DUPLICADO,
   parsearNumero,
-  type DatosPerfilACompletar,
+  type DatosAltaAlumno,
   type Genero,
-  type InstructorLinaje,
 } from '@/lib/perfil';
 
 const OPCIONES_GENERO: { valor: Genero; etiqueta: string }[] = [
@@ -29,7 +28,7 @@ const OPCIONES_GENERO: { valor: Genero; etiqueta: string }[] = [
 ];
 
 type ErroresFormulario = Partial<
-  Record<'nombre' | 'dni' | 'fechaNacimiento' | 'peso' | 'genero' | 'altura' | 'telefono' | 'instructor', string>
+  Record<'nombre' | 'dni' | 'fechaNacimiento' | 'peso' | 'genero' | 'grado' | 'altura' | 'telefono', string>
 >;
 
 function formatearFecha(fecha: Date): string {
@@ -37,19 +36,10 @@ function formatearFecha(fecha: Date): string {
   return `${dia}/${mes}/${anio}`;
 }
 
-export default function OnboardingScreen() {
-  const { perfil, onboardingCompleto, completarPerfil, listarInstructores, solicitarLinaje, verificarDniDisponible } =
-    useAuthGlobal();
+export default function AltaAlumnoScreen() {
+  const { altaAlumno, verificarDniDisponible } = useAuthGlobal();
   const { reportarError } = useErrorGlobal();
   const router = useRouter();
-
-  const esMaestroUsuario = perfil?.es_maestro === true;
-  const tieneLinajeEstablecido = perfil?.maestro_id != null;
-  const necesitaLinaje = !esMaestroUsuario && !tieneLinajeEstablecido;
-
-  useEffect(() => {
-    if (onboardingCompleto) router.replace('/');
-  }, [onboardingCompleto, router]);
 
   const [nombre, setNombre] = useState('');
   const [dni, setDni] = useState('');
@@ -59,79 +49,31 @@ export default function OnboardingScreen() {
   const [contactoEmergencia, setContactoEmergencia] = useState('');
   const [datosSalud, setDatosSalud] = useState('');
   const [genero, setGenero] = useState<Genero | null>(null);
+  const [grado, setGrado] = useState<Grado>('blanco');
   const [fechaSeleccionada, setFechaSeleccionada] = useState<Date | null>(null);
   const [mostrarSelectorFecha, setMostrarSelectorFecha] = useState(false);
-  const [instructores, setInstructores] = useState<InstructorLinaje[]>([]);
-  const [cargandoInstructores, setCargandoInstructores] = useState(false);
-  const [errorInstructores, setErrorInstructores] = useState(false);
-  const [instructorSeleccionado, setInstructorSeleccionado] = useState<string | null>(null);
   const [errores, setErrores] = useState<ErroresFormulario>({});
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
-  const prefillHecho = useRef(false);
 
   const edadCalculada = useMemo(
     () => calcularEdad(fechaSeleccionada != null ? aIsoLocal(fechaSeleccionada) : null),
     [fechaSeleccionada],
   );
 
-  useEffect(() => {
-    if (perfil == null || prefillHecho.current) return;
-    prefillHecho.current = true;
-    setNombre(perfil.nombre_completo);
-    setDni(perfil.dni ?? '');
-    setPeso(perfil.peso_kg != null ? String(perfil.peso_kg) : '');
-    setAltura(perfil.altura_cm != null ? String(perfil.altura_cm) : '');
-    setTelefono(perfil.telefono ?? '');
-    setContactoEmergencia(perfil.contacto_emergencia ?? '');
-    setDatosSalud(perfil.datos_salud ?? '');
-    setGenero(perfil.genero);
-    if (perfil.fecha_nacimiento != null) {
-      const [anio, mes, dia] = perfil.fecha_nacimiento.split('-').map(Number);
-      setFechaSeleccionada(new Date(anio, mes - 1, dia));
-    }
-  }, [perfil]);
-
-  const cargarInstructores = useCallback(async () => {
-    setCargandoInstructores(true);
-    setErrorInstructores(false);
-    const { data, error } = await listarInstructores();
-    if (error != null || data == null) {
-      setErrorInstructores(true);
-    } else {
-      setInstructores(data);
-    }
-    setCargandoInstructores(false);
-  }, [listarInstructores]);
-
-  useEffect(() => {
-    if (necesitaLinaje) void cargarInstructores();
-  }, [necesitaLinaje, cargarInstructores]);
-
   const validar = (): ErroresFormulario => {
     const e: ErroresFormulario = {};
-    if (nombre.trim() === '') e.nombre = 'Ingresá tu nombre completo.';
+    if (nombre.trim() === '') e.nombre = 'Ingresá el nombre completo del alumno.';
     if (!esDniValido(dni)) e.dni = 'El DNI debe tener 7 u 8 dígitos.';
     if (fechaSeleccionada == null) {
-      e.fechaNacimiento = 'Seleccioná tu fecha de nacimiento.';
+      e.fechaNacimiento = 'Seleccioná la fecha de nacimiento.';
     } else if (!fechaValidaNacimiento(aIsoLocal(fechaSeleccionada))) {
       e.fechaNacimiento = 'La fecha debe ser válida (edad mínima de 4 años).';
     }
-    if (!esPesoValido(peso)) e.peso = 'Ingresá tu peso en kg (mayor a 0).';
-    if (genero == null) e.genero = 'Seleccioná tu género.';
+    if (!esPesoValido(peso)) e.peso = 'Ingresá el peso en kg (mayor a 0).';
+    if (genero == null) e.genero = 'Seleccioná el género.';
     if (!esAlturaValida(altura)) e.altura = 'Altura inválida (de 50 a 230 cm).';
     if (!esTelefonoValido(telefono)) e.telefono = 'Teléfono inválido.';
-    if (necesitaLinaje) {
-      if (cargandoInstructores) {
-        e.instructor = 'La lista de instructores se está cargando…';
-      } else if (errorInstructores) {
-        e.instructor = 'No pudimos cargar la lista de instructores.';
-      } else if (instructores.length === 0) {
-        e.instructor = 'Aún no hay instructores registrados. Avisá a la administración.';
-      } else if (instructorSeleccionado == null) {
-        e.instructor = 'Seleccioná tu instructor.';
-      }
-    }
     return e;
   };
 
@@ -149,31 +91,25 @@ export default function OnboardingScreen() {
         setErrores((prev) => ({ ...prev, dni: MENSAJE_DNI_DUPLICADO }));
         return;
       }
-      const datos: DatosPerfilACompletar = {
+      const datos: DatosAltaAlumno = {
         nombre_completo: nombre.trim(),
         dni: dni.trim(),
         fecha_nacimiento: aIsoLocal(fechaSeleccionada as Date),
         peso_kg: parsearNumero(peso) ?? 0,
         genero: genero as Genero,
+        grado_actual: grado,
         altura_cm: altura.trim() === '' ? null : parsearNumero(altura),
         telefono: telefono.trim() === '' ? null : telefono.trim(),
         contacto_emergencia: contactoEmergencia.trim() === '' ? null : contactoEmergencia.trim(),
         datos_salud: datosSalud.trim() === '' ? null : datosSalud.trim(),
       };
-      const resultado = await completarPerfil(datos);
+      const resultado = await altaAlumno(datos);
       if (resultado.error) {
         setError(resultado.error);
         if (resultado.error === MENSAJE_ERROR_GENERICO) reportarError();
         return;
       }
-      if (necesitaLinaje && instructorSeleccionado != null) {
-        const resultadoLinaje = await solicitarLinaje(instructorSeleccionado);
-        if (resultadoLinaje.error) {
-          setError(resultadoLinaje.error);
-          if (resultadoLinaje.error === MENSAJE_ERROR_GENERICO) reportarError();
-          return;
-        }
-      }
+      router.replace('/instructor/alumnos');
     } catch {
       setError(MENSAJE_ERROR_GENERICO);
       reportarError();
@@ -189,15 +125,13 @@ export default function OnboardingScreen() {
         contentContainerStyle={styles.contenido}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.titulo}>Completá tu perfil</Text>
         <Text style={styles.subtitulo}>
-          Estos datos nos permiten armar tu ficha para la escuela. Los campos marcados son obligatorios.
+          Los campos marcados con * son obligatorios. El alumno queda asignado a tu cuenta como alumno directo.
         </Text>
 
         <CampoTexto
           label="Nombre completo *"
           autoCapitalize="words"
-          textContentType="name"
           placeholder="Nombre y apellido"
           value={nombre}
           onChangeText={setNombre}
@@ -224,9 +158,7 @@ export default function OnboardingScreen() {
               {fechaSeleccionada != null ? formatearFecha(fechaSeleccionada) : 'Seleccionar fecha'}
             </Text>
           </Pressable>
-          {edadCalculada != null ? (
-            <Text style={styles.edad}>Edad calculada: {edadCalculada} años</Text>
-          ) : null}
+          {edadCalculada != null ? <Text style={styles.edad}>Edad calculada: {edadCalculada} años</Text> : null}
           {errores.fechaNacimiento ? <Text style={styles.errorTexto}>{errores.fechaNacimiento}</Text> : null}
           {mostrarSelectorFecha ? (
             <DateTimePicker
@@ -261,11 +193,11 @@ export default function OnboardingScreen() {
                 <Pressable
                   key={opcion.valor}
                   onPress={() => setGenero(opcion.valor)}
-                  style={[styles.opcionGenero, seleccionado ? styles.opcionGeneroSeleccionada : null]}
+                  style={[styles.opcionGenero, seleccionado ? styles.opcionSeleccionada : null]}
                   accessibilityRole="button"
                   accessibilityState={{ selected: seleccionado }}
                 >
-                  <Text style={[styles.opcionGeneroTexto, seleccionado ? styles.opcionGeneroTextoSeleccionado : null]}>
+                  <Text style={[styles.opcionTexto, seleccionado ? styles.opcionTextoSeleccionado : null]}>
                     {opcion.etiqueta}
                   </Text>
                 </Pressable>
@@ -273,6 +205,29 @@ export default function OnboardingScreen() {
             })}
           </View>
           {errores.genero ? <Text style={styles.errorTexto}>{errores.genero}</Text> : null}
+        </View>
+
+        <View style={styles.bloque}>
+          <Text style={styles.label}>Grado actual *</Text>
+          <View style={styles.filaGrado}>
+            {GRADOS.map((opcion) => {
+              const seleccionado = grado === opcion;
+              return (
+                <Pressable
+                  key={opcion}
+                  onPress={() => setGrado(opcion)}
+                  style={[styles.chipGrado, seleccionado ? styles.opcionSeleccionada : null]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: seleccionado }}
+                >
+                  <Text style={[styles.chipGradoTexto, seleccionado ? styles.opcionTextoSeleccionado : null]}>
+                    {etiquetaGrado(opcion)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          {errores.grado ? <Text style={styles.errorTexto}>{errores.grado}</Text> : null}
         </View>
 
         <CampoTexto
@@ -304,64 +259,6 @@ export default function OnboardingScreen() {
           onChangeText={setDatosSalud}
         />
 
-        {necesitaLinaje ? (
-          <View style={styles.bloque}>
-            <Text style={styles.label}>Tu instructor / maestro *</Text>
-            <Text style={styles.edad}>
-              Lo elegís ahora; tu instructor deberá confirmar tu registro desde su cuenta.
-            </Text>
-            {cargandoInstructores ? (
-              <Text style={styles.edad}>Cargando instructores…</Text>
-            ) : errorInstructores ? (
-              <View>
-                <Text style={styles.errorTexto}>No pudimos cargar la lista de instructores.</Text>
-                <Pressable
-                  onPress={() => void cargarInstructores()}
-                  style={styles.reintentar}
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.reintentarTexto}>Reintentar</Text>
-                </Pressable>
-              </View>
-            ) : instructores.length === 0 ? (
-              <Text style={styles.errorTexto}>Aún no hay instructores registrados. Avisá a la administración.</Text>
-            ) : (
-              <View style={styles.listaInstructores}>
-                {instructores.map((inst) => {
-                  const seleccionado = instructorSeleccionado === inst.id;
-                  return (
-                    <Pressable
-                      key={inst.id}
-                      onPress={() => setInstructorSeleccionado(inst.id)}
-                      style={[styles.opcionInstructor, seleccionado ? styles.opcionInstructorSeleccionada : null]}
-                      accessibilityRole="radio"
-                      accessibilityState={{ selected: seleccionado }}
-                    >
-                      <Text style={[styles.nombreInstructor, seleccionado ? styles.nombreInstructorSeleccionado : null]}>
-                        {inst.nombre_completo}
-                      </Text>
-                      <Text style={[styles.dataInstructor, seleccionado ? styles.dataInstructorSeleccionado : null]}>
-                        {inst.es_maestro ? 'Maestro' : 'Profesor'} · {etiquetaGrado(inst.grado_actual)}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            )}
-            {errores.instructor ? <Text style={styles.errorTexto}>{errores.instructor}</Text> : null}
-          </View>
-        ) : esMaestroUsuario ? (
-          <View style={styles.bloque}>
-            <Text style={styles.label}>Linaje</Text>
-            <Text style={styles.edad}>Te registraste como Maestro: tu linaje se define a nivel de administración.</Text>
-          </View>
-        ) : (
-          <View style={styles.bloque}>
-            <Text style={styles.label}>Linaje</Text>
-            <Text style={styles.edad}>Tu instructor ya fue asignado y no puede modificarse.</Text>
-          </View>
-        )}
-
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <Pressable
@@ -370,7 +267,7 @@ export default function OnboardingScreen() {
           style={({ pressed }) => [styles.boton, pressed && styles.botonPresionado]}
           accessibilityRole="button"
         >
-          <Text style={styles.botonTexto}>{enviando ? 'Guardando…' : 'Guardar perfil'}</Text>
+          <Text style={styles.botonTexto}>{enviando ? 'Guardando…' : 'Guardar alumno'}</Text>
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -390,17 +287,10 @@ const styles = StyleSheet.create({
     padding: 24,
     paddingBottom: 48,
   },
-  titulo: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
   subtitulo: {
-    fontSize: 15,
+    fontSize: 14,
     color: '#666',
-    textAlign: 'center',
-    marginTop: 8,
-    marginBottom: 24,
+    marginBottom: 20,
   },
   bloque: {
     marginBottom: 14,
@@ -452,62 +342,34 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
   },
-  opcionGeneroSeleccionada: {
-    backgroundColor: '#C62828',
-    borderColor: '#C62828',
-  },
-  opcionGeneroTexto: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  opcionGeneroTextoSeleccionado: {
-    color: '#fff',
-  },
-  listaInstructores: {
+  filaGrado: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
   },
-  opcionInstructor: {
+  chipGrado: {
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
+    paddingVertical: 8,
   },
-  opcionInstructorSeleccionada: {
+  chipGradoTexto: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#333',
+  },
+  opcionSeleccionada: {
     backgroundColor: '#C62828',
     borderColor: '#C62828',
   },
-  nombreInstructor: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#111',
-  },
-  nombreInstructorSeleccionado: {
-    color: '#fff',
-  },
-  dataInstructor: {
-    fontSize: 13,
-    color: '#666',
-    marginTop: 2,
-  },
-  dataInstructorSeleccionado: {
-    color: '#f5d8d8',
-  },
-  reintentar: {
-    marginTop: 8,
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: '#C62828',
-    borderRadius: 8,
-  },
-  reintentarTexto: {
-    color: '#C62828',
+  opcionTexto: {
     fontSize: 14,
     fontWeight: '600',
+    color: '#333',
+  },
+  opcionTextoSeleccionado: {
+    color: '#fff',
   },
   error: {
     color: '#C62828',

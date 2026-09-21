@@ -33,6 +33,7 @@ El sistema debe permitir registrar y administrar el perfil detallado de cada est
 * Peso (Valor aproximado para categorización competitiva).  
 * Género.  
 * Grado/Cinturón actual.
+* Teléfono / celular de contacto (Campo opcional).
 
 ## **3.2. Catálogo de Grados (Cinturones)**
 

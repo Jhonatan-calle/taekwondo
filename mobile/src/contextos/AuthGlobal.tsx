@@ -14,6 +14,9 @@ import {
   type InstructorLinaje,
   type PerfilOnboarding,
   type SolicitudLinaje,
+  type AlumnoDirecto,
+  type AlumnoDetalle,
+  type DatosAltaAlumno,
 } from '@/lib/perfil'
 import type { Grado } from '@/constants/grados'
 
@@ -37,6 +40,9 @@ type AuthGlobalValue = {
   recuperarContrasena(email: string): Promise<ResultadoAuth>
   verificarDniDisponible(dni: string): Promise<boolean | null>
   completarPerfil(datos: DatosPerfilACompletar): Promise<{ error: string | null }>
+  listarAlumnosDirectos(): Promise<ResultadoConsulta<AlumnoDirecto[] | null>>
+  obtenerAlumnoDetalle(alumnoId: string): Promise<ResultadoConsulta<AlumnoDetalle | null>>
+  altaAlumno(datos: DatosAltaAlumno): Promise<{ error: string | null }>
   listarInstructores(): Promise<ResultadoConsulta<InstructorLinaje[] | null>>
   solicitarLinaje(maestroId: string): Promise<{ error: string | null }>
   listarSolicitudesPendientes(): Promise<ResultadoConsulta<SolicitudLinaje[] | null>>
@@ -45,7 +51,7 @@ type AuthGlobalValue = {
 }
 
 const CAMPOS_PERFIL_SELECT =
-  'nombre_completo, dni, fecha_nacimiento, peso_kg, genero, altura_cm, contacto_emergencia, datos_salud, grado_actual, es_maestro, es_profesor, maestro_id'
+  'nombre_completo, dni, fecha_nacimiento, peso_kg, genero, altura_cm, telefono, contacto_emergencia, datos_salud, grado_actual, es_maestro, es_profesor, maestro_id'
 
 const AuthContext = createContext<AuthGlobalValue | null>(null)
 
@@ -207,6 +213,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
             peso_kg: datos.peso_kg,
             genero: datos.genero,
             altura_cm: datos.altura_cm,
+            telefono: datos.telefono,
             contacto_emergencia: datos.contacto_emergencia,
             datos_salud: datos.datos_salud,
           })
@@ -231,6 +238,69 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       }
     },
     [sesion?.user?.id],
+  )
+
+  const listarAlumnosDirectos = useCallback(
+    async (): Promise<ResultadoConsulta<AlumnoDirecto[] | null>> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { data: null, error: MENSAJE_ERROR_GENERICO }
+      return ejecutarConsulta<AlumnoDirecto[] | null>(
+        Promise.resolve(
+          supabase
+            .from('profiles')
+            .select('id, nombre_completo, dni, fecha_nacimiento, genero, grado_actual, contacto_emergencia')
+            .eq('maestro_id', usuarioId)
+            .order('nombre_completo', { ascending: true }),
+        ),
+        { modulo: 'alumnos', contexto: 'listarAlumnosDirectos' },
+      )
+    },
+    [sesion?.user?.id],
+  )
+
+  const obtenerAlumnoDetalle = useCallback(
+    async (alumnoId: string): Promise<ResultadoConsulta<AlumnoDetalle | null>> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { data: null, error: MENSAJE_ERROR_GENERICO }
+      return ejecutarConsulta<AlumnoDetalle | null>(
+        Promise.resolve(
+          supabase
+            .from('profiles')
+            .select(
+              'id, nombre_completo, dni, fecha_nacimiento, peso_kg, genero, altura_cm, telefono, contacto_emergencia, datos_salud, grado_actual, creado_en',
+            )
+            .eq('id', alumnoId)
+            .eq('maestro_id', usuarioId)
+            .single(),
+        ),
+        { modulo: 'alumnos', contexto: 'obtenerAlumnoDetalle' },
+      )
+    },
+    [sesion?.user?.id],
+  )
+
+  const altaAlumno = useCallback(
+    async (datos: DatosAltaAlumno): Promise<{ error: string | null }> => {
+      const { data, error } = await ejecutarConsulta<string | null>(
+        Promise.resolve(
+          supabase.rpc('alta_alumno', {
+            p_nombre_completo: datos.nombre_completo,
+            p_dni: datos.dni,
+            p_fecha_nacimiento: datos.fecha_nacimiento,
+            p_peso_kg: datos.peso_kg,
+            p_genero: datos.genero,
+            p_grado_actual: datos.grado_actual,
+            p_altura_cm: datos.altura_cm ?? undefined,
+            p_telefono: datos.telefono ?? undefined,
+            p_contacto_emergencia: datos.contacto_emergencia ?? undefined,
+            p_datos_salud: datos.datos_salud ?? undefined,
+          }),
+        ),
+        { modulo: 'alumnos', contexto: 'altaAlumno' },
+      )
+      return error != null || data == null ? { error: MENSAJE_ERROR_GENERICO } : { error: null }
+    },
+    [],
   )
 
   const listarInstructores = useCallback(
@@ -329,6 +399,9 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       recuperarContrasena,
       verificarDniDisponible,
       completarPerfil,
+      listarAlumnosDirectos,
+      obtenerAlumnoDetalle,
+      altaAlumno,
       listarInstructores,
       solicitarLinaje,
       listarSolicitudesPendientes,
@@ -353,6 +426,9 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       recuperarContrasena,
       verificarDniDisponible,
       completarPerfil,
+      listarAlumnosDirectos,
+      obtenerAlumnoDetalle,
+      altaAlumno,
       listarInstructores,
       solicitarLinaje,
       listarSolicitudesPendientes,

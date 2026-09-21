@@ -1,5 +1,5 @@
 import type { Database } from '@/lib/database.types'
-import { esGradoDan } from '@/constants/grados'
+import { esGradoDan, type Grado } from '@/constants/grados'
 
 type PerfilRow = Database['public']['Tables']['profiles']['Row']
 export type Genero = Database['public']['Enums']['genero']
@@ -12,6 +12,7 @@ export type PerfilOnboarding = Pick<
   | 'peso_kg'
   | 'genero'
   | 'altura_cm'
+  | 'telefono'
   | 'contacto_emergencia'
   | 'datos_salud'
   | 'grado_actual'
@@ -27,9 +28,44 @@ export type DatosPerfilACompletar = {
   peso_kg: number
   genero: Genero
   altura_cm: number | null
+  telefono: string | null
   contacto_emergencia: string | null
   datos_salud: string | null
 }
+
+export type AlumnoDirecto = Pick<
+  PerfilRow,
+  'id' | 'nombre_completo' | 'dni' | 'fecha_nacimiento' | 'genero' | 'grado_actual' | 'contacto_emergencia'
+>
+
+export type DatosAltaAlumno = {
+  nombre_completo: string
+  dni: string
+  fecha_nacimiento: string
+  peso_kg: number
+  genero: Genero
+  grado_actual: Grado
+  altura_cm: number | null
+  telefono: string | null
+  contacto_emergencia: string | null
+  datos_salud: string | null
+}
+
+export type AlumnoDetalle = Pick<
+  PerfilRow,
+  | 'id'
+  | 'nombre_completo'
+  | 'dni'
+  | 'fecha_nacimiento'
+  | 'peso_kg'
+  | 'genero'
+  | 'altura_cm'
+  | 'telefono'
+  | 'contacto_emergencia'
+  | 'datos_salud'
+  | 'grado_actual'
+  | 'creado_en'
+>
 
 export type InstructorLinaje = {
   id: string
@@ -105,6 +141,11 @@ export function esAlturaValida(altura: string): boolean {
   if (altura.trim() === '') return true
   const numero = parsearNumero(altura)
   return numero != null && numero >= 50 && numero <= 230
+}
+
+export function esTelefonoValido(telefono: string): boolean {
+  if (telefono.trim() === '') return true
+  return /^[+0-9 ()-]{6,20}$/.test(telefono.trim())
 }
 
 export function fechaValidaNacimiento(fechaISO: string | null): boolean {

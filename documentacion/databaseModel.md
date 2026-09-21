@@ -7,11 +7,12 @@ erDiagram
     }
 
     PROFILES {
-        uuid id PK
+        uuid id PK "sin FK a auth.users: hay alumnos sin cuenta (alta_alumno)"
         string nombre_completo
         date fecha_nacimiento
         numeric peso_kg
         numeric altura_cm
+        string telefono
         string contacto_emergencia
         string datos_salud
         uuid maestro_id FK "árbol de linaje (ascendente); asignado/cambiado solo vía Service Role"
@@ -202,7 +203,7 @@ erDiagram
         string solucion
     }
 
-    AUTH.USERS ||--o| PROFILES : id
+    AUTH.USERS ||..o| PROFILES : "id (sin FK desde alta_alumnos; un perfil puede no tener cuenta)"
     PROFILES ||--o{ PROFILES : maestro_id "(árbol de linaje)"
     PROFILES ||--o| LOCACIONES : creado_por
     LOCACIONES ||--o| PAGOS_ALQUILER : locacion_id

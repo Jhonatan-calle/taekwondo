@@ -114,6 +114,22 @@ export type DatosPagoAlquiler = {
   archivo: ArchivoAdjunto | null
 }
 
+export type EstadoPagoAlquiler = 'al_dia' | 'vencida' | 'sin_pagos'
+
+// Locación vista por un superior en la auditoría en cascada (SRS §2).
+export type LocacionAuditada = {
+  id: string
+  nombre: string
+  direccion: string
+  valor_alquiler: number
+  dueno_id: string
+  dueno_nombre: string
+  ultimo_periodo_pagado: string | null
+  ultimo_monto: number | null
+  estado_pago: EstadoPagoAlquiler
+  meses_adeudados: number
+}
+
 export const ETIQUETAS_DIAS: Record<number, string> = {
   1: 'Lunes',
   2: 'Martes',
@@ -286,6 +302,29 @@ export function esFechaValida(fechaISO: string): boolean {
   const fecha = new Date(anio, mes - 1, dia)
   if (fecha.getFullYear() !== anio || fecha.getMonth() !== mes - 1 || fecha.getDate() !== dia) return false
   return fecha <= new Date()
+}
+
+// Diferencia en meses entre dos periodos 'AAAA-MM' (b - a).
+function mesesEntre(desde: string, hasta: string): number {
+  const [anioA, mesA] = desde.split('-').map(Number)
+  const [anioB, mesB] = hasta.split('-').map(Number)
+  return (anioB - anioA) * 12 + (mesB - mesA)
+}
+
+// El modelo no almacena vencimientos: el estado se DERIVA del último pago.
+//   - al_dia:   tiene pago del mes actual o posterior.
+//   - vencida:  el último periodo pagado es anterior (meses_adeudados > 0).
+//   - sin_pagos: nunca se registró un pago.
+export function estadoPagoAlquiler(
+  ultimoPeriodo: string | null,
+  periodoActual: string = mesActual(),
+): { estado: EstadoPagoAlquiler; meses_adeudados: number } {
+  if (ultimoPeriodo == null || !esPeriodoValido(ultimoPeriodo)) {
+    return { estado: 'sin_pagos', meses_adeudados: 0 }
+  }
+  const diferencia = mesesEntre(ultimoPeriodo, periodoActual)
+  if (diferencia <= 0) return { estado: 'al_dia', meses_adeudados: 0 }
+  return { estado: 'vencida', meses_adeudados: diferencia }
 }
 
 export function esHorarioGrupoValido(horario: HorarioGrupo): boolean {

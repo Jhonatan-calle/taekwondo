@@ -1,10 +1,11 @@
-import { Redirect } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { FilaOpcionMenu } from '@/components/FilaOpcionMenu';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 
 export default function MaestroScreen() {
   const { esMaestro } = useAuthGlobal();
+  const router = useRouter();
 
   if (!esMaestro) {
     return <Redirect href="/" />;
@@ -18,7 +19,12 @@ export default function MaestroScreen() {
       <View style={styles.menu}>
         <FilaOpcionMenu titulo="Mesas de examen" descripcion="Planificar y abrir mesas de graduación" />
         <FilaOpcionMenu titulo="Planilla técnica de evaluación" descripcion="Evaluar a los alumnos postulados" />
-        <FilaOpcionMenu titulo="Auditoría de locaciones en cascada" descripcion="Locaciones y alquileres de tus subordinados" />
+        <FilaOpcionMenu
+          titulo="Auditoría de locaciones en cascada"
+          descripcion="Locaciones y alquileres de tus subordinados"
+          habilitada
+          onPresionar={() => router.push('/maestro/auditoria')}
+        />
         <FilaOpcionMenu titulo="Estadísticas anonimizadas" descripcion="Métricas por género, edad y grado" />
       </View>
     </ScrollView>

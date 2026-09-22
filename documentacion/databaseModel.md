@@ -284,6 +284,14 @@ erDiagram
   temporal (1 h). RLS de storage: sube/lee/borra el dueño (`owner = auth.uid()`) y **lee su superior
   jerárquico** (`es_subordinado_de`, excepción de auditoría SRS §2). Distinto del
   `locaciones.valor_alquiler` (valor **pactado** del contrato).
+- **Auditoría en cascada (SRS §2) 🔍:** un superior lee las locaciones
+  (`locaciones_select_superior`) y los pagos (`pagos_alquiler_select_superior`) de **toda su rama
+  descendente** —las funciones `es_subordinado_de`/`descendientes` son **recursivas**, así que
+  alcanzan nietos— y firma los comprobantes (`comprobantes_select_superior`, política de
+  **Storage** sobre `storage.objects`; **no existe tabla de comprobantes**). La vista es de **solo
+  lectura** y **no** expone datos personales de alumnos (privacidad en cascada).
+  **Vencimientos:** el modelo **no almacena** fecha de vencimiento; el estado de pago se **deriva**
+  del último periodo pagado (`al_dia` / `vencida` con meses adeudados / `sin_pagos`).
 - **Horarios 📋 y membresía única:** los horarios de un grupo viven en `grupos_horarios` (día
   1..7 + `hora_inicio`/`hora_fin` con `hora_fin > hora_inicio`, RLS del profesor dueño via
   helpers `es_profesor_del_grupo`); la columna texto `grupos.horarios` fue eliminada. Un alumno

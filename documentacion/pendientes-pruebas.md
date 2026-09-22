@@ -134,6 +134,17 @@
 - Borrar un pago → debe eliminar también el archivo del bucket (sin huérfanos).
 - Cortar la red al guardar → banner genérico + fila en `errores_runtime` (`modulo='pagos_alquiler'`).
 
+### 15. Auditoría en cascada para superiores (dispositivo + RLS)
+- **Referencia:** `documentacion/planes/mobile-auditoria-cascada.md`.
+- Tab **Maestro** → "Auditoría de locaciones en cascada" → listado con locación, **dueño**, valor pactado y **estado de pago**.
+- **Estado derivado:** con un pago del mes actual → "Al día"; con pagos anteriores → "Vencida" y el número de meses adeudados; sin pagos → "Sin pagos".
+- Filtro "Toda mi rama / instructor": al elegir un instructor, solo se ven sus locaciones.
+- Abrir el detalle → historial de pagos y **"Comprobante"** (enlace firmado; verificar con foto y PDF).
+- **Recursividad (clave):** con una cuenta de **nieto** (descendiente indirecto, no subordinado directo) verificar que el Maestro **sí** ve sus locaciones, pagos y comprobantes.
+- **Aislamiento:** con una cuenta **ajena** (sin linaje) verificar que **no** ve nada y que el enlace firmado del comprobante **falla**.
+- **Solo lectura:** verificar que la vista no ofrece alta, edición ni borrado.
+- **Privacidad:** confirmar que no se exponen datos personales de alumnos (solo infraestructura).
+
 ### 13. Editar grupo y bloquear borrado de locación (dispositivo)
 - **Referencia:** `documentacion/planes/mobile-editar-grupo-locacion.md`.
 - Detalle del grupo (`/instructor/grupo/[id]`) → botón **"Editar"** → cambiar nombre, locación y horarios → "Guardar cambios"; al volver se reflejan los cambios.

@@ -93,14 +93,17 @@
 1. **Registro de Locacion:** *(Implementado — Fase 5, ítem 1)*
    - Permitir a profesores y maestros dar de alta centros de entrenamiento registrando **nombre**, **direccion (obligatoria)** y el **valor de alquiler pactado** (SRS §3.3; `locaciones.valor_alquiler` NOT NULL con `check >= 0`).
    - Gestion completa: listado, detalle con grupos asociados, edicion y eliminacion, ademas del alta. La fila "Locaciones" del menu Instructor queda habilitada. Referencia: `documentacion/planes/mobile-registro-locaciones.md`.
-   - El valor del alquiler no se solicita en este paso: el monto se registra unicamente en `pagos_alquiler` al ejecutar el pago del periodo correspondiente.
+   - El **valor pactado** (SRS §3.3) se solicita en el alta y en la edicion de la locacion. El **monto pagado** es un concepto distinto: se registra unicamente en `pagos_alquiler` (`monto`, `periodo`, `fecha_pago`) al ejecutar el pago del periodo correspondiente (Fase 5.2).
 2. **Pagos de Alquiler y Storage:** *(Implementado — Fase 5, ítem 2)*
    - Formulario para registrar el pago de alquiler mensual de la locacion: periodo (ej. '2026-09'), monto pagado y fecha. Un periodo no puede pagarse dos veces por locacion (indice unico `locacion_id, periodo`).
    - Permitir adjuntar fotos (camara/galeria) o archivos PDF del comprobante de pago, subiendolos al bucket privado de storage `comprobantes` y guardando el **path** en `pagos_alquiler.comprobante_url`.
    - **No hay URL publica** (bucket privado, decision de privacidad/auditoria): al visualizar se genera un **enlace firmado temporal** (1 hora). El dueño sube/lee/borra; el **superior jerarquico** lee (excepcion de auditoria SRS §2).
    - **Implementado:** migracion `pagos_alquiler_reglas` (indice unico) + pantallas `instructor/locacion/[id]/pago` (formulario con periodo/monto/fecha y adjunto camara-galeria-PDF) y seccion "Pagos de alquiler" en `instructor/locacion/[id]` (historial, ver comprobante, eliminar). Referencia: `documentacion/planes/mobile-pagos-alquiler.md`.
-3. **Auditoria en Cascada para Superiores:**
-   - El Maestro puede acceder a la pestaña de Auditoria para consultar las locaciones, montos, vencimientos y adjuntos de todas las locaciones que pertenecen a sus instructores subordinados.
+3. **Auditoria en Cascada para Superiores:** *(Implementado — Fase 5, ítem 3)*
+   - El Maestro accede a la pestaña de Auditoria para consultar las locaciones, montos, vencimientos y adjuntos de todas las locaciones que pertenecen a sus instructores subordinados.
+   - **Vencimientos:** el modelo no almacena fecha de vencimiento; el estado se **deriva** del ultimo periodo pagado (Al dia / Vencida con meses adeudados / Sin pagos).
+   - **Seguridad ya vigente:** RLS `locaciones_select_superior` y `pagos_alquiler_select_superior` (tablas) + `comprobantes_select_superior` (**Storage** sobre `storage.objects`; no existe tabla de comprobantes). `es_subordinado_de`/`descendientes` son recursivos, por lo que alcanzan descendientes indirectos.
+   - **Implementado:** layout del tab Maestro con guard + pantallas `maestro/auditoria` (listado con dueno, valor pactado, estado de pago y filtro por instructor) y `maestro/auditoria/[id]` (detalle de solo lectura con historial y comprobante por enlace firmado); fila "Auditoria de locaciones en cascada" habilitada. Referencia: `documentacion/planes/mobile-auditoria-cascada.md`.
 
 ### Fase 6: Registro de Cuotas de Alumnos
 1. **Cobranzas Directas del Profesor:**

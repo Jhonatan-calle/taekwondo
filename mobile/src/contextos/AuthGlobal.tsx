@@ -11,6 +11,8 @@ import {
   esInstructor as esInstructorDePerfil,
   esProfesorActivo as esProfesorActivoDePerfil,
   perfilCompleto as esPerfilCompleto,
+  estadoPagoAlquiler,
+  mesActual,
   type DatosPerfilACompletar,
   type InstructorLinaje,
   type PerfilOnboarding,
@@ -27,6 +29,7 @@ import {
   type LocacionDetalle,
   type PagoAlquiler,
   type DatosPagoAlquiler,
+  type LocacionAuditada,
   type FilaGrupoConRelaciones,
   type ClaseItem,
   type DatosNuevaClase,
@@ -78,6 +81,8 @@ type AuthGlobalValue = {
   registrarPagoAlquiler(datos: DatosPagoAlquiler): Promise<{ error: string | null }>
   obtenerUrlComprobante(path: string): Promise<ResultadoConsulta<string | null>>
   eliminarPagoAlquiler(pagoId: string, comprobantePath: string | null): Promise<{ error: string | null }>
+  listarInstructoresSubordinados(): Promise<ResultadoConsulta<InstructorLinaje[] | null>>
+  listarLocacionesAuditadas(instructorId?: string): Promise<ResultadoConsulta<LocacionAuditada[] | null>>
   listarClases(grupoId?: string): Promise<ResultadoConsulta<ClaseItem[] | null>>
   obtenerClaseDetalle(claseId: string): Promise<ResultadoConsulta<ClaseItem | null>>
   crearClase(datos: DatosNuevaClase): Promise<ResultadoCreacion>
@@ -460,6 +465,99 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       return error != null || data == null
         ? { error: MENSAJE_ERROR_GENERICO }
         : { error: null, nuevoId: data }
+    },
+    [sesion?.user?.id],
+  )
+
+  const listarInstructoresSubordinados = useCallback(
+    async (): Promise<ResultadoConsulta<InstructorLinaje[] | null>> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { data: null, error: MENSAJE_ERROR_GENERICO }
+      return ejecutarConsulta<InstructorLinaje[] | null>(
+        Promise.resolve(
+          supabase.rpc('descendientes', { p_ancestro: usuarioId }).then(async ({ data, error }) => {
+            if (error != null || data == null) return { data: null, error }
+            if (data.length === 0) return { data: [], error: null }
+            const resultado = await supabase
+              .from('profiles')
+              .select('id, nombre_completo, grado_actual, es_profesor, es_maestro')
+              .in('id', data)
+              .order('nombre_completo', { ascending: true })
+            return {
+              data: (resultado.data ?? []).map((fila) => ({
+                id: fila.id,
+                nombre_completo: fila.nombre_completo,
+                grado_actual: fila.grado_actual,
+                es_profesor: fila.es_profesor === true,
+                es_maestro: fila.es_maestro === true,
+              })),
+              error: resultado.error,
+            }
+          }),
+        ),
+        { modulo: 'auditoria', contexto: 'listarInstructoresSubordinados' },
+      )
+    },
+    [sesion?.user?.id],
+  )
+
+  // Auditoría en cascada (SRS §2): la RLS `*_select_superior` ya limita a la
+  // rama descendente del usuario; aquí solo se arma el resumen para la UI.
+  const listarLocacionesAuditadas = useCallback(
+    async (instructorId?: string): Promise<ResultadoConsulta<LocacionAuditada[] | null>> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { data: null, error: MENSAJE_ERROR_GENERICO }
+
+      type FilaLocacionAuditada = {
+        id: string
+        nombre: string
+        direccion: string
+        valor_alquiler: number
+        creado_por: string
+        profiles: { id: string; nombre_completo: string } | null
+        pagos_alquiler: { periodo: string; monto: number }[]
+      }
+
+      let consulta = supabase
+        .from('locaciones')
+        .select(
+          'id, nombre, direccion, valor_alquiler, creado_por, profiles!locaciones_creado_por_fkey(id, nombre_completo), pagos_alquiler(periodo, monto)',
+        )
+        .order('nombre', { ascending: true })
+
+      if (instructorId != null && instructorId !== '') {
+        consulta = consulta.eq('creado_por', instructorId)
+      }
+
+      const periodoActual = mesActual()
+
+      return ejecutarConsulta<LocacionAuditada[] | null>(
+        Promise.resolve(
+          consulta.returns<FilaLocacionAuditada[]>().then(({ data, error }) => ({
+            data: data?.map((fila) => {
+              const pagos = [...(fila.pagos_alquiler ?? [])].sort((a, b) =>
+                b.periodo.localeCompare(a.periodo),
+              )
+              const ultimo = pagos[0] ?? null
+              const { estado, meses_adeudados } = estadoPagoAlquiler(ultimo?.periodo ?? null, periodoActual)
+              return {
+                id: fila.id,
+                nombre: fila.nombre,
+                direccion: fila.direccion,
+                valor_alquiler: fila.valor_alquiler,
+                dueno_id: fila.creado_por,
+                dueno_nombre: fila.profiles?.nombre_completo ?? 'Instructor',
+                ultimo_periodo_pagado: ultimo?.periodo ?? null,
+                ultimo_monto: ultimo?.monto ?? null,
+                estado_pago: estado,
+                meses_adeudados,
+              } satisfies LocacionAuditada
+            }) ?? null,
+            error,
+          })),
+        ),
+        { modulo: 'auditoria', contexto: 'listarLocacionesAuditadas' },
+      )
     },
     [sesion?.user?.id],
   )
@@ -1078,6 +1176,8 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       registrarPagoAlquiler,
       obtenerUrlComprobante,
       eliminarPagoAlquiler,
+      listarInstructoresSubordinados,
+      listarLocacionesAuditadas,
       listarClases,
       obtenerClaseDetalle,
       crearClase,
@@ -1125,6 +1225,8 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       registrarPagoAlquiler,
       obtenerUrlComprobante,
       eliminarPagoAlquiler,
+      listarInstructoresSubordinados,
+      listarLocacionesAuditadas,
       listarClases,
       obtenerClaseDetalle,
       crearClase,

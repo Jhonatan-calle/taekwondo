@@ -50,7 +50,12 @@ export default function InstructorScreen() {
           onPresionar={() => router.push('/instructor/locaciones')}
         />
         <FilaOpcionMenu titulo="Registro de alquileres" descripcion="Registrar los pagos de alquiler" />
-        <FilaOpcionMenu titulo="Postulación a examen" descripcion="Postular a tus alumnos a las mesas abiertas" />
+        <FilaOpcionMenu
+          titulo="Postulación a examen"
+          descripcion="Postular a tus alumnos a las mesas abiertas"
+          habilitada
+          onPresionar={() => router.push('/instructor/mesas')}
+        />
       </View>
     </ScrollView>
   );

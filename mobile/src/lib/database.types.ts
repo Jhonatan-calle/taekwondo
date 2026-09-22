@@ -1086,6 +1086,18 @@ export type Database = {
         Returns: undefined
       }
       descendientes: { Args: { p_ancestro: string }; Returns: string[] }
+      actualizar_derecho_examen: {
+        Args: { p_postulacion_id: string; p_derecho_examen: number }
+        Returns: boolean
+      }
+      postular_alumno: {
+        Args: { p_alumno_id: string; p_derecho_examen?: number; p_mesa_id: string }
+        Returns: string
+      }
+      quitar_postulacion: {
+        Args: { p_postulacion_id: string }
+        Returns: boolean
+      }
       eliminar_locacion_segura: {
         Args: { p_locacion_id: string }
         Returns: boolean

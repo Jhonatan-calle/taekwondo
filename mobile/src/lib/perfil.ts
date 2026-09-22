@@ -168,6 +168,53 @@ export type DatosNuevaMesa = {
   lugar: string
 }
 
+export type EstadoPostulacion = 'postulado' | 'aprobado' | 'desaprobado' | 'ausente'
+
+export const MENSAJE_POSTULACION_DUPLICADA = 'El alumno ya está postulado en esta mesa.'
+export const MENSAJE_SIN_GRADO_SUPERIOR =
+  'El alumno ya alcanzó el grado máximo y no puede aspirar a uno superior.'
+
+export type PostulacionExamen = Pick<
+  Database['public']['Tables']['postulaciones_examen']['Row'],
+  'id' | 'mesa_id' | 'alumno_id' | 'grado_aspirado' | 'derecho_examen'
+> & {
+  estado: EstadoPostulacion
+  nombre_alumno: string
+}
+
+export type CandidatoPostulacion = {
+  alumno_id: string
+  nombre_completo: string
+  grado_actual: Grado | null
+  grado_aspirado: Grado | null
+  ya_postulado: boolean
+}
+
+export type ResumenRecaudacion = {
+  total: number
+  conCobro: number
+  sinCobro: number
+  postulados: number
+}
+
+// Suma el derecho de examen de todas las postulaciones de la mesa (SRS §3.7).
+export function resumirRecaudacion(postulaciones: PostulacionExamen[]): ResumenRecaudacion {
+  let total = 0
+  let conCobro = 0
+  for (const postulacion of postulaciones) {
+    if (postulacion.derecho_examen != null) {
+      total += Number(postulacion.derecho_examen)
+      conCobro += 1
+    }
+  }
+  return {
+    total,
+    conCobro,
+    sinCobro: postulaciones.length - conCobro,
+    postulados: postulaciones.length,
+  }
+}
+
 export const ETIQUETAS_DIAS: Record<number, string> = {
   1: 'Lunes',
   2: 'Martes',

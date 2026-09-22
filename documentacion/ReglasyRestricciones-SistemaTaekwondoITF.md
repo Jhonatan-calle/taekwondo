@@ -50,7 +50,11 @@ jerarquía y disciplina del Taekwondo ITF. Fuente funcional: `srs-sistemaDeGesti
 
 > - **Planificación:** los Maestros (`es_maestro`) aperturan mesas de examen (fecha, lugar).
 > - **Inscripción:** los profesores postulan a sus **alumnos directos**; el sistema calcula
->   automáticamente el **grado inmediato superior** al que aspiran.
+>   automáticamente el **grado inmediato superior** al que aspiran (RPC `postular_alumno`, no
+>   falsificable desde el cliente).
+> - **Gestión financiera:** el profesor registra manualmente el **derecho de examen** (solo registro:
+>   el sistema no procesa dinero). El **maestro examinador visualiza la recaudación total de la mesa**
+>   (SRS §3.7), con el desglose de derechos cobrados y pendientes.
 > - **Evaluación:** solo el **maestro examinador** (dueño de la mesa) carga el resultado
 >   (aprobado / desaprobado / ausente) vía RPC `registrar_resultado_examen`.
 > - **Ascenso y registro:** al aprobar, el sistema actualiza automáticamente `profiles.grado_actual`

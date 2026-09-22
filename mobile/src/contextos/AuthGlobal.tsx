@@ -9,6 +9,7 @@ import { ejecutarConsulta, type ResultadoConsulta } from '@/lib/consulta-supabas
 import {
   MENSAJE_DNI_DUPLICADO,
   MENSAJE_CUOTA_DUPLICADA,
+  MENSAJE_POSTULACION_DUPLICADA,
   esInstructor as esInstructorDePerfil,
   esProfesorActivo as esProfesorActivoDePerfil,
   perfilCompleto as esPerfilCompleto,
@@ -37,6 +38,9 @@ import {
   type MesaExamen,
   type DatosNuevaMesa,
   type EstadoMesa,
+  type PostulacionExamen,
+  type CandidatoPostulacion,
+  type EstadoPostulacion,
   type FilaGrupoConRelaciones,
   type ClaseItem,
   type DatosNuevaClase,
@@ -44,6 +48,7 @@ import {
   type AsistenciaItem,
 } from '@/lib/perfil'
 import type { Grado } from '@/constants/grados'
+import { gradoSiguiente } from '@/constants/grados'
 
 export type ResultadoAuth = { error: string | null; pendienteConfirmacion?: boolean }
 
@@ -98,6 +103,11 @@ type AuthGlobalValue = {
   crearMesaExamen(datos: DatosNuevaMesa): Promise<ResultadoCreacion>
   editarMesaExamen(mesaId: string, datos: DatosNuevaMesa): Promise<{ error: string | null }>
   cambiarEstadoMesa(mesaId: string, estado: EstadoMesa): Promise<{ error: string | null }>
+  listarPostulacionesMesa(mesaId: string): Promise<ResultadoConsulta<PostulacionExamen[] | null>>
+  listarCandidatosPostulacion(mesaId: string): Promise<ResultadoConsulta<CandidatoPostulacion[] | null>>
+  postularAlumno(mesaId: string, alumnoId: string, derechoExamen: number | null): Promise<{ error: string | null }>
+  editarDerechoExamen(postulacionId: string, monto: number): Promise<{ error: string | null }>
+  quitarPostulacion(postulacionId: string): Promise<{ error: string | null }>
   listarClases(grupoId?: string): Promise<ResultadoConsulta<ClaseItem[] | null>>
   obtenerClaseDetalle(claseId: string): Promise<ResultadoConsulta<ClaseItem | null>>
   crearClase(datos: DatosNuevaClase): Promise<ResultadoCreacion>
@@ -828,6 +838,158 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
     [sesion?.user?.id],
   )
 
+  const listarPostulacionesMesa = useCallback(
+    async (mesaId: string): Promise<ResultadoConsulta<PostulacionExamen[] | null>> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { data: null, error: MENSAJE_ERROR_GENERICO }
+
+      type FilaPostulacion = {
+        id: string
+        mesa_id: string
+        alumno_id: string
+        grado_aspirado: Grado
+        derecho_examen: number | null
+        estado: string
+        profiles: { nombre_completo: string } | null
+      }
+
+      const promesa = supabase
+        .from('postulaciones_examen')
+        .select(
+          'id, mesa_id, alumno_id, grado_aspirado, derecho_examen, estado, profiles!postulaciones_examen_alumno_id_fkey(nombre_completo)',
+        )
+        .eq('mesa_id', mesaId)
+        .order('creado_en', { ascending: true })
+        .returns<FilaPostulacion[]>()
+
+      return ejecutarConsulta<PostulacionExamen[] | null>(
+        Promise.resolve(
+          promesa.then(({ data, error }) => ({
+            data:
+              data?.map((fila) => ({
+                id: fila.id,
+                mesa_id: fila.mesa_id,
+                alumno_id: fila.alumno_id,
+                grado_aspirado: fila.grado_aspirado,
+                derecho_examen: fila.derecho_examen,
+                estado: fila.estado as EstadoPostulacion,
+                nombre_alumno: fila.profiles?.nombre_completo ?? 'Alumno',
+              })) ?? null,
+            error,
+          })),
+        ),
+        { modulo: 'postulaciones', contexto: 'listarPostulacionesMesa' },
+      )
+    },
+    [sesion?.user?.id],
+  )
+
+  const listarCandidatosPostulacion = useCallback(
+    async (mesaId: string): Promise<ResultadoConsulta<CandidatoPostulacion[] | null>> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { data: null, error: MENSAJE_ERROR_GENERICO }
+
+      const [resultadoAlumnos, resultadoPostulaciones] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('id, nombre_completo, grado_actual')
+          .eq('maestro_id', usuarioId)
+          .order('nombre_completo', { ascending: true }),
+        supabase.from('postulaciones_examen').select('alumno_id').eq('mesa_id', mesaId),
+      ])
+
+      if (resultadoAlumnos.error != null || resultadoAlumnos.data == null) {
+        return { data: null, error: MENSAJE_ERROR_GENERICO }
+      }
+
+      const yaPostulados = new Set((resultadoPostulaciones.data ?? []).map((p) => p.alumno_id))
+
+      return {
+        data: resultadoAlumnos.data.map((alumno) => {
+          const gradoActual = (alumno.grado_actual as Grado | null) ?? null
+          return {
+            alumno_id: alumno.id,
+            nombre_completo: alumno.nombre_completo,
+            grado_actual: gradoActual,
+            // Vista previa: el servidor recalcula y persiste el valor final.
+            grado_aspirado: gradoActual != null ? gradoSiguiente(gradoActual) : null,
+            ya_postulado: yaPostulados.has(alumno.id),
+          } satisfies CandidatoPostulacion
+        }),
+        error: null,
+      }
+    },
+    [sesion?.user?.id],
+  )
+
+  const postularAlumno = useCallback(
+    async (
+      mesaId: string,
+      alumnoId: string,
+      derechoExamen: number | null,
+    ): Promise<{ error: string | null }> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { error: MENSAJE_ERROR_GENERICO }
+
+      const { data, error } = await ejecutarConsulta<string | null>(
+        Promise.resolve(
+          supabase.rpc('postular_alumno', {
+            p_mesa_id: mesaId,
+            p_alumno_id: alumnoId,
+            p_derecho_examen: derechoExamen ?? undefined,
+          }),
+        ),
+        { modulo: 'postulaciones', contexto: 'postularAlumno' },
+      )
+
+      if (error != null || data == null) {
+        // El mensaje específico del RPC (duplicado, mesa cerrada, etc.) no llega
+        // por `ejecutarConsulta`; se distingue el duplicado con una consulta.
+        const { data: existente } = await supabase
+          .from('postulaciones_examen')
+          .select('id')
+          .eq('mesa_id', mesaId)
+          .eq('alumno_id', alumnoId)
+          .maybeSingle()
+        if (existente != null) return { error: MENSAJE_POSTULACION_DUPLICADA }
+        return { error: MENSAJE_ERROR_GENERICO }
+      }
+      return { error: null }
+    },
+    [sesion?.user?.id],
+  )
+
+  const editarDerechoExamen = useCallback(
+    async (postulacionId: string, monto: number): Promise<{ error: string | null }> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { error: MENSAJE_ERROR_GENERICO }
+      const { data, error } = await ejecutarConsulta<boolean | null>(
+        Promise.resolve(
+          supabase.rpc('actualizar_derecho_examen', {
+            p_postulacion_id: postulacionId,
+            p_derecho_examen: monto,
+          }),
+        ),
+        { modulo: 'postulaciones', contexto: 'editarDerechoExamen' },
+      )
+      return error != null || data !== true ? { error: MENSAJE_ERROR_GENERICO } : { error: null }
+    },
+    [sesion?.user?.id],
+  )
+
+  const quitarPostulacion = useCallback(
+    async (postulacionId: string): Promise<{ error: string | null }> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { error: MENSAJE_ERROR_GENERICO }
+      const { data, error } = await ejecutarConsulta<boolean | null>(
+        Promise.resolve(supabase.rpc('quitar_postulacion', { p_postulacion_id: postulacionId })),
+        { modulo: 'postulaciones', contexto: 'quitarPostulacion' },
+      )
+      return error != null || data !== true ? { error: MENSAJE_ERROR_GENERICO } : { error: null }
+    },
+    [sesion?.user?.id],
+  )
+
   const editarGrupo = useCallback(
     async (grupoId: string, datos: DatosNuevoGrupo): Promise<{ error: string | null }> => {
       const usuarioId = sesion?.user?.id
@@ -1452,6 +1614,11 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       crearMesaExamen,
       editarMesaExamen,
       cambiarEstadoMesa,
+      listarPostulacionesMesa,
+      listarCandidatosPostulacion,
+      postularAlumno,
+      editarDerechoExamen,
+      quitarPostulacion,
       listarClases,
       obtenerClaseDetalle,
       crearClase,
@@ -1509,6 +1676,11 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       crearMesaExamen,
       editarMesaExamen,
       cambiarEstadoMesa,
+      listarPostulacionesMesa,
+      listarCandidatosPostulacion,
+      postularAlumno,
+      editarDerechoExamen,
+      quitarPostulacion,
       listarClases,
       obtenerClaseDetalle,
       crearClase,

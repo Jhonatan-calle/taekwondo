@@ -21,6 +21,9 @@ export default function InstructorLayout() {
       <Stack.Screen name="alumno/[id]" options={{ title: 'Detalle del alumno' }} />
       <Stack.Screen name="alumno/[id]/cuota" options={{ title: 'Registrar cuota' }} />
       <Stack.Screen name="cuotas" options={{ title: 'Cuotas de alumnos' }} />
+      <Stack.Screen name="mesas" options={{ title: 'Mesas de examen' }} />
+      <Stack.Screen name="mesas/[id]" options={{ title: 'Mesa de examen' }} />
+      <Stack.Screen name="mesas/[id]/postular" options={{ title: 'Postular alumnos' }} />
       <Stack.Screen name="grupos" options={{ title: 'Mis grupos' }} />
       <Stack.Screen name="nuevo-grupo" options={{ title: 'Nuevo grupo' }} />
       <Stack.Screen name="grupo/[id]" options={{ title: 'Detalle del grupo' }} />

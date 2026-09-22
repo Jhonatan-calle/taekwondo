@@ -271,6 +271,14 @@ erDiagram
   `registrar_resultado_examen(p_postulacion, p_resultado)` (valida maestro examinador). `aprobado`
   actualiza `profiles.grado_actual` y deja registro permanente en `graduaciones`; `desaprobado`/
   `ausente` solo cambian el estado de la postulación.
+- **Postulación a examen 🎓:** el profesor postula a sus alumnos directos con el RPC
+  `postular_alumno(p_mesa, p_alumno, p_derecho)` (`SECURITY DEFINER`), que **calcula el
+  `grado_aspirado` en el servidor** derivándolo de `profiles.grado_actual` con el orden del enum
+  `public.grado` (grado inmediato superior; `dan_9` no tiene y se rechaza). Valida `es_profesor`,
+  `es_alumno_directo_de` y mesa **`abierta`**; el `unique (mesa_id, alumno_id)` impide duplicados.
+  El `derecho_examen` es **solo registro del cobro** (no hay pasarela). El maestro examinador ve la
+  **recaudación total de su mesa** (SRS §3.7). Acompañan `actualizar_derecho_examen` y
+  `quitar_postulacion`, ambos limitados al profesor postulante y a mesas abiertas.
 - **Dashboard anonimizado:** RPC `metricas_dashboard(p_vista, p_instructor)` devuelve
   `{total, por_grado, por_genero, por_rango_edad}` de los descendientes de `auth.uid()`;
   `planilla_mesa_examen(p_mesa)` expone datos técnicos (nombre, edad, peso, grados) solo al maestro

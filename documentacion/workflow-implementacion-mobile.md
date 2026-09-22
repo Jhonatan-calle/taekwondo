@@ -117,9 +117,12 @@
    - Un Maestro calificado abre una mesa de examen definiendo la fecha, el lugar y el estado como "abierta".
    - **Nota (decision de producto):** el "limite de inscripcion" se elimino del modelo (`mesas_examen.limite_inscripcion` dropeada); el SRS §3.7 y las Reglas §4 se actualizaron para no contradecir. Si se quiere cupo por mesa, es una evolucion futura.
    - **Implementado:** acciones `listarMesasExamen` (con conteo de postulados), `crearMesaExamen` (`maestro_id = auth.uid()`, estado `abierta`), `editarMesaExamen` y `cambiarEstadoMesa`; pantallas `maestro/mesas` (listado con estado y postulados), `maestro/mesas/nueva` (fecha + lugar con chips de locaciones u otro lugar) y `maestro/mesas/[id]` (detalle, editar, cerrar/finalizar). Referencia: `documentacion/planes/mobile-mesas-examen.md`.
-2. **Inscripcion y Postulacion (Profesor):**
+2. **Inscripcion y Postulacion (Profesor):** *(Implementado — Fase 7, ítem 2)*
    - Los profesores postulan a sus alumnos directos para la mesa de examen abierta.
-   - El sistema calcula automaticamente el `grado_aspirado` (grado inmediato superior segun el enum `grado`). El profesor registra de manera manual el cobro del "derecho de examen".
+   - El sistema calcula automaticamente el `grado_aspirado` (grado inmediato superior segun el enum `grado`) **en el servidor**, via RPC `postular_alumno` (no falsificable desde el cliente).
+   - El profesor registra de manera manual el cobro del **derecho de examen** (`derecho_examen`; solo registro, el sistema no procesa dinero).
+   - **Recaudacion (SRS §3.7):** el maestro examinador visualiza la **recaudacion total de la mesa** (suma de los derechos de examen), con desglose de cobrados y pendientes, en el detalle de la mesa.
+   - **Implementado:** migracion `postular_alumno` (RPCs `postular_alumno`, `actualizar_derecho_examen`, `quitar_postulacion`) + pantallas `instructor/mesas` (mesas abiertas), `instructor/mesas/[id]` (postulaciones propias) e `instructor/mesas/[id]/postular` (seleccion multiple con grado aspirado y derecho); el detalle del Maestro muestra postulados y recaudacion. Referencia: `documentacion/planes/mobile-postulacion-examen.md`.
 3. **Planilla Tecnica y Evaluacion (Maestro Examinador):**
    - Al momento de evaluar, el Maestro examinador consulta la planilla digital mediante el RPC seguro `planilla_mesa_examen(p_mesa)`.
    - Registra de forma individual el resultado (Aprobado, Desaprobado o Ausente).

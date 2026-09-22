@@ -165,6 +165,19 @@
 - Mesa ajena: al abrir una mesa de otro maestro, debe mostrarse en **solo lectura** (sin acciones de edición/cierre).
 - Verificar que `mesas_examen` ya no tiene la columna `limite_inscripcion` y que el formulario **no** la pide.
 
+### 18. Postulación a examen (dispositivo)
+- **Referencia:** `documentacion/planes/mobile-postulacion-examen.md`.
+- Menú Instructor → "Postulación a examen": deben listarse **solo las mesas abiertas**.
+- Entrar a una mesa → "Postular alumnos": verificar que cada alumno directo muestra **grado actual → grado aspirado** (el inmediato superior).
+- Postular a un alumno con derecho de examen cargado → debe aparecer en "Tus postulaciones" con el monto y en estado "Postulado".
+- **Duplicado:** intentar postular al **mismo alumno** otra vez en la misma mesa → mensaje claro y **sin fila duplicada**.
+- **Grado máximo:** un alumno en `dan_9` debe aparecer deshabilitado ("Ya alcanzó el grado máximo").
+- **Mesa cerrada:** cerrar la mesa desde la cuenta del Maestro → el profesor ya no debe poder postular ni editar el cobro.
+- **Aislamiento:** un profesor no puede postular a un alumno **ajeno** (no aparece en su lista de candidatos directos).
+- **Recaudación (clave, SRS §3.7):** desde la cuenta del Maestro, abrir el detalle de su mesa → debe verse la **recaudación total** (suma de los derechos) y el desglose de **cobrados / pendientes**, ademas del detalle de postulaciones.
+- Editar el cobro de una postulación existente y verificar que la recaudación se actualiza.
+- Quitar una postulación → debe desaparecer de la lista y de la recaudación.
+
 ### 13. Editar grupo y bloquear borrado de locación (dispositivo)
 - **Referencia:** `documentacion/planes/mobile-editar-grupo-locacion.md`.
 - Detalle del grupo (`/instructor/grupo/[id]`) → botón **"Editar"** → cambiar nombre, locación y horarios → "Guardar cambios"; al volver se reflejan los cambios.

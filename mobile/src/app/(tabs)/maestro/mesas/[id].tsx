@@ -1,10 +1,18 @@
 import { useCallback, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { etiquetaGrado } from '@/constants/grados';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 import { useErrorGlobal } from '@/contextos/ErrorGlobal';
 import { MENSAJE_ERROR_GENERICO } from '@/lib/errores';
-import type { EstadoMesa, MesaExamen } from '@/lib/perfil';
+import {
+  formatearMonto,
+  resumirRecaudacion,
+  type EstadoMesa,
+  type EstadoPostulacion,
+  type MesaExamen,
+  type PostulacionExamen,
+} from '@/lib/perfil';
 
 function formatearFecha(fechaISO: string): string {
   const partes = fechaISO.split('-');
@@ -21,11 +29,17 @@ const ETIQUETA_ESTADO: Record<EstadoMesa, string> = {
 
 export default function MesaDetalleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { listarMesasExamen, cambiarEstadoMesa, sesion } = useAuthGlobal();
+  const {
+    listarMesasExamen,
+    listarPostulacionesMesa,
+    cambiarEstadoMesa,
+    sesion,
+  } = useAuthGlobal();
   const { reportarError } = useErrorGlobal();
   const router = useRouter();
 
   const [mesa, setMesa] = useState<MesaExamen | null>(null);
+  const [postulados, setPostulados] = useState<PostulacionExamen[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(false);
   const [cambiando, setCambiando] = useState(false);
@@ -37,17 +51,21 @@ export default function MesaDetalleScreen() {
       return;
     }
     setCargando(true);
-    const resultado = await listarMesasExamen();
-    const encontrada = resultado.data?.find((item) => item.id === id) ?? null;
-    if (resultado.error != null || encontrada == null) {
+    const [resultadoMesas, resultadoPostulaciones] = await Promise.all([
+      listarMesasExamen(),
+      listarPostulacionesMesa(id),
+    ]);
+    const encontrada = resultadoMesas.data?.find((item) => item.id === id) ?? null;
+    if (resultadoMesas.error != null || encontrada == null) {
       setError(true);
-      if (resultado.error === MENSAJE_ERROR_GENERICO) reportarError();
+      if (resultadoMesas.error === MENSAJE_ERROR_GENERICO) reportarError();
     } else {
       setMesa(encontrada);
+      setPostulados(resultadoPostulaciones.data ?? []);
       setError(false);
     }
     setCargando(false);
-  }, [id, listarMesasExamen, reportarError]);
+  }, [id, listarMesasExamen, listarPostulacionesMesa, reportarError]);
 
   useFocusEffect(
     useCallback(() => {
@@ -56,6 +74,7 @@ export default function MesaDetalleScreen() {
   );
 
   const esPropia = mesa != null && mesa.maestro_id === sesion?.user?.id;
+  const recaudacion = resumirRecaudacion(postulados);
 
   const confirmarCambioEstado = (estado: EstadoMesa) => {
     if (mesa == null) return;
@@ -129,9 +148,39 @@ export default function MesaDetalleScreen() {
         <Text style={styles.tarjetaContenido}>
           {mesa.cantidad_postulados} alumno(s) postulado(s) hasta ahora.
         </Text>
+      </View>
+
+      <View style={styles.tarjeta}>
+        <Text style={styles.tarjetaTitulo}>Recaudación de la mesa</Text>
+        <Text style={styles.recaudacionTotal}>{formatearMonto(recaudacion.total)}</Text>
         <Text style={styles.tarjetaNota}>
-          La inscripción y postulación de alumnos se habilita en la próxima fase.
+          Suma de los derechos de examen registrados (SRS §3.7). Cobrados: {recaudacion.conCobro} ·
+          Pendientes: {recaudacion.sinCobro}.
         </Text>
+      </View>
+
+      <View style={styles.tarjeta}>
+        <Text style={styles.tarjetaTitulo}>Detalle de postulaciones</Text>
+        {postulados.length === 0 ? (
+          <Text style={styles.tarjetaContenido}>Todavía no hay postulaciones en esta mesa.</Text>
+        ) : (
+          postulados.map((postulacion) => (
+            <View key={postulacion.id} style={styles.filaPostulacion}>
+              <View style={styles.postulacionInfo}>
+                <Text style={styles.nombreAlumno}>{postulacion.nombre_alumno}</Text>
+                <Text style={styles.datosPostulacion}>
+                  Aspira a {etiquetaGrado(postulacion.grado_aspirado)} · Derecho:{' '}
+                  {postulacion.derecho_examen != null
+                    ? formatearMonto(postulacion.derecho_examen)
+                    : 'sin cobrar'}
+                </Text>
+              </View>
+              <View style={[styles.estadoBadge, badgeEstadoPostulacion(postulacion.estado)]}>
+                <Text style={styles.estadoBadgeTexto}>{postulacion.estado}</Text>
+              </View>
+            </View>
+          ))
+        )}
       </View>
 
       {esPropia ? (
@@ -173,6 +222,13 @@ export default function MesaDetalleScreen() {
       )}
     </ScrollView>
   );
+}
+
+function badgeEstadoPostulacion(estado: EstadoPostulacion) {
+  if (estado === 'aprobado') return styles.badgePostAprobado;
+  if (estado === 'desaprobado') return styles.badgePostDesaprobado;
+  if (estado === 'ausente') return styles.badgePostAusente;
+  return styles.badgePostulado;
 }
 
 function badgeEstilo(estado: EstadoMesa) {
@@ -303,6 +359,58 @@ const styles = StyleSheet.create({
     color: '#888',
     textAlign: 'center',
     marginTop: 8,
+  },
+  recaudacionTotal: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#C62828',
+  },
+  filaPostulacion: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#eee',
+  },
+  postulacionInfo: {
+    flex: 1,
+  },
+  nombreAlumno: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#111',
+  },
+  datosPostulacion: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 2,
+  },
+  estadoBadge: {
+    borderRadius: 6,
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  badgePostulado: {
+    borderColor: '#bbb',
+    backgroundColor: '#f5f5f5',
+  },
+  badgePostAprobado: {
+    borderColor: '#2E7D32',
+    backgroundColor: '#e8f5e9',
+  },
+  badgePostDesaprobado: {
+    borderColor: '#C62828',
+    backgroundColor: '#fdf0f0',
+  },
+  badgePostAusente: {
+    borderColor: '#bbb',
+    backgroundColor: '#fafafa',
+  },
+  estadoBadgeTexto: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#555',
   },
   centro: {
     flex: 1,

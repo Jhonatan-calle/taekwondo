@@ -66,6 +66,10 @@
    - **No existe la Vista Alumno Regular:** los alumnos no tienen sesion ni navegacion propia en la app; son filas de `profiles` sin cuenta de usuario, administradas por su profesor.
    - Un usuario autenticado sin `es_profesor` ni `es_maestro` no accede a pestañas de gestion; el otorgamiento de facetas lo efectua un superior o el Service Role.
    - **Implementado (Fase 3, ítem 2):** navegacion por tabs (Inicio/Instructor/Maestro) en `(tabs)`; ocultamiento condicional con `href: null` y proteccion de deep links con `<Redirect>` en cada landing; menús con filas deshabilitadas que cada Fase 4-8 activara. Referencia: `documentacion/planes/mobile-rutas-condicionales-navegacion.md`.
+3. **Inicio como panel operativo:** *(Implementado — posterior a Fase 7)*
+   - La pestana "Inicio" deja de ser solo identidad + solicitudes + cerrar sesion y pasa a ser un **panel de gestion**: resumen del mes (cuotas pendientes, clases sin asistencia de los ultimos 7 dias, grupos y alumnos), **acciones rapidas** y el resumen de **rama** para el Maestro (alquileres vencidos, mesas abiertas y recaudacion).
+   - Carga con `useFocusEffect` (se refresca al volver) y **fail gracefully por bloque** (una metrica que falla no rompe el panel).
+   - Sin migraciones ni acciones nuevas: se compone con lo ya existente. Referencia: `documentacion/planes/mobile-rediseno-inicio.md`.
 
 ### Fase 4: Modulo de Gestion de Alumnos, Grupos y Clases (Rol: Profesor)
 1. **Directorio y Alta de Alumnos Directos:** *(Implementado — Fase 4, ítem 1)*

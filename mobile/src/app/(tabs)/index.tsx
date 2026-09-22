@@ -1,24 +1,73 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
-import { MENSAJE_ERROR_GENERICO } from '@/lib/errores';
-import type { SolicitudLinaje } from '@/lib/perfil';
+import { aIsoLocal, formatearMonto, formatearPeriodo, mesActual, type SolicitudLinaje } from '@/lib/perfil';
+import { BotonAccion } from '@/components/BotonAccion';
+import { TarjetaMetrica } from '@/components/TarjetaMetrica';
+
+// Días hacia atrás que se consideran para "clases sin asistencia tomada".
+const DIAS_ASISTENCIA = 7;
+
+type Resumen = {
+  // Instructor
+  alumnos: number | null;
+  cuotasPendientes: number | null;
+  cuotasTotal: number | null;
+  clasesSinAsistencia: number | null;
+  grupos: number | null;
+  // Maestro
+  locacionesVencidas: number | null;
+  mesasAbiertas: number | null;
+  recaudacionAbiertas: number | null;
+};
+
+const RESUMEN_VACIO: Resumen = {
+  alumnos: null,
+  cuotasPendientes: null,
+  cuotasTotal: null,
+  clasesSinAsistencia: null,
+  grupos: null,
+  locacionesVencidas: null,
+  mesasAbiertas: null,
+  recaudacionAbiertas: null,
+};
+
+// Clases de los últimos N días (el filtro se hace en el cliente porque
+// `listarClases()` no filtra por fecha).
+function filtrarUltimosDias(fechas: string[], dias: number): string[] {
+  const hoy = new Date();
+  const desde = aIsoLocal(new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - dias));
+  return fechas.filter((fecha) => fecha >= desde);
+}
 
 export default function HomeScreen() {
   const {
     sesion,
+    perfil,
     esMaestro,
     esProfesor,
     esInstructor,
     linajeEstablecido,
     listarSolicitudesPendientes,
     resolverSolicitudLinaje,
+    listarAlumnosDirectos,
+    listarGrupos,
+    listarClases,
+    listarAsistenciaClase,
+    listarCuotasPorPeriodo,
+    listarLocacionesAuditadas,
+    listarMesasExamen,
+    listarPostulacionesMesa,
     cerrarSesion,
   } = useAuthGlobal();
+  const router = useRouter();
 
-  const email = sesion?.user?.email;
   const sinConfirmar = !esMaestro && !linajeEstablecido;
   const sinFacetasGestion = !esProfesor && !esMaestro;
+
+  const [resumen, setResumen] = useState<Resumen>(RESUMEN_VACIO);
+  const [cargando, setCargando] = useState(true);
 
   const [solicitudes, setSolicitudes] = useState<SolicitudLinaje[]>([]);
   const [cargandoSolicitudes, setCargandoSolicitudes] = useState(false);
@@ -37,9 +86,115 @@ export default function HomeScreen() {
     setCargandoSolicitudes(false);
   }, [listarSolicitudesPendientes]);
 
-  useEffect(() => {
-    if (esInstructor) void cargarSolicitudes();
-  }, [esInstructor, cargarSolicitudes]);
+  // Cada bloque carga de forma independiente: si una métrica falla, el resto
+  // del panel sigue siendo util (fail gracefully por bloque).
+  const cargarResumen = useCallback(async () => {
+    setCargando(true);
+
+    const tareas: Promise<void>[] = [];
+
+    if (esProfesor) {
+      tareas.push(
+        (async () => {
+          const [alumnos, grupos, cuotas] = await Promise.all([
+            listarAlumnosDirectos(),
+            listarGrupos(),
+            listarCuotasPorPeriodo(mesActual()),
+          ]);
+          setResumen((actual) => ({
+            ...actual,
+            alumnos: alumnos.data?.length ?? null,
+            grupos: grupos.data?.length ?? null,
+            cuotasTotal: cuotas.data?.length ?? null,
+            cuotasPendientes:
+              cuotas.data != null ? cuotas.data.filter((c) => c.estado === 'pendiente').length : null,
+          }));
+        })(),
+      );
+
+      tareas.push(
+        (async () => {
+          const clases = await listarClases();
+          if (clases.data == null) return;
+          const recientes = clases.data.filter((clase) =>
+            filtrarUltimosDias([clase.fecha], DIAS_ASISTENCIA).length > 0,
+          );
+          if (recientes.length === 0) {
+            setResumen((actual) => ({ ...actual, clasesSinAsistencia: 0 }));
+            return;
+          }
+          // Lecturas de asistencia EN PARALELO (sin consultas anidadas).
+          const asistencias = await Promise.all(
+            recientes.map((clase) => listarAsistenciaClase(clase.id)),
+          );
+          const sinAsistencia = asistencias.filter(
+            (resultado) => resultado.data == null || resultado.data.length === 0,
+          ).length;
+          setResumen((actual) => ({ ...actual, clasesSinAsistencia: sinAsistencia }));
+        })(),
+      );
+    }
+
+    if (esMaestro) {
+      tareas.push(
+        (async () => {
+          const locaciones = await listarLocacionesAuditadas();
+          setResumen((actual) => ({
+            ...actual,
+            locacionesVencidas:
+              locaciones.data != null
+                ? locaciones.data.filter((l) => l.estado_pago === 'vencida').length
+                : null,
+          }));
+        })(),
+      );
+
+      tareas.push(
+        (async () => {
+          const mesas = await listarMesasExamen();
+          if (mesas.data == null) return;
+          const abiertas = mesas.data.filter((mesa) => mesa.estado === 'abierta');
+          let total = 0;
+          // Una consulta por mesa abierta. Deuda técnica: si crecen las mesas
+          // simultáneas, migrar a un RPC agregado (ver plan del rediseño).
+          const postulaciones = await Promise.all(
+            abiertas.map((mesa) => listarPostulacionesMesa(mesa.id)),
+          );
+          for (const resultado of postulaciones) {
+            for (const postulacion of resultado.data ?? []) {
+              if (postulacion.derecho_examen != null) total += Number(postulacion.derecho_examen);
+            }
+          }
+          setResumen((actual) => ({
+            ...actual,
+            mesasAbiertas: abiertas.length,
+            recaudacionAbiertas: total,
+          }));
+        })(),
+      );
+    }
+
+    await Promise.all(tareas);
+    setCargando(false);
+  }, [
+    esProfesor,
+    esMaestro,
+    listarAlumnosDirectos,
+    listarGrupos,
+    listarClases,
+    listarAsistenciaClase,
+    listarCuotasPorPeriodo,
+    listarLocacionesAuditadas,
+    listarMesasExamen,
+    listarPostulacionesMesa,
+  ]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void cargarResumen();
+      if (esInstructor) void cargarSolicitudes();
+    }, [cargarResumen, cargarSolicitudes, esInstructor]),
+  );
 
   const resolver = async (solicitudId: string, resultado: 'aceptada' | 'rechazada') => {
     if (resolviendoId != null) return;
@@ -48,13 +203,16 @@ export default function HomeScreen() {
     setResolviendoId(null);
     if (error != null) return;
     setSolicitudes((prev) => prev.filter((s) => s.id !== solicitudId));
+    void cargarResumen();
   };
+
+  const nombre = perfil?.nombre_completo ?? sesion?.user?.email ?? 'usuario';
+  const mostrarPerfilAlerta = resumen.cuotasPendientes != null && resumen.cuotasPendientes > 0;
 
   return (
     <ScrollView style={styles.pantalla} contentContainerStyle={styles.contenido}>
-      <Text style={styles.titulo}>Taekwondo ITF</Text>
-      <Text style={styles.subtitulo}>Sesión iniciada como</Text>
-      <Text style={styles.correo}>{email ?? 'usuario'}</Text>
+      <Text style={styles.saludo}>Hola, {nombre}</Text>
+      <Text style={styles.subtitulo}>Panel de gestión</Text>
 
       {sinConfirmar ? (
         <View style={styles.avisoPendiente}>
@@ -73,8 +231,88 @@ export default function HomeScreen() {
         </View>
       ) : null}
 
+      {esProfesor ? (
+        <View style={styles.seccion}>
+          <Text style={styles.tituloSeccion}>Tu actividad</Text>
+          {cargando ? (
+            <ActivityIndicator style={styles.cargando} color="#C62828" />
+          ) : (
+            <View style={styles.grilla}>
+              <TarjetaMetrica
+                valor={resumen.alumnos != null ? String(resumen.alumnos) : '—'}
+                etiqueta="Alumnos directos"
+                onPresionar={() => router.push('/instructor/alumnos')}
+              />
+              <TarjetaMetrica
+                valor={resumen.grupos != null ? String(resumen.grupos) : '—'}
+                etiqueta="Grupos activos"
+                onPresionar={() => router.push('/instructor/grupos')}
+              />
+              <TarjetaMetrica
+                valor={
+                  resumen.cuotasPendientes != null && resumen.cuotasTotal != null
+                    ? `${resumen.cuotasPendientes}/${resumen.cuotasTotal}`
+                    : '—'
+                }
+                etiqueta="Cuotas pendientes"
+                detalle={formatearPeriodo(mesActual())}
+                tono={mostrarPerfilAlerta ? 'alerta' : 'neutro'}
+                onPresionar={() => router.push('/instructor/cuotas')}
+              />
+              <TarjetaMetrica
+                valor={resumen.clasesSinAsistencia != null ? String(resumen.clasesSinAsistencia) : '—'}
+                etiqueta="Clases sin asistencia"
+                detalle={`Últimos ${DIAS_ASISTENCIA} días`}
+                tono={resumen.clasesSinAsistencia != null && resumen.clasesSinAsistencia > 0 ? 'alerta' : 'neutro'}
+                onPresionar={() => router.push('/instructor/clases')}
+              />
+            </View>
+          )}
+        </View>
+      ) : null}
+
+      {esMaestro ? (
+        <View style={styles.seccion}>
+          <Text style={styles.tituloSeccion}>Tu rama</Text>
+          {cargando ? (
+            <ActivityIndicator style={styles.cargando} color="#C62828" />
+          ) : (
+            <View style={styles.grilla}>
+              <TarjetaMetrica
+                valor={resumen.locacionesVencidas != null ? String(resumen.locacionesVencidas) : '—'}
+                etiqueta="Alquileres vencidos"
+                tono={resumen.locacionesVencidas != null && resumen.locacionesVencidas > 0 ? 'alerta' : 'neutro'}
+                onPresionar={() => router.push('/maestro/auditoria')}
+              />
+              <TarjetaMetrica
+                valor={resumen.mesasAbiertas != null ? String(resumen.mesasAbiertas) : '—'}
+                etiqueta="Mesas abiertas"
+                onPresionar={() => router.push('/maestro/mesas')}
+              />
+              <TarjetaMetrica
+                valor={
+                  resumen.recaudacionAbiertas != null ? formatearMonto(resumen.recaudacionAbiertas) : '—'
+                }
+                etiqueta="Recaudación de mesas"
+                detalle="Solo mesas abiertas"
+                onPresionar={() => router.push('/maestro/mesas')}
+              />
+            </View>
+          )}
+        </View>
+      ) : null}
+
+      {esProfesor ? (
+        <View style={styles.seccion}>
+          <Text style={styles.tituloSeccion}>Acciones rápidas</Text>
+          <BotonAccion titulo="Tomar asistencia" onPresionar={() => router.push('/instructor/clases')} />
+          <BotonAccion titulo="Registrar cuota" onPresionar={() => router.push('/instructor/cuotas')} />
+          <BotonAccion titulo="Alta de alumno" onPresionar={() => router.push('/instructor/alta-alumno')} />
+        </View>
+      ) : null}
+
       {esInstructor ? (
-        <View style={styles.bloqueInstructor}>
+        <View style={styles.seccion}>
           <Text style={styles.tituloSeccion}>Solicitudes de alumnos</Text>
           <Text style={styles.subtituloSeccion}>
             Confirmá los alumnos que te eligieron como instructor.
@@ -82,7 +320,7 @@ export default function HomeScreen() {
           {cargandoSolicitudes ? (
             <ActivityIndicator style={styles.cargando} color="#C62828" />
           ) : errorSolicitudes ? (
-            <View style={styles.errorContenedor}>
+            <View>
               <Text style={styles.errorTexto}>No pudimos cargar las solicitudes.</Text>
               <Pressable onPress={() => void cargarSolicitudes()} style={styles.reintentar} accessibilityRole="button">
                 <Text style={styles.reintentarTexto}>Reintentar</Text>
@@ -120,12 +358,16 @@ export default function HomeScreen() {
         </View>
       ) : null}
 
-      <Pressable
-        onPress={cerrarSesion}
-        style={({ pressed }) => [styles.boton, pressed && styles.botonPresionado]}
-        accessibilityRole="button"
-      >
-        <Text style={styles.botonTexto}>Cerrar sesión</Text>
+      {esMaestro ? (
+        <View style={styles.seccion}>
+          <Text style={styles.tituloSeccion}>Acciones rápidas</Text>
+          <BotonAccion titulo="Nueva mesa de examen" onPresionar={() => router.push('/maestro/mesas/nueva')} />
+          <BotonAccion titulo="Auditoría de locaciones" onPresionar={() => router.push('/maestro/auditoria')} />
+        </View>
+      ) : null}
+
+      <Pressable onPress={cerrarSesion} style={styles.cerrarSesion} accessibilityRole="button">
+        <Text style={styles.cerrarSesionTexto}>Cerrar sesión</Text>
       </Pressable>
     </ScrollView>
   );
@@ -138,29 +380,21 @@ const styles = StyleSheet.create({
   },
   contenido: {
     flexGrow: 1,
-    padding: 24,
+    padding: 20,
     paddingBottom: 48,
   },
-  titulo: {
-    fontSize: 24,
+  saludo: {
+    fontSize: 22,
     fontWeight: 'bold',
-    textAlign: 'center',
+    color: '#111',
   },
   subtitulo: {
-    fontSize: 16,
-    marginTop: 8,
+    fontSize: 14,
     color: '#666',
-    textAlign: 'center',
-  },
-  correo: {
-    fontSize: 16,
     marginTop: 2,
-    color: '#333',
-    fontWeight: '600',
-    textAlign: 'center',
   },
   avisoPendiente: {
-    marginTop: 20,
+    marginTop: 16,
     backgroundColor: '#FFF3E0',
     borderColor: '#E65100',
     borderWidth: 1,
@@ -171,25 +405,28 @@ const styles = StyleSheet.create({
     color: '#7A3A00',
     fontSize: 14,
   },
-  bloqueInstructor: {
-    marginTop: 28,
+  seccion: {
+    marginTop: 24,
   },
   tituloSeccion: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
     color: '#111',
+    marginBottom: 10,
   },
   subtituloSeccion: {
     fontSize: 13,
     color: '#666',
-    marginTop: 2,
+    marginTop: -6,
     marginBottom: 12,
+  },
+  grilla: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
   cargando: {
     marginTop: 8,
-  },
-  errorContenedor: {
-    marginTop: 4,
   },
   errorTexto: {
     color: '#C62828',
@@ -258,20 +495,15 @@ const styles = StyleSheet.create({
   botonDeshabilitado: {
     opacity: 0.6,
   },
-  boton: {
-    marginTop: 32,
-    backgroundColor: '#C62828',
-    borderRadius: 8,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    alignItems: 'center',
+  cerrarSesion: {
+    marginTop: 36,
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
   },
-  botonPresionado: {
-    backgroundColor: '#a02020',
-  },
-  botonTexto: {
-    color: '#fff',
-    fontSize: 16,
+  cerrarSesionTexto: {
+    color: '#999',
+    fontSize: 14,
     fontWeight: '600',
   },
 });

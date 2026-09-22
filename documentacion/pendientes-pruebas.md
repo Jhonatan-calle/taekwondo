@@ -178,6 +178,18 @@
 - Editar el cobro de una postulación existente y verificar que la recaudación se actualiza.
 - Quitar una postulación → debe desaparecer de la lista y de la recaudación.
 
+### 19. Panel de Inicio (dispositivo)
+- **Referencia:** `documentacion/planes/mobile-rediseno-inicio.md`.
+- Con un usuario **profesor** con linaje confirmado: el Inicio debe mostrar **saludo con el nombre**, tarjetas de resumen (alumnos, grupos, cuotas pendientes del mes, clases sin asistencia) y **acciones rápidas**; ya no debe verse vacío.
+- **Cuotas pendientes:** la tarjeta debe mostrar `pendientes/total` del mes actual y resaltarse en rojo si hay pendientes; al tocarla debe abrir "Cuotas de alumnos".
+- **Clases sin asistencia:** debe contar solo las de los **últimos 7 días**; tomar asistencia de una clase y volver → el número debe **bajar** (verifica el `useFocusEffect`).
+- **Refresco:** registrar una cuota y volver al Inicio → el contador debe actualizarse **sin reiniciar la app**.
+- Con un usuario **Maestro**: debe verse el bloque "Tu rama" (alquileres vencidos de subordinados, mesas abiertas y **recaudación** de mesas abiertas) y las acciones rápidas de Maestro.
+- **Fail gracefully:** con red cortada, las tarjetas deben quedar en "—" **sin romper** el resto del panel.
+- **Sin datos:** un usuario recién creado (sin alumnos) debe ver textos guía, no errores.
+- Verificar que las **solicitudes de linaje** siguen funcionando (aceptar/rechazar) y que al aceptar se recarga el resumen.
+- "Cerrar sesión" debe verse discreto al final, sin competir con el contenido.
+
 ### 13. Editar grupo y bloquear borrado de locación (dispositivo)
 - **Referencia:** `documentacion/planes/mobile-editar-grupo-locacion.md`.
 - Detalle del grupo (`/instructor/grupo/[id]`) → botón **"Editar"** → cambiar nombre, locación y horarios → "Guardar cambios"; al volver se reflejan los cambios.

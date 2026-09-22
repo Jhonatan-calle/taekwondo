@@ -92,7 +92,7 @@ export default function CrearCuentaScreen() {
         />
         <CampoTexto
           label="Contraseña"
-          secureTextEntry
+          esContrasena
           autoCapitalize="none"
           autoComplete="new-password"
           textContentType="newPassword"
@@ -101,7 +101,7 @@ export default function CrearCuentaScreen() {
         />
         <CampoTexto
           label="Confirmar contraseña"
-          secureTextEntry
+          esContrasena
           autoCapitalize="none"
           autoComplete="new-password"
           textContentType="newPassword"

@@ -68,7 +68,7 @@ export default function IniciarSesionScreen() {
         />
         <CampoTexto
           label="Contraseña"
-          secureTextEntry
+          esContrasena
           autoCapitalize="none"
           autoComplete="current-password"
           textContentType="password"

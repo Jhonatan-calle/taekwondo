@@ -130,7 +130,7 @@ export default function NuevaContrasenaScreen() {
 
       <CampoTexto
         label="Nueva contraseña"
-        secureTextEntry
+        esContrasena
         autoCapitalize="none"
         autoComplete="new-password"
         textContentType="newPassword"
@@ -139,7 +139,7 @@ export default function NuevaContrasenaScreen() {
       />
       <CampoTexto
         label="Confirmar contraseña"
-        secureTextEntry
+        esContrasena
         autoCapitalize="none"
         autoComplete="new-password"
         textContentType="newPassword"

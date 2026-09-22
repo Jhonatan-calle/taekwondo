@@ -99,18 +99,18 @@
    - Permitir adjuntar fotos (camara/galeria) o archivos PDF del comprobante de pago, subiendolos al bucket privado de storage `comprobantes` y guardando el **path** en `pagos_alquiler.comprobante_url`.
    - **No hay URL publica** (bucket privado, decision de privacidad/auditoria): al visualizar se genera un **enlace firmado temporal** (1 hora). El dueño sube/lee/borra; el **superior jerarquico** lee (excepcion de auditoria SRS §2).
    - **Implementado:** migracion `pagos_alquiler_reglas` (indice unico) + pantallas `instructor/locacion/[id]/pago` (formulario con periodo/monto/fecha y adjunto camara-galeria-PDF) y seccion "Pagos de alquiler" en `instructor/locacion/[id]` (historial, ver comprobante, eliminar). Referencia: `documentacion/planes/mobile-pagos-alquiler.md`.
-3. **Auditoria en Cascada para Superiores:** *(Implementado — Fase 5, ítem 3)*
-   - El Maestro accede a la pestaña de Auditoria para consultar las locaciones, montos, vencimientos y adjuntos de todas las locaciones que pertenecen a sus instructores subordinados.
+3. **Auditoria en Cascada para Superiores:** *(Implementado — Fase 5, ítem 3)*   - El Maestro accede a la pestaña de Auditoria para consultar las locaciones, montos, vencimientos y adjuntos de todas las locaciones que pertenecen a sus instructores subordinados.
    - **Vencimientos:** el modelo no almacena fecha de vencimiento; el estado se **deriva** del ultimo periodo pagado (Al dia / Vencida con meses adeudados / Sin pagos).
    - **Seguridad ya vigente:** RLS `locaciones_select_superior` y `pagos_alquiler_select_superior` (tablas) + `comprobantes_select_superior` (**Storage** sobre `storage.objects`; no existe tabla de comprobantes). `es_subordinado_de`/`descendientes` son recursivos, por lo que alcanzan descendientes indirectos.
    - **Implementado:** layout del tab Maestro con guard + pantallas `maestro/auditoria` (listado con dueno, valor pactado, estado de pago y filtro por instructor) y `maestro/auditoria/[id]` (detalle de solo lectura con historial y comprobante por enlace firmado); fila "Auditoria de locaciones en cascada" habilitada. Referencia: `documentacion/planes/mobile-auditoria-cascada.md`.
 
 ### Fase 6: Registro de Cuotas de Alumnos
-1. **Cobranzas Directas del Profesor:**
+1. **Cobranzas Directas del Profesor:** *(Implementado — Fase 6)*
    - El profesor registra de manera manual el pago mensual de un alumno directo.
-   - Datos a guardar: alumno, periodo (ej. '2026-09'), monto percibido y fecha de pago.
-   - La aplicacion previene y controla excepciones si se intenta registrar un pago para un periodo ya cubierto por el mismo alumno (cumpliendo con la restriccion de unicidad de la BD).
-   - El alumno no consulta sus cuotas desde la app (no tiene cuenta); el historial de periodos pagados queda administrado por el profesor y los superiores.
+   - Datos a guardar: alumno, periodo (ej. '2026-09'), monto percibido y fecha de pago (columna `fecha`).
+   - La aplicacion previene y controla excepciones si se intenta registrar un pago para un periodo ya cubierto por el mismo alumno: la tabla `pagos_cuota` ya tiene `UNIQUE (alumno_id, periodo)`; la app hace **pre-chequeo** y ademas traduce el `23505` a un mensaje amable.
+   - El alumno no consulta sus cuotas desde la app (no tiene cuenta); el historial de periodos pagados queda administrado por el **profesor directo**. Los **superiores NO acceden** a las cuotas: las Reglas §2 limitan su visibilidad a metricas anonimizadas de alumnos (las cuotas son dato financiero personal, no infraestructura).
+   - **Implementado:** acciones `listarCuotasAlumno`, `listarCuotasPorPeriodo`, `registrarCuota` (con `creado_por = auth.uid()`) y `eliminarCuota`; seccion "Cuotas" en `instructor/alumno/[id]`, formulario `instructor/alumno/[id]/cuota` y listado de cobranzas `instructor/cuotas` (con estado pagado/pendiente por periodo). Referencia: `documentacion/planes/mobile-cuotas-alumnos.md`.
 
 ### Fase 7: Examenes de Graduacion y Promocion
 1. **Creacion de Mesas de Examen (Maestro):**

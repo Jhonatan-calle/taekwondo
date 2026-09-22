@@ -145,6 +145,16 @@
 - **Solo lectura:** verificar que la vista no ofrece alta, edición ni borrado.
 - **Privacidad:** confirmar que no se exponen datos personales de alumnos (solo infraestructura).
 
+### 16. Cuotas de alumnos (dispositivo)
+- **Referencia:** `documentacion/planes/mobile-cuotas-alumnos.md`.
+- Detalle del alumno → sección **"Cuotas"**: verificar que muestra el estado del mes actual (Pagado/Pendiente) y el historial.
+- "+ Registrar cuota" → cargar periodo (por defecto el mes actual), monto y fecha → guardar; debe aparecer en el historial y pasar el mes a "Pagado".
+- **Duplicado:** intentar registrar otra cuota del **mismo periodo** → mensaje "Ya registraste un pago para ese periodo." y **sin fila duplicada** en la BD.
+- **Cobranzas:** menú Instructor → "Cuotas de alumnos" → elegir un periodo y verificar que lista los alumnos directos con badge Pagado/Pendiente y el resumen "X de Y".
+- **Aislamiento:** con un profesor distinto, verificar que **no** ve las cuotas de alumnos ajenos (RLS `es_alumno_directo_de`).
+- Eliminar una cuota mal cargada → desaparece del historial y el mes vuelve a "Pendiente".
+- **Fecha pasada permitida:** cargar una cuota de un mes anterior y verificar que se registra correctamente (el periodo y la fecha pueden diferir).
+
 ### 13. Editar grupo y bloquear borrado de locación (dispositivo)
 - **Referencia:** `documentacion/planes/mobile-editar-grupo-locacion.md`.
 - Detalle del grupo (`/instructor/grupo/[id]`) → botón **"Editar"** → cambiar nombre, locación y horarios → "Guardar cambios"; al volver se reflejan los cambios.

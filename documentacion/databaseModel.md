@@ -47,11 +47,12 @@ erDiagram
 
     PAGOS_CUOTA {
         uuid id PK
-        uuid alumno_id FK
+        uuid alumno_id FK "profiles(id)"
         string periodo "ej '2026-09'"
-        numeric monto
-        date fecha_pago
-        uuid profesor_id FK "profesor directo que registra"
+        numeric monto "check (monto > 0)"
+        date fecha
+        string observaciones "opcional"
+        uuid creado_por FK "profesor directo que registra (auth.uid())"
         timestamptz creado_en
         string unico "(alumno_id, periodo)"
     }
@@ -218,7 +219,7 @@ erDiagram
     LOCACIONES ||--o| PAGOS_ALQUILER : locacion_id
     PROFILES ||--o| PAGOS_ALQUILER : creado_por
     PROFILES ||--o| PAGOS_CUOTA : alumno_id
-    PROFILES ||--o| PAGOS_CUOTA : profesor_id
+    PROFILES ||--o| PAGOS_CUOTA : creado_por
     PROFILES ||--o| GRUPOS : profesor_id
     GRUPOS }o--|| LOCACIONES : locacion_id
     GRUPOS ||--o| GRUPOS_HORARIOS : grupo_id

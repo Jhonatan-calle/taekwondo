@@ -8,6 +8,7 @@ import { esRechazoEsperado, mensajeAmigableDeErrorAuth, MENSAJE_USUARIO_YA_EXIST
 import { ejecutarConsulta, type ResultadoConsulta } from '@/lib/consulta-supabase'
 import {
   MENSAJE_DNI_DUPLICADO,
+  MENSAJE_CUOTA_DUPLICADA,
   esInstructor as esInstructorDePerfil,
   esProfesorActivo as esProfesorActivoDePerfil,
   perfilCompleto as esPerfilCompleto,
@@ -30,6 +31,9 @@ import {
   type PagoAlquiler,
   type DatosPagoAlquiler,
   type LocacionAuditada,
+  type PagoCuota,
+  type DatosPagoCuota,
+  type CuotaAlumno,
   type FilaGrupoConRelaciones,
   type ClaseItem,
   type DatosNuevaClase,
@@ -83,6 +87,10 @@ type AuthGlobalValue = {
   eliminarPagoAlquiler(pagoId: string, comprobantePath: string | null): Promise<{ error: string | null }>
   listarInstructoresSubordinados(): Promise<ResultadoConsulta<InstructorLinaje[] | null>>
   listarLocacionesAuditadas(instructorId?: string): Promise<ResultadoConsulta<LocacionAuditada[] | null>>
+  listarCuotasAlumno(alumnoId: string): Promise<ResultadoConsulta<PagoCuota[] | null>>
+  listarCuotasPorPeriodo(periodo: string): Promise<ResultadoConsulta<CuotaAlumno[] | null>>
+  registrarCuota(datos: DatosPagoCuota): Promise<{ error: string | null }>
+  eliminarCuota(cuotaId: string): Promise<{ error: string | null }>
   listarClases(grupoId?: string): Promise<ResultadoConsulta<ClaseItem[] | null>>
   obtenerClaseDetalle(claseId: string): Promise<ResultadoConsulta<ClaseItem | null>>
   crearClase(datos: DatosNuevaClase): Promise<ResultadoCreacion>
@@ -558,6 +566,148 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
         ),
         { modulo: 'auditoria', contexto: 'listarLocacionesAuditadas' },
       )
+    },
+    [sesion?.user?.id],
+  )
+
+  const listarCuotasAlumno = useCallback(
+    async (alumnoId: string): Promise<ResultadoConsulta<PagoCuota[] | null>> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { data: null, error: MENSAJE_ERROR_GENERICO }
+      return ejecutarConsulta<PagoCuota[] | null>(
+        Promise.resolve(
+          supabase
+            .from('pagos_cuota')
+            .select('id, alumno_id, fecha, monto, periodo')
+            .eq('alumno_id', alumnoId)
+            .order('periodo', { ascending: false }),
+        ),
+        { modulo: 'cuotas', contexto: 'listarCuotasAlumno' },
+      )
+    },
+    [sesion?.user?.id],
+  )
+
+  // Vista de cobranzas: todos los alumnos directos con el estado del periodo.
+  const listarCuotasPorPeriodo = useCallback(
+    async (periodo: string): Promise<ResultadoConsulta<CuotaAlumno[] | null>> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { data: null, error: MENSAJE_ERROR_GENERICO }
+
+      const [resultadoAlumnos, resultadoPagos] = await Promise.all([
+        ejecutarConsulta<AlumnoDirecto[] | null>(
+          Promise.resolve(
+            supabase
+              .from('profiles')
+              .select('id, nombre_completo, dni, fecha_nacimiento, genero, grado_actual, contacto_emergencia')
+              .eq('maestro_id', usuarioId)
+              .order('nombre_completo', { ascending: true }),
+          ),
+          { modulo: 'cuotas', contexto: 'listarCuotasPorPeriodoAlumnos' },
+        ),
+        ejecutarConsulta<{ id: string; alumno_id: string; monto: number }[] | null>(
+          Promise.resolve(
+            supabase.from('pagos_cuota').select('id, alumno_id, monto').eq('periodo', periodo),
+          ),
+          { modulo: 'cuotas', contexto: 'listarCuotasPorPeriodoPagos' },
+        ),
+      ])
+
+      if (resultadoAlumnos.error != null || resultadoAlumnos.data == null) {
+        return { data: null, error: MENSAJE_ERROR_GENERICO }
+      }
+
+      const pagosPorAlumno = new Map(
+        (resultadoPagos.data ?? []).map((pago) => [pago.alumno_id, pago]),
+      )
+
+      return {
+        data: resultadoAlumnos.data.map((alumno) => {
+          const pago = pagosPorAlumno.get(alumno.id)
+          return {
+            alumno_id: alumno.id,
+            nombre_completo: alumno.nombre_completo,
+            grado_actual: alumno.grado_actual,
+            periodo,
+            estado: pago != null ? 'pagado' : 'pendiente',
+            pago_id: pago?.id ?? null,
+            monto: pago?.monto ?? null,
+          } satisfies CuotaAlumno
+        }),
+        error: null,
+      }
+    },
+    [sesion?.user?.id],
+  )
+
+  const registrarCuota = useCallback(
+    async (datos: DatosPagoCuota): Promise<{ error: string | null }> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { error: MENSAJE_ERROR_GENERICO }
+
+      // Pre-chequeo amable: un alumno no puede tener dos pagos del mismo periodo.
+      const { data: existente, error: errorConsulta } = await ejecutarConsulta<
+        { id: string } | null
+      >(
+        Promise.resolve(
+          supabase
+            .from('pagos_cuota')
+            .select('id')
+            .eq('alumno_id', datos.alumno_id)
+            .eq('periodo', datos.periodo.trim())
+            .maybeSingle(),
+        ),
+        { modulo: 'cuotas', contexto: 'verificarCuotaDuplicada' },
+      )
+
+      if (errorConsulta != null) return { error: MENSAJE_ERROR_GENERICO }
+      if (existente != null) return { error: MENSAJE_CUOTA_DUPLICADA }
+
+      const { data, error } = await ejecutarConsulta<{ id: string } | null>(
+        Promise.resolve(
+          supabase
+            .from('pagos_cuota')
+            .insert({
+              alumno_id: datos.alumno_id,
+              periodo: datos.periodo.trim(),
+              monto: datos.monto,
+              fecha: datos.fecha,
+              // Columna real que identifica al profesor que registra.
+              creado_por: usuarioId,
+            })
+            .select('id')
+            .single(),
+        ),
+        { modulo: 'cuotas', contexto: 'registrarCuota' },
+      )
+
+      if (error != null || data == null) {
+        // Red de seguridad: si dos dispositivos compiten, la unicidad de la BD
+        // protege y aquí se traduce a un mensaje amable.
+        const { data: confirmacion } = await supabase
+          .from('pagos_cuota')
+          .select('id')
+          .eq('alumno_id', datos.alumno_id)
+          .eq('periodo', datos.periodo.trim())
+          .maybeSingle()
+        if (confirmacion != null) return { error: MENSAJE_CUOTA_DUPLICADA }
+        return { error: MENSAJE_ERROR_GENERICO }
+      }
+
+      return { error: null }
+    },
+    [sesion?.user?.id],
+  )
+
+  const eliminarCuota = useCallback(
+    async (cuotaId: string): Promise<{ error: string | null }> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { error: MENSAJE_ERROR_GENERICO }
+      const { error } = await ejecutarConsulta<null>(
+        Promise.resolve(supabase.from('pagos_cuota').delete().eq('id', cuotaId)),
+        { modulo: 'cuotas', contexto: 'eliminarCuota' },
+      )
+      return error != null ? { error: MENSAJE_ERROR_GENERICO } : { error: null }
     },
     [sesion?.user?.id],
   )
@@ -1178,6 +1328,10 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       eliminarPagoAlquiler,
       listarInstructoresSubordinados,
       listarLocacionesAuditadas,
+      listarCuotasAlumno,
+      listarCuotasPorPeriodo,
+      registrarCuota,
+      eliminarCuota,
       listarClases,
       obtenerClaseDetalle,
       crearClase,
@@ -1227,6 +1381,10 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       eliminarPagoAlquiler,
       listarInstructoresSubordinados,
       listarLocacionesAuditadas,
+      listarCuotasAlumno,
+      listarCuotasPorPeriodo,
+      registrarCuota,
+      eliminarCuota,
       listarClases,
       obtenerClaseDetalle,
       crearClase,

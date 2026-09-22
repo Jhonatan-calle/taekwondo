@@ -37,7 +37,12 @@ export default function InstructorScreen() {
           habilitada
           onPresionar={() => router.push('/instructor/clases')}
         />
-        <FilaOpcionMenu titulo="Cuotas de alumnos" descripcion="Registrar los pagos mensuales" />
+        <FilaOpcionMenu
+          titulo="Cuotas de alumnos"
+          descripcion="Registrar los pagos mensuales"
+          habilitada
+          onPresionar={() => router.push('/instructor/cuotas')}
+        />
         <FilaOpcionMenu
           titulo="Locaciones"
           descripcion="Administrar los centros de entrenamiento"

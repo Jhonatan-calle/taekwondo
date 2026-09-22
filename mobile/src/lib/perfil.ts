@@ -114,9 +114,9 @@ export type DatosPagoAlquiler = {
   archivo: ArchivoAdjunto | null
 }
 
-export type EstadoPagoAlquiler = 'al_dia' | 'vencida' | 'sin_pagos'
+export const MENSAJE_CUOTA_DUPLICADA = 'Ya registraste un pago para ese periodo.'
 
-// Locación vista por un superior en la auditoría en cascada (SRS §2).
+export type EstadoPagoAlquiler = 'al_dia' | 'vencida' | 'sin_pagos'// Locación vista por un superior en la auditoría en cascada (SRS §2).
 export type LocacionAuditada = {
   id: string
   nombre: string
@@ -128,6 +128,29 @@ export type LocacionAuditada = {
   ultimo_monto: number | null
   estado_pago: EstadoPagoAlquiler
   meses_adeudados: number
+}
+
+export type PagoCuota = Pick<
+  Database['public']['Tables']['pagos_cuota']['Row'],
+  'id' | 'alumno_id' | 'fecha' | 'monto' | 'periodo'
+>
+
+export type DatosPagoCuota = {
+  alumno_id: string
+  periodo: string
+  monto: number
+  fecha: string
+}
+
+// Estado de la cuota de un alumno para un periodo dado.
+export type CuotaAlumno = {
+  alumno_id: string
+  nombre_completo: string
+  grado_actual: Grado | null
+  periodo: string
+  estado: 'pagado' | 'pendiente'
+  pago_id: string | null
+  monto: number | null
 }
 
 export const ETIQUETAS_DIAS: Record<number, string> = {

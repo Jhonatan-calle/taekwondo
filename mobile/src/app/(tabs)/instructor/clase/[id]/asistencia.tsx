@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -120,12 +120,6 @@ export default function AsistenciaClaseScreen() {
     listarAsistenciaClase,
     reportarError,
   ]);
-
-  useEffect(() => {
-    // Carga inicial; la recarga al volver a la pantalla la hace useFocusEffect.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void cargar();
-  }, []);
 
   useFocusEffect(
     useCallback(() => {

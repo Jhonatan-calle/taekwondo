@@ -76,6 +76,10 @@ export default function OnboardingScreen() {
   );
 
   useEffect(() => {
+    // Precarga única del perfil en el formulario (sincronización contexto → estado local).
+    // Los setState son intencionales y ocurren una sola vez (guard `prefillHecho`); se silencia
+    // la regla del compilador de React para no alterar el ciclo de vida del componente.
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (perfil == null || prefillHecho.current) return;
     prefillHecho.current = true;
     setNombre(perfil.nombre_completo);
@@ -90,6 +94,7 @@ export default function OnboardingScreen() {
       const [anio, mes, dia] = perfil.fecha_nacimiento.split('-').map(Number);
       setFechaSeleccionada(new Date(anio, mes - 1, dia));
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [perfil]);
 
   const cargarInstructores = useCallback(async () => {
@@ -105,6 +110,8 @@ export default function OnboardingScreen() {
   }, [listarInstructores]);
 
   useEffect(() => {
+    // Carga inicial de la lista de instructores para elegir el linaje.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- los setState ocurren dentro del cargador
     if (necesitaLinaje) void cargarInstructores();
   }, [necesitaLinaje, cargarInstructores]);
 

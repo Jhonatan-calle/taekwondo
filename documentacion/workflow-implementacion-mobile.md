@@ -148,8 +148,9 @@
    - **Implementado:** la pantalla solo consume los conteos agregados del RPC `metricas_dashboard` (nunca `profiles` de los alumnos); el filtro por instructor usa `vista='especifica'` y el propio RPC valida la autorización.
 
 ### Fase 9: Verificacion, Calidad y Compilacion
-1. **Verificaciones de Stack y Tipado:**
+1. **Verificaciones de Stack y Tipado:** *(Implementado — Fase 9, ítem 1)*
    - Ejecutar la comprobacion de tipos en TypeScript (`tsc`) y la herramienta de linting (`npm run lint`) en el directorio `mobile/` para garantizar la calidad del codigo.
+   - **Implementado:** `npm run typecheck` y `npm run lint` en verde (`0 problems`). Se corrigieron los hallazgos que bloqueaban el lint: import y variable sin uso en `crear-cuenta`, precarga del perfil y carga de instructores en `onboarding` (supresión mínima `eslint-disable` sobre la regla `react-hooks/set-state-in-effect`) y eliminación de un `useEffect` redundante en la asistencia (ya cargaba `useFocusEffect`). Referencia: `documentacion/planes/mobile-verificaciones-stack.md`.
 2. **Pruebas Integrales de RLS (Arbol de Poder):**
    - Probar los flujos clave utilizando tres perfiles de prueba diferentes para validar que los limites de visibilidad y edicion se aplican correctamente en la aplicacion real.
 3. **Generacion de Build:**

@@ -115,9 +115,11 @@ erDiagram
         uuid mesa_id FK
         uuid alumno_id FK
         uuid profesor_id FK "profesor que postula (alumno directo)"
-        grado grado_aspirado
+        grado grado_aspirado "aspiración +1; al evaluar se sobreescribe con el grado OTORGADO (+2 si doble)"
         numeric derecho_examen
         string estado "postulado | aprobado | desaprobado | ausente"
+        bool mencion_especial "premio sobre un aprobado"
+        bool promocion_doble "salta un cinturón (grado +2)"
         uuid evaluado_por FK
         timestamptz evaluado_en
         timestamptz creado_en
@@ -129,9 +131,11 @@ erDiagram
         uuid alumno_id FK
         uuid sinodal_id FK "maestro evaluador"
         grado grado_anterior
-        grado grado_nuevo
+        grado grado_nuevo "salto de +1 o +2 (doble graduación)"
         uuid mesa_id FK
         string resultado "aprobado (único que deja registro); desaprobado/ausente solo cambian la postulación"
+        bool mencion_especial
+        bool promocion_doble
         timestamptz examinado_en
     }
 
@@ -268,9 +272,19 @@ erDiagram
   modifican vía entidades internas. El gate de profesor exige `grado_actual >= 'dan_1'`
   (`puede_activar_profesor()`).
 - **Exámenes de graduación:** flujo `mesas_examen` → `postulaciones_examen` → RPC
-  `registrar_resultado_examen(p_postulacion, p_resultado)` (valida maestro examinador). `aprobado`
-  actualiza `profiles.grado_actual` y deja registro permanente en `graduaciones`; `desaprobado`/
-  `ausente` solo cambian el estado de la postulación.
+  `registrar_resultado_examen(p_postulacion, p_resultado, p_mencion_especial, p_promocion_doble)`
+  (valida maestro examinador). `aprobado` actualiza `profiles.grado_actual` y deja registro
+  permanente en `graduaciones`; `desaprobado`/`ausente` solo cambian el estado de la postulación.
+  Sobre un `aprobado` el maestro puede marcar **mención especial** y/o **doble graduación**
+  (combinables): la doble salta un cinturón (grado **+2**) y **solo aplica si el grado actual está
+  entre `blanco` y `azul_punta_roja`** (tope `azul_punta_roja → rojo_punta_negra`); desde `rojo` en
+  adelante el máximo es mención especial. Ambas quedan en `postulaciones_examen` y `graduaciones`
+  (`mencion_especial`, `promocion_doble`).
+- **`grado_aspirado` (nota de diseño):** mientras la postulación está `postulado` es la aspiración
+  +1 (calculada en el servidor por `postular_alumno`). Al evaluar, `registrar_resultado_examen` lo
+  **sobreescribe con el grado final otorgado** (+1 o +2). La fuente histórica es
+  `graduaciones.grado_nuevo`; ver el `comment on column` en la migración
+  `20260922153640_resultados_mencion_doble_graduacion.sql`.
 - **Postulación a examen 🎓:** el profesor postula a sus alumnos directos con el RPC
   `postular_alumno(p_mesa, p_alumno, p_derecho)` (`SECURITY DEFINER`), que **calcula el
   `grado_aspirado` en el servidor** derivándolo de `profiles.grado_actual` con el orden del enum

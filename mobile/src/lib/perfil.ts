@@ -1,5 +1,5 @@
 import type { Database } from '@/lib/database.types'
-import { esGradoDan, type Grado } from '@/constants/grados'
+import { GRADOS, esGradoDan, type Grado } from '@/constants/grados'
 
 type PerfilRow = Database['public']['Tables']['profiles']['Row']
 export type Genero = Database['public']['Enums']['genero']
@@ -170,9 +170,23 @@ export type DatosNuevaMesa = {
 
 export type EstadoPostulacion = 'postulado' | 'aprobado' | 'desaprobado' | 'ausente'
 
+// Resultados que el maestro examinador puede cargar (el estado previo es 'postulado').
+export type ResultadoExamen = Exclude<EstadoPostulacion, 'postulado'>
+
 export const MENSAJE_POSTULACION_DUPLICADA = 'El alumno ya está postulado en esta mesa.'
 export const MENSAJE_SIN_GRADO_SUPERIOR =
   'El alumno ya alcanzó el grado máximo y no puede aspirar a uno superior.'
+export const MENSAJE_YA_EVALUADA = 'Esta postulación ya fue evaluada.'
+
+// La doble graduación (salto de un cinturón) solo aplica desde blanco hasta
+// azul punta roja; el grado resultante es +2 (tope rojo punta negra).
+export const GRADO_TOPE_DOBLE_GRADUACION: Grado = 'azul_punta_roja'
+
+export function esElegibleDobleGraduacion(grado: Grado | null): boolean {
+  if (grado == null) return false
+  const indice = GRADOS.indexOf(grado)
+  return indice >= 0 && indice <= GRADOS.indexOf(GRADO_TOPE_DOBLE_GRADUACION)
+}
 
 export type PostulacionExamen = Pick<
   Database['public']['Tables']['postulaciones_examen']['Row'],
@@ -180,6 +194,21 @@ export type PostulacionExamen = Pick<
 > & {
   estado: EstadoPostulacion
   nombre_alumno: string
+  mencion_especial: boolean
+  promocion_doble: boolean
+}
+
+// Etiqueta del desenlace de una postulación evaluada (incluye mención y doble).
+export function etiquetaResultadoExamen(resultado: {
+  estado: EstadoPostulacion
+  mencion_especial: boolean
+  promocion_doble: boolean
+}): string {
+  if (resultado.estado === 'postulado') return 'Pendiente'
+  if (resultado.estado === 'desaprobado') return 'Desaprobado'
+  if (resultado.estado === 'ausente') return 'Ausente'
+  const base = resultado.promocion_doble ? 'Doble graduación' : 'Aprobado'
+  return resultado.mencion_especial ? `${base} · Mención especial` : base
 }
 
 export type CandidatoPostulacion = {
@@ -212,6 +241,36 @@ export function resumirRecaudacion(postulaciones: PostulacionExamen[]): ResumenR
     conCobro,
     sinCobro: postulaciones.length - conCobro,
     postulados: postulaciones.length,
+  }
+}
+
+// Fila de la planilla técnica (SRS §2, excepción de mesa de examen):
+// datos técnicos del RPC `planilla_mesa_examen` + estado de la postulación.
+export type FilaPlanillaExamen = {
+  postulacion_id: string
+  alumno_id: string
+  nombre_completo: string
+  edad: number | null
+  peso: number | null
+  grado_actual: Grado | null
+  grado_aspirado: Grado
+  estado: EstadoPostulacion
+  mencion_especial: boolean
+  promocion_doble: boolean
+}
+
+export type ResumenEvaluacion = {
+  total: number
+  evaluados: number
+  pendientes: number
+}
+
+export function resumirEvaluacion(filas: FilaPlanillaExamen[]): ResumenEvaluacion {
+  const evaluados = filas.filter((fila) => fila.estado !== 'postulado').length
+  return {
+    total: filas.length,
+    evaluados,
+    pendientes: filas.length - evaluados,
   }
 }
 

@@ -23,7 +23,12 @@ export default function MaestroScreen() {
           habilitada
           onPresionar={() => router.push('/maestro/mesas')}
         />
-        <FilaOpcionMenu titulo="Planilla técnica de evaluación" descripcion="Evaluar a los alumnos postulados" />
+        <FilaOpcionMenu
+          titulo="Planilla técnica de evaluación"
+          descripcion="Evaluar a los alumnos postulados"
+          habilitada
+          onPresionar={() => router.push('/maestro/mesas')}
+        />
         <FilaOpcionMenu
           titulo="Auditoría de locaciones en cascada"
           descripcion="Locaciones y alquileres de tus subordinados"

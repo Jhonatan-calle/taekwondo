@@ -69,6 +69,7 @@ Panel de control interactivo destinado a usuarios con personal subordinado:
 * **Planificación:** Los Maestros pueden aperturar mesas de examen definiendo fecha y lugar.  
 * **Inscripción:** Los profesores postulan a sus alumnos aptos; el sistema debe calcular automáticamente el grado inmediato superior al que aspiran.  
 * **Gestión Financiera:** Registro del "derecho de examen". El maestro examinador podrá visualizar la recaudación total de la mesa.  
-* **Evaluación:** Carga de resultados finales (Aprobado, Desaprobado o Ausente) directamente en la planilla digital.  
-* **Ascenso y Registro:** Al aprobar, el sistema debe actualizar automáticamente el cinturón en el perfil del alumno y registrar el evento en su historial académico permanente.
+* **Evaluación:** Carga de resultados finales directamente en la planilla digital: **Aprobado** o **Desaprobado**, o **Ausente**. Sobre un aprobado el maestro examinador puede marcar además **Mención especial** y/o **Doble graduación** (el alumno se salta un cinturón).  
+* **Doble graduación:** solo aplica cuando el grado actual del alumno está entre **Blanco** y **Azul punta roja** (inclusive); el nuevo grado es dos niveles superior (caso tope: Azul punta roja → Rojo punta negra). De ahí en adelante el máximo premio es la **mención especial**.  
+* **Ascenso y Registro:** Al aprobar, el sistema debe actualizar automáticamente el cinturón en el perfil del alumno (un nivel, o dos si hay doble graduación) y registrar el evento en su historial académico permanente (`graduaciones`), incluidas la mención especial y la doble graduación. La postulación guarda el **grado otorgado**.  
 

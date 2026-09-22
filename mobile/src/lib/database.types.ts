@@ -271,7 +271,9 @@ export type Database = {
           grado_anterior: Database["public"]["Enums"]["grado"] | null
           grado_nuevo: Database["public"]["Enums"]["grado"] | null
           id: string
+          mencion_especial: boolean
           mesa_id: string | null
+          promocion_doble: boolean
           resultado: string
           sinodal_id: string
         }
@@ -281,7 +283,9 @@ export type Database = {
           grado_anterior?: Database["public"]["Enums"]["grado"] | null
           grado_nuevo?: Database["public"]["Enums"]["grado"] | null
           id?: string
+          mencion_especial?: boolean
           mesa_id?: string | null
+          promocion_doble?: boolean
           resultado?: string
           sinodal_id: string
         }
@@ -291,7 +295,9 @@ export type Database = {
           grado_anterior?: Database["public"]["Enums"]["grado"] | null
           grado_nuevo?: Database["public"]["Enums"]["grado"] | null
           id?: string
+          mencion_especial?: boolean
           mesa_id?: string | null
+          promocion_doble?: boolean
           resultado?: string
           sinodal_id?: string
         }
@@ -774,8 +780,10 @@ export type Database = {
           evaluado_por: string | null
           grado_aspirado: Database["public"]["Enums"]["grado"]
           id: string
+          mencion_especial: boolean
           mesa_id: string
           profesor_id: string
+          promocion_doble: boolean
         }
         Insert: {
           alumno_id: string
@@ -786,8 +794,10 @@ export type Database = {
           evaluado_por?: string | null
           grado_aspirado: Database["public"]["Enums"]["grado"]
           id?: string
+          mencion_especial?: boolean
           mesa_id: string
           profesor_id: string
+          promocion_doble?: boolean
         }
         Update: {
           alumno_id?: string
@@ -798,8 +808,10 @@ export type Database = {
           evaluado_por?: string | null
           grado_aspirado?: Database["public"]["Enums"]["grado"]
           id?: string
+          mencion_especial?: boolean
           mesa_id?: string
           profesor_id?: string
+          promocion_doble?: boolean
         }
         Relationships: [
           {
@@ -1050,6 +1062,10 @@ export type Database = {
     }
     Functions: {
       activar_faceta_profesor: { Args: never; Returns: boolean }
+      actualizar_derecho_examen: {
+        Args: { p_derecho_examen: number; p_postulacion_id: string }
+        Returns: boolean
+      }
       alta_alumno: {
         Args: {
           p_altura_cm?: number
@@ -1070,11 +1086,7 @@ export type Database = {
         Returns: undefined
       }
       crear_grupo_con_horarios: {
-        Args: {
-          p_horarios: Json
-          p_locacion_id?: string
-          p_nombre: string
-        }
+        Args: { p_horarios: Json; p_locacion_id: string; p_nombre: string }
         Returns: string
       }
       crear_llave_tul: {
@@ -1086,16 +1098,17 @@ export type Database = {
         Returns: undefined
       }
       descendientes: { Args: { p_ancestro: string }; Returns: string[] }
-      actualizar_derecho_examen: {
-        Args: { p_postulacion_id: string; p_derecho_examen: number }
+      editar_grupo: {
+        Args: {
+          p_grupo_id: string
+          p_horarios?: Json
+          p_locacion_id?: string
+          p_nombre: string
+        }
         Returns: boolean
       }
-      postular_alumno: {
-        Args: { p_alumno_id: string; p_derecho_examen?: number; p_mesa_id: string }
-        Returns: string
-      }
-      quitar_postulacion: {
-        Args: { p_postulacion_id: string }
+      editar_miembros_grupo: {
+        Args: { p_alumno_ids: string[]; p_grupo_id: string }
         Returns: boolean
       }
       eliminar_locacion_segura: {
@@ -1116,19 +1129,6 @@ export type Database = {
       }
       es_subordinado_de: {
         Args: { p_jefe: string; p_perfil: string }
-        Returns: boolean
-      }
-      editar_grupo: {
-        Args: {
-          p_grupo_id: string
-          p_horarios?: Json
-          p_locacion_id?: string
-          p_nombre: string
-        }
-        Returns: boolean
-      }
-      editar_miembros_grupo: {
-        Args: { p_alumno_ids: string[]; p_grupo_id: string }
         Returns: boolean
       }
       finalizar_torneo: {
@@ -1177,7 +1177,19 @@ export type Database = {
           postulacion_id: string
         }[]
       }
+      postular_alumno: {
+        Args: {
+          p_alumno_id: string
+          p_derecho_examen?: number
+          p_mesa_id: string
+        }
+        Returns: string
+      }
       puede_activar_profesor: { Args: never; Returns: boolean }
+      quitar_postulacion: {
+        Args: { p_postulacion_id: string }
+        Returns: boolean
+      }
       registrar_grado_verificado: {
         Args: {
           p_grado: Database["public"]["Enums"]["grado"]
@@ -1186,7 +1198,12 @@ export type Database = {
         Returns: undefined
       }
       registrar_resultado_examen: {
-        Args: { p_postulacion: string; p_resultado: string }
+        Args: {
+          p_mencion_especial?: boolean
+          p_postulacion: string
+          p_promocion_doble?: boolean
+          p_resultado: string
+        }
         Returns: boolean
       }
       resolver_solicitud_linaje: {

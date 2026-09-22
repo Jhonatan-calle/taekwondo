@@ -201,6 +201,21 @@
 - Verificar que ningún grupo se borra en cascada al eliminar la locación (`on delete set null`).
 - **Refresco:** editar el grupo y volver → el detalle debe reflejar los cambios **sin reiniciar** la app (ver `documentacion/planes/mobile-refresco-detalle-foco.md`). Mismo chequeo al editar una locación.
 
+### 20. Planilla técnica y evaluación (dispositivo)
+- **Referencia:** `documentacion/planes/mobile-planilla-evaluacion.md`.
+- Con la cuenta **maestro dueño** de una mesa **cerrada**: en el detalle de la mesa, tocar **"Abrir planilla de evaluación"** → se ve cada postulado con **nombre, edad, peso y `grado actual → aspirado`**.
+- Con la mesa **abierta**: el botón está deshabilitado con la nota "Cerrá la mesa para poder evaluar"; la planilla muestra el mismo aviso y sin acciones.
+- Cargar **Aprobado** a un postulado → debe pedir **confirmación**, ascender el `grado_actual` del alumno (ver su detalle en Instructor) y registrar la fila en `graduaciones`. `Desaprobado`/`Ausente` no deben cambiar el grado.
+- **Mención especial:** marcar la casilla + Aprobado → el desenlace queda "Aprobado · Mención especial" y en `graduaciones.mencion_especial = true`; el grado sube solo un nivel.
+- **Doble graduación:** con un alumno de grado entre `blanco` y `azul punta roja`, usar **Doble graduación** → el grado sube **dos** niveles (probar el caso tope `azul punta roja → rojo punta negra`) y `graduaciones.promocion_doble = true`. Con un alumno `rojo`/`rojo punta negra`/dan el botón **no** debe aparecer.
+- **Doble + mención:** confirmar que se pueden combinar y que el badge muestra ambos.
+- **Grado otorgado:** tras evaluar, "Aspira a" pasa a mostrar **"Grado otorgado"** con el grado real (para doble, el +2).
+- Con la mesa **abierta**, presionar "Abrir planilla de evaluación" debe mostrar el aviso con opción de **cerrar la mesa** (ya no queda mudo).
+- Volver a la planilla: la fila evaluada muestra **badge** y no permite volver a cargar (el RPC rechaza el reintento).
+- **Mesa ajena:** abrir la planilla de una mesa de otro maestro → debe verse solo el mensaje de **solo lectura** (sin datos técnicos).
+- **Fail gracefully:** con red cortada al cargar o al registrar, debe verse el banner genérico y **no** romperse la pantalla.
+- Verificar que el resumen **"Evaluados X de Y"** se actualiza tras cada resultado sin reiniciar la app.
+
 ---
 
 🗒️ Actualizar este archivo (tachar items, agregar folow-ups de fecha) cada vez que se haga una

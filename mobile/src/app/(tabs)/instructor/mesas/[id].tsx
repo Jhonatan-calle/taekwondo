@@ -5,7 +5,12 @@ import { etiquetaGrado } from '@/constants/grados';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 import { useErrorGlobal } from '@/contextos/ErrorGlobal';
 import { MENSAJE_ERROR_GENERICO } from '@/lib/errores';
-import { formatearMonto, type MesaExamen, type PostulacionExamen } from '@/lib/perfil';
+import {
+  etiquetaResultadoExamen,
+  formatearMonto,
+  type MesaExamen,
+  type PostulacionExamen,
+} from '@/lib/perfil';
 
 function formatearFecha(fechaISO: string): string {
   const partes = fechaISO.split('-');
@@ -13,13 +18,6 @@ function formatearFecha(fechaISO: string): string {
   const [anio, mes, dia] = partes;
   return `${dia}/${mes}/${anio}`;
 }
-
-const ETIQUETA_ESTADO: Record<PostulacionExamen['estado'], string> = {
-  postulado: 'Postulado',
-  aprobado: 'Aprobado',
-  desaprobado: 'Desaprobado',
-  ausente: 'Ausente',
-};
 
 export default function MesaInstructorDetalleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -134,12 +132,19 @@ export default function MesaInstructorDetalleScreen() {
               <View style={styles.postulacionInfo}>
                 <Text style={styles.nombre}>{postulacion.nombre_alumno}</Text>
                 <Text style={styles.datos}>
-                  Aspira a {etiquetaGrado(postulacion.grado_aspirado)} ·{' '}
+                  {postulacion.estado === 'postulado'
+                    ? `Aspira a ${etiquetaGrado(postulacion.grado_aspirado)}`
+                    : `Grado otorgado: ${etiquetaGrado(postulacion.grado_aspirado)}`}{' '}
+                  ·{' '}
                   {postulacion.derecho_examen != null
                     ? formatearMonto(postulacion.derecho_examen)
                     : 'Derecho sin cobrar'}
                 </Text>
-                <Text style={styles.estado}>{ETIQUETA_ESTADO[postulacion.estado]}</Text>
+                <Text style={styles.estado}>
+                  {postulacion.estado === 'postulado'
+                    ? 'Postulado'
+                    : etiquetaResultadoExamen(postulacion)}
+                </Text>
               </View>
               {mesaAbierta && postulacion.estado === 'postulado' ? (
                 <View style={styles.accionesFila}>

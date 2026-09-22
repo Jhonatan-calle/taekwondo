@@ -6,6 +6,7 @@ import { useAuthGlobal } from '@/contextos/AuthGlobal';
 import { useErrorGlobal } from '@/contextos/ErrorGlobal';
 import { MENSAJE_ERROR_GENERICO } from '@/lib/errores';
 import {
+  etiquetaResultadoExamen,
   formatearMonto,
   resumirRecaudacion,
   type EstadoMesa,
@@ -90,6 +91,26 @@ export default function MesaDetalleScreen() {
     );
   };
 
+  const abrirPlanilla = () => {
+    if (mesa == null) return;
+    if (mesa.estado === 'abierta') {
+      Alert.alert(
+        'Primero cerrá la mesa',
+        'Para evaluar a los postulados tenés que cerrar la mesa. ¿Querés cerrarla ahora?',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Cerrar mesa', onPress: () => void cambiarEstado('cerrada') },
+        ],
+      );
+      return;
+    }
+    if (postulados.length === 0) {
+      Alert.alert('Sin postulados', 'Todavía no hay alumnos postulados en esta mesa.');
+      return;
+    }
+    router.push(`/maestro/mesas/${mesa.id}/planilla`);
+  };
+
   const cambiarEstado = async (estado: EstadoMesa) => {
     if (cambiando || mesa == null) return;
     setCambiando(true);
@@ -169,14 +190,17 @@ export default function MesaDetalleScreen() {
               <View style={styles.postulacionInfo}>
                 <Text style={styles.nombreAlumno}>{postulacion.nombre_alumno}</Text>
                 <Text style={styles.datosPostulacion}>
-                  Aspira a {etiquetaGrado(postulacion.grado_aspirado)} · Derecho:{' '}
+                  {postulacion.estado === 'postulado'
+                    ? `Aspira a ${etiquetaGrado(postulacion.grado_aspirado)}`
+                    : `Grado otorgado: ${etiquetaGrado(postulacion.grado_aspirado)}`}
+                  {' · Derecho: '}
                   {postulacion.derecho_examen != null
                     ? formatearMonto(postulacion.derecho_examen)
                     : 'sin cobrar'}
                 </Text>
               </View>
               <View style={[styles.estadoBadge, badgeEstadoPostulacion(postulacion.estado)]}>
-                <Text style={styles.estadoBadgeTexto}>{postulacion.estado}</Text>
+                <Text style={styles.estadoBadgeTexto}>{etiquetaResultadoExamen(postulacion)}</Text>
               </View>
             </View>
           ))
@@ -186,11 +210,26 @@ export default function MesaDetalleScreen() {
       {esPropia ? (
         <View style={styles.acciones}>
           <Pressable
-            onPress={() => router.push(`/maestro/mesas/nueva?mesa_id=${mesa.id}`)}
+            onPress={abrirPlanilla}
             style={styles.botonPrimario}
             accessibilityRole="button"
+            accessibilityLabel="Abrir planilla de evaluación"
           >
-            <Text style={styles.botonPrimarioTexto}>Editar mesa</Text>
+            <Text style={styles.botonPrimarioTexto}>Abrir planilla de evaluación</Text>
+          </Pressable>
+
+          {mesa.estado === 'abierta' ? (
+            <Text style={styles.notaPlanilla}>
+              Cerra la mesa para poder evaluar a los postulados.
+            </Text>
+          ) : null}
+
+          <Pressable
+            onPress={() => router.push(`/maestro/mesas/nueva?mesa_id=${mesa.id}`)}
+            style={styles.botonSecundario}
+            accessibilityRole="button"
+          >
+            <Text style={styles.botonSecundarioTexto}>Editar mesa</Text>
           </Pressable>
 
           {mesa.estado === 'abierta' ? (
@@ -359,6 +398,11 @@ const styles = StyleSheet.create({
     color: '#888',
     textAlign: 'center',
     marginTop: 8,
+  },
+  notaPlanilla: {
+    fontSize: 13,
+    color: '#888',
+    textAlign: 'center',
   },
   recaudacionTotal: {
     fontSize: 24,

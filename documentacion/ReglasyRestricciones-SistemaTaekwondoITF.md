@@ -56,10 +56,16 @@ jerarquía y disciplina del Taekwondo ITF. Fuente funcional: `srs-sistemaDeGesti
 >   el sistema no procesa dinero). El **maestro examinador visualiza la recaudación total de la mesa**
 >   (SRS §3.7), con el desglose de derechos cobrados y pendientes.
 > - **Evaluación:** solo el **maestro examinador** (dueño de la mesa) carga el resultado
->   (aprobado / desaprobado / ausente) vía RPC `registrar_resultado_examen`.
+>   (aprobado / desaprobado / ausente) vía RPC `registrar_resultado_examen`. Sobre un aprobado puede
+>   marcar **mención especial** y/o **doble graduación** (combinables).
+> - **Doble graduación:** solo si el grado **actual** está entre **Blanco** y **Azul punta roja**
+>   (inclusive); el nuevo grado es **+2** (caso tope: Azul punta roja → Rojo punta negra). Desde
+>   **Rojo** en adelante (incluidos los Dan) no hay doble graduación: el máximo es mención especial.
+>   El servidor valida el límite y la interfaz no ofrece el botón fuera de rango.
 > - **Ascenso y registro:** al aprobar, el sistema actualiza automáticamente `profiles.grado_actual`
->   y deja registro permanente en `graduaciones` (historial académico). La escritura en `graduaciones`
->   solo ocurre vía RPC, nunca directa.
+>   (un nivel, o dos con doble graduación) y deja registro permanente en `graduaciones` (historial
+>   académico), con las banderas de mención y doble. La escritura en `graduaciones` solo ocurre vía
+>   RPC, nunca directa. La postulación guarda el **grado otorgado** (sobreescribe `grado_aspirado`).
 
 ## 5. Módulo de Torneos (CONGELADO — web fuera de desarrollo)
 

@@ -127,13 +127,16 @@
    - El profesor registra de manera manual el cobro del **derecho de examen** (`derecho_examen`; solo registro, el sistema no procesa dinero).
    - **Recaudacion (SRS §3.7):** el maestro examinador visualiza la **recaudacion total de la mesa** (suma de los derechos de examen), con desglose de cobrados y pendientes, en el detalle de la mesa.
    - **Implementado:** migracion `postular_alumno` (RPCs `postular_alumno`, `actualizar_derecho_examen`, `quitar_postulacion`) + pantallas `instructor/mesas` (mesas abiertas), `instructor/mesas/[id]` (postulaciones propias) e `instructor/mesas/[id]/postular` (seleccion multiple con grado aspirado y derecho); el detalle del Maestro muestra postulados y recaudacion. Referencia: `documentacion/planes/mobile-postulacion-examen.md`.
-3. **Planilla Tecnica y Evaluacion (Maestro Examinador):**
+3. **Planilla Tecnica y Evaluacion (Maestro Examinador):** *(Implementado — Fase 7, ítem 3)*
    - Al momento de evaluar, el Maestro examinador consulta la planilla digital mediante el RPC seguro `planilla_mesa_examen(p_mesa)`.
-   - Registra de forma individual el resultado (Aprobado, Desaprobado o Ausente).
-4. **Ascenso y Log permanente:**
+   - Registra de forma individual el resultado (Aprobado, Desaprobado o Ausente). Sobre un aprobado puede marcar **mención especial** y/o **doble graduación**.
+   - **Implementado:** acción `obtenerPlanillaMesa` (RPC de datos técnicos fusionado con `listarPostulacionesMesa` por estado y banderas) + `registrarResultadoExamen`; pantalla `maestro/mesas/[id]/planilla` con datos técnicos (nombre, edad, peso, grado), casilla de **mención especial** y botones **Aprobado / Doble graduación / Desaprobado / Ausente** con confirmación y badge del desenlace. Solo el maestro dueño de la mesa (la RPC devuelve 0 filas a otro); evaluar requiere la mesa **cerrada/finalizada** (el detalle avisa y ofrece cerrarla). Referencia: `documentacion/planes/mobile-planilla-evaluacion.md`.
+4. **Ascenso y Log permanente:** *(Cubierto por Fase 7, ítem 3)*
    - Al guardar un resultado como "Aprobado", la aplicacion invoca al RPC `registrar_resultado_examen`.
-   - Este RPC actualiza de forma atomica y segura el campo `grado_actual` en el perfil del alumno, genera una fila de registro historico en `graduaciones` y evita que el usuario pueda autopromocionarse de grado de forma ilegitima.
+   - Este RPC actualiza de forma atomica y segura el campo `grado_actual` en el perfil del alumno (un nivel, o **dos** si hay doble graduación), genera una fila de registro historico en `graduaciones` y evita que el usuario pueda autopromocionarse de grado de forma ilegitima.
+   - **Mención especial y doble graduación** quedan registradas en `postulaciones_examen` y `graduaciones`. La **doble graduación** solo aplica con grado actual entre `blanco` y `azul_punta_roja` (nuevo grado +2, tope `rojo_punta_negra`); desde `rojo` el maximo es mencion especial. La postulacion guarda el **grado otorgado** (sobreescribe `grado_aspirado`).
    - El historial de `graduaciones` es registro interno del staff: el alumno no accede a el desde la app (no tiene cuenta).
+   - **Nota:** el RPC y el ascenso ya existian de la migracion `examenes_graduacion` (la v1.1 agrega las banderas); la Fase 7.3 los consume desde la planilla, por lo que no requiere UI adicional.
 
 ### Fase 8: Dashboard de Metricas Anonimizadas
 1. **Visualizacion Estadistica:**

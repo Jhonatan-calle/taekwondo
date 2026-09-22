@@ -41,6 +41,8 @@ import {
   type PostulacionExamen,
   type CandidatoPostulacion,
   type EstadoPostulacion,
+  type FilaPlanillaExamen,
+  type ResultadoExamen,
   type FilaGrupoConRelaciones,
   type ClaseItem,
   type DatosNuevaClase,
@@ -108,6 +110,13 @@ type AuthGlobalValue = {
   postularAlumno(mesaId: string, alumnoId: string, derechoExamen: number | null): Promise<{ error: string | null }>
   editarDerechoExamen(postulacionId: string, monto: number): Promise<{ error: string | null }>
   quitarPostulacion(postulacionId: string): Promise<{ error: string | null }>
+  obtenerPlanillaMesa(mesaId: string): Promise<ResultadoConsulta<FilaPlanillaExamen[] | null>>
+  registrarResultadoExamen(
+    postulacionId: string,
+    resultado: ResultadoExamen,
+    mencionEspecial?: boolean,
+    promocionDoble?: boolean,
+  ): Promise<{ error: string | null }>
   listarClases(grupoId?: string): Promise<ResultadoConsulta<ClaseItem[] | null>>
   obtenerClaseDetalle(claseId: string): Promise<ResultadoConsulta<ClaseItem | null>>
   crearClase(datos: DatosNuevaClase): Promise<ResultadoCreacion>
@@ -477,11 +486,13 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
     async (datos: DatosNuevoGrupo): Promise<ResultadoCreacion> => {
       const usuarioId = sesion?.user?.id
       if (usuarioId == null) return { error: MENSAJE_ERROR_GENERICO }
+      // El alta exige locación (el RPC la recibe como NOT NULL).
+      if (datos.locacion_id == null) return { error: MENSAJE_ERROR_GENERICO }
       const { data, error } = await ejecutarConsulta<string | null>(
         Promise.resolve(
           supabase.rpc('crear_grupo_con_horarios', {
             p_nombre: datos.nombre.trim(),
-            p_locacion_id: datos.locacion_id ?? undefined,
+            p_locacion_id: datos.locacion_id,
             p_horarios: datos.horarios,
           }),
         ),
@@ -850,13 +861,15 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
         grado_aspirado: Grado
         derecho_examen: number | null
         estado: string
+        mencion_especial: boolean
+        promocion_doble: boolean
         profiles: { nombre_completo: string } | null
       }
 
       const promesa = supabase
         .from('postulaciones_examen')
         .select(
-          'id, mesa_id, alumno_id, grado_aspirado, derecho_examen, estado, profiles!postulaciones_examen_alumno_id_fkey(nombre_completo)',
+          'id, mesa_id, alumno_id, grado_aspirado, derecho_examen, estado, mencion_especial, promocion_doble, profiles!postulaciones_examen_alumno_id_fkey(nombre_completo)',
         )
         .eq('mesa_id', mesaId)
         .order('creado_en', { ascending: true })
@@ -874,6 +887,8 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
                 derecho_examen: fila.derecho_examen,
                 estado: fila.estado as EstadoPostulacion,
                 nombre_alumno: fila.profiles?.nombre_completo ?? 'Alumno',
+                mencion_especial: fila.mencion_especial === true,
+                promocion_doble: fila.promocion_doble === true,
               })) ?? null,
             error,
           })),
@@ -984,6 +999,90 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       const { data, error } = await ejecutarConsulta<boolean | null>(
         Promise.resolve(supabase.rpc('quitar_postulacion', { p_postulacion_id: postulacionId })),
         { modulo: 'postulaciones', contexto: 'quitarPostulacion' },
+      )
+      return error != null || data !== true ? { error: MENSAJE_ERROR_GENERICO } : { error: null }
+    },
+    [sesion?.user?.id],
+  )
+
+  // Planilla técnica (SRS §2, excepción de mesa de examen): el RPC expone los
+  // datos técnicos solo al maestro examinador; el estado de cada postulación se
+  // fusiona desde la consulta de postulaciones para no duplicar la RLS.
+  const obtenerPlanillaMesa = useCallback(
+    async (mesaId: string): Promise<ResultadoConsulta<FilaPlanillaExamen[] | null>> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { data: null, error: MENSAJE_ERROR_GENERICO }
+
+      type FilaPlanilla = {
+        postulacion_id: string
+        alumno_id: string
+        nombre_completo: string
+        edad: number | null
+        peso: number | null
+        grado_actual: Grado | null
+        grado_aspirado: Grado
+      }
+
+      const [resultadoPlanilla, resultadoPostulaciones] = await Promise.all([
+        ejecutarConsulta<FilaPlanilla[] | null>(
+          Promise.resolve(supabase.rpc('planilla_mesa_examen', { p_mesa: mesaId })),
+          { modulo: 'planilla_examen', contexto: 'obtenerPlanillaMesa' },
+        ),
+        listarPostulacionesMesa(mesaId),
+      ])
+
+      if (resultadoPlanilla.error != null || resultadoPlanilla.data == null) {
+        return { data: null, error: resultadoPlanilla.error ?? MENSAJE_ERROR_GENERICO }
+      }
+      if (resultadoPostulaciones.error != null || resultadoPostulaciones.data == null) {
+        return { data: null, error: resultadoPostulaciones.error ?? MENSAJE_ERROR_GENERICO }
+      }
+
+      const postulacionPorId = new Map(
+        resultadoPostulaciones.data.map((postulacion) => [postulacion.id, postulacion]),
+      )
+
+      return {
+        data: resultadoPlanilla.data.map((fila) => {
+          const postulacion = postulacionPorId.get(fila.postulacion_id)
+          return {
+            postulacion_id: fila.postulacion_id,
+            alumno_id: fila.alumno_id,
+            nombre_completo: fila.nombre_completo,
+            edad: fila.edad,
+            peso: fila.peso,
+            grado_actual: fila.grado_actual,
+            grado_aspirado: fila.grado_aspirado,
+            estado: postulacion?.estado ?? 'postulado',
+            mencion_especial: postulacion?.mencion_especial ?? false,
+            promocion_doble: postulacion?.promocion_doble ?? false,
+          }
+        }),
+        error: null,
+      }
+    },
+    [sesion?.user?.id, listarPostulacionesMesa],
+  )
+
+  const registrarResultadoExamen = useCallback(
+    async (
+      postulacionId: string,
+      resultado: ResultadoExamen,
+      mencionEspecial = false,
+      promocionDoble = false,
+    ): Promise<{ error: string | null }> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { error: MENSAJE_ERROR_GENERICO }
+      const { data, error } = await ejecutarConsulta<boolean | null>(
+        Promise.resolve(
+          supabase.rpc('registrar_resultado_examen', {
+            p_postulacion: postulacionId,
+            p_resultado: resultado,
+            p_mencion_especial: mencionEspecial,
+            p_promocion_doble: promocionDoble,
+          }),
+        ),
+        { modulo: 'planilla_examen', contexto: 'registrarResultadoExamen' },
       )
       return error != null || data !== true ? { error: MENSAJE_ERROR_GENERICO } : { error: null }
     },
@@ -1619,6 +1718,8 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       postularAlumno,
       editarDerechoExamen,
       quitarPostulacion,
+      obtenerPlanillaMesa,
+      registrarResultadoExamen,
       listarClases,
       obtenerClaseDetalle,
       crearClase,
@@ -1681,6 +1782,8 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       postularAlumno,
       editarDerechoExamen,
       quitarPostulacion,
+      obtenerPlanillaMesa,
+      registrarResultadoExamen,
       listarClases,
       obtenerClaseDetalle,
       crearClase,

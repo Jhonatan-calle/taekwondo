@@ -22,6 +22,7 @@ export default function MaestroLayout() {
       <Stack.Screen name="mesas/[id]/planilla" options={{ title: 'Planilla de evaluación' }} />
       <Stack.Screen name="auditoria" options={{ title: 'Auditoría de locaciones' }} />
       <Stack.Screen name="auditoria/[id]" options={{ title: 'Locación auditada' }} />
+      <Stack.Screen name="estadisticas" options={{ title: 'Estadísticas' }} />
     </Stack>
   );
 }

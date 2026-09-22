@@ -1,5 +1,5 @@
 import type { Database } from '@/lib/database.types'
-import { GRADOS, esGradoDan, type Grado } from '@/constants/grados'
+import { GRADOS, esGradoDan, etiquetaGrado, type Grado } from '@/constants/grados'
 
 type PerfilRow = Database['public']['Tables']['profiles']['Row']
 export type Genero = Database['public']['Enums']['genero']
@@ -527,4 +527,77 @@ export function horaFinPosterior(inicio: string, fin: string): boolean {
 
 export function esTextoRequerido(texto: string, min = 2): boolean {
   return texto.trim().length >= min
+}
+
+// ============================================================
+// Dashboard de métricas anonimizadas (SRS §3.6)
+// ============================================================
+
+export type VistaMetricas = 'consolidada' | 'especifica'
+
+// Conteo de una categoría listo para graficar.
+export type ItemDistribucion = {
+  clave: string
+  etiqueta: string
+  total: number
+}
+
+export type MetricasDashboard = {
+  total: number
+  por_genero: ItemDistribucion[]
+  por_rango_edad: ItemDistribucion[]
+  por_grado: ItemDistribucion[]
+}
+
+const GENEROS_METRICA: { clave: Genero; etiqueta: string }[] = [
+  { clave: 'masculino', etiqueta: 'Masculino' },
+  { clave: 'femenino', etiqueta: 'Femenino' },
+  { clave: 'otro', etiqueta: 'Otro' },
+]
+
+// El RPC agrupa los 18-30 y todo lo superior como '30+' (31+ en la práctica):
+// se muestra una etiqueta no ambigua, sin tocar la BD.
+const RANGOS_EDAD_METRICA: { clave: string; etiqueta: string }[] = [
+  { clave: '0-7', etiqueta: '0 a 7' },
+  { clave: '8-11', etiqueta: '8 a 11' },
+  { clave: '12-14', etiqueta: '12 a 14' },
+  { clave: '15-17', etiqueta: '15 a 17' },
+  { clave: '18-30', etiqueta: '18 a 30' },
+  { clave: '30+', etiqueta: 'Mayores de 30' },
+]
+
+function aConteo(valor: unknown): number {
+  return typeof valor === 'number' && Number.isFinite(valor) ? valor : 0
+}
+
+function leerBloque(bloque: unknown): Record<string, unknown> {
+  return bloque != null && typeof bloque === 'object' ? (bloque as Record<string, unknown>) : {}
+}
+
+// Normaliza el jsonb del RPC: orden fijo de categorías, 0 para claves ausentes
+// y descarte de claves desconocidas. Los grados sin integrantes no se grafican.
+export function normalizarMetricas(json: unknown): MetricasDashboard {
+  const raiz = leerBloque(json)
+  const porGenero = leerBloque(raiz.por_genero)
+  const porRango = leerBloque(raiz.por_rango_edad)
+  const porGrado = leerBloque(raiz.por_grado)
+
+  return {
+    total: aConteo(raiz.total),
+    por_genero: GENEROS_METRICA.map(({ clave, etiqueta }) => ({
+      clave,
+      etiqueta,
+      total: aConteo(porGenero[clave]),
+    })),
+    por_rango_edad: RANGOS_EDAD_METRICA.map(({ clave, etiqueta }) => ({
+      clave,
+      etiqueta,
+      total: aConteo(porRango[clave]),
+    })),
+    por_grado: GRADOS.map((grado) => ({
+      clave: grado,
+      etiqueta: etiquetaGrado(grado),
+      total: aConteo(porGrado[grado]),
+    })).filter((item) => item.total > 0),
+  }
 }

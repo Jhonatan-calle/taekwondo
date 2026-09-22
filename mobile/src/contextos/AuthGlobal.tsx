@@ -10,6 +10,7 @@ import {
   MENSAJE_DNI_DUPLICADO,
   MENSAJE_CUOTA_DUPLICADA,
   MENSAJE_POSTULACION_DUPLICADA,
+  normalizarMetricas,
   esInstructor as esInstructorDePerfil,
   esProfesorActivo as esProfesorActivoDePerfil,
   perfilCompleto as esPerfilCompleto,
@@ -48,6 +49,8 @@ import {
   type DatosNuevaClase,
   type AlumnoGrupo,
   type AsistenciaItem,
+  type VistaMetricas,
+  type MetricasDashboard,
 } from '@/lib/perfil'
 import type { Grado } from '@/constants/grados'
 import { gradoSiguiente } from '@/constants/grados'
@@ -97,6 +100,10 @@ type AuthGlobalValue = {
   eliminarPagoAlquiler(pagoId: string, comprobantePath: string | null): Promise<{ error: string | null }>
   listarInstructoresSubordinados(): Promise<ResultadoConsulta<InstructorLinaje[] | null>>
   listarLocacionesAuditadas(instructorId?: string): Promise<ResultadoConsulta<LocacionAuditada[] | null>>
+  obtenerMetricasDashboard(
+    vista: VistaMetricas,
+    instructorId?: string,
+  ): Promise<ResultadoConsulta<MetricasDashboard | null>>
   listarCuotasAlumno(alumnoId: string): Promise<ResultadoConsulta<PagoCuota[] | null>>
   listarCuotasPorPeriodo(periodo: string): Promise<ResultadoConsulta<CuotaAlumno[] | null>>
   registrarCuota(datos: DatosPagoCuota): Promise<{ error: string | null }>
@@ -593,6 +600,33 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
           })),
         ),
         { modulo: 'auditoria', contexto: 'listarLocacionesAuditadas' },
+      )
+    },
+    [sesion?.user?.id],
+  )
+
+  // Dashboard anonimizado (SRS §3.6): el RPC devuelve SOLO conteos de la rama
+  // (consolidada = descendientes del usuario; específica = de un subordinado).
+  const obtenerMetricasDashboard = useCallback(
+    async (
+      vista: VistaMetricas,
+      instructorId?: string,
+    ): Promise<ResultadoConsulta<MetricasDashboard | null>> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { data: null, error: MENSAJE_ERROR_GENERICO }
+      return ejecutarConsulta<MetricasDashboard | null>(
+        Promise.resolve(
+          supabase
+            .rpc('metricas_dashboard', {
+              p_vista: vista,
+              p_instructor: vista === 'especifica' ? instructorId : undefined,
+            })
+            .then(({ data, error }) => ({
+              data: error == null && data != null ? normalizarMetricas(data) : null,
+              error,
+            })),
+        ),
+        { modulo: 'estadisticas', contexto: 'obtenerMetricasDashboard' },
       )
     },
     [sesion?.user?.id],
@@ -1705,6 +1739,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       eliminarPagoAlquiler,
       listarInstructoresSubordinados,
       listarLocacionesAuditadas,
+      obtenerMetricasDashboard,
       listarCuotasAlumno,
       listarCuotasPorPeriodo,
       registrarCuota,
@@ -1769,6 +1804,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       eliminarPagoAlquiler,
       listarInstructoresSubordinados,
       listarLocacionesAuditadas,
+      obtenerMetricasDashboard,
       listarCuotasAlumno,
       listarCuotasPorPeriodo,
       registrarCuota,

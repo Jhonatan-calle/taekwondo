@@ -35,7 +35,12 @@ export default function MaestroScreen() {
           habilitada
           onPresionar={() => router.push('/maestro/auditoria')}
         />
-        <FilaOpcionMenu titulo="Estadísticas anonimizadas" descripcion="Métricas por género, edad y grado" />
+        <FilaOpcionMenu
+          titulo="Estadísticas anonimizadas"
+          descripcion="Métricas por género, edad y grado"
+          habilitada
+          onPresionar={() => router.push('/maestro/estadisticas')}
+        />
       </View>
     </ScrollView>
   );

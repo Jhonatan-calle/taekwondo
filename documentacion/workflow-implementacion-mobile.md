@@ -139,11 +139,13 @@
    - **Nota:** el RPC y el ascenso ya existian de la migracion `examenes_graduacion` (la v1.1 agrega las banderas); la Fase 7.3 los consume desde la planilla, por lo que no requiere UI adicional.
 
 ### Fase 8: Dashboard de Metricas Anonimizadas
-1. **Visualizacion Estadistica:**
-   - Consumir el RPC `metricas_dashboard(p_vista, p_instructor)` para alimentar graficos o listas de distribucion por genero, rango de edad y cinturon.
-2. **Privacidad en Cascada Activa:**
+1. **Visualizacion Estadistica:** *(Implementado — Fase 8, ítem 1)*
+   - Consumir el RPC `metricas_dashboard(p_vista, p_instructor)` para alimentar graficos de distribucion por genero, rango de edad y cinturon.
+   - **Implementado:** acción `obtenerMetricasDashboard(vista, instructorId?)` (normaliza el `jsonb` del RPC con orden fijo de categorías y etiqueta "Mayores de 30" para el bucket `30+`) + componentes `GraficoDona`/`GraficoBarras` (librería `react-native-gifted-charts` + `react-native-svg`) + pantalla `maestro/estadisticas` con filtro por chips (toda la rama / instructor específico) y fail gracefully; fila "Estadísticas anonimizadas" habilitada. Referencia: `documentacion/planes/mobile-dashboard-metricas.md`.
+2. **Privacidad en Cascada Activa:** *(Implementado en Fase 8, ítem 1)*
    - Asegurar que ningun dato de caracter personal de los alumnos indirectos (pertenecientes a instructores subordinados) sea expuesto en esta vista.
    - Proveer controles de filtrado entre la vista consolidada (toda la descendencia) y la vista especifica (un instructor seleccionado).
+   - **Implementado:** la pantalla solo consume los conteos agregados del RPC `metricas_dashboard` (nunca `profiles` de los alumnos); el filtro por instructor usa `vista='especifica'` y el propio RPC valida la autorización.
 
 ### Fase 9: Verificacion, Calidad y Compilacion
 1. **Verificaciones de Stack y Tipado:**

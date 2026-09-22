@@ -10,15 +10,16 @@
 > Los **pendientes puntuales** (bloqueos, fechas, follow-ups) viven en `pendientes-pruebas.md`.
 
 ## Metadatos
-- **Versión:** 1.0
+- **Versión:** 1.1
 - **Estado:** Vigente
 - **Fecha:** 2026-09-22
-- **Cobertura:** 129 casos en 18 módulos (40 marcados Smoke)
+- **Cobertura:** 137 casos en 19 módulos (42 marcados Smoke)
 
 ## Historial de revisiones
 | Versión | Fecha | Cambios |
 |---|---|---|
 | 1.0 | 2026-09-22 | Creación inicial: catálogo de casos por módulo (auth, onboarding, linaje, navegación, inicio, alumnos, grupos, locaciones, clases, asistencia, cuotas, alquileres, auditoría, mesas, postulación, evaluación), matriz de roles/RLS, resiliencia y smoke test. |
+| 1.1 | 2026-09-22 | Fase 8.1: nuevo módulo **TC-DASH** (dashboard de métricas anonimizadas) con 8 casos (2 Smoke) y dos entradas al smoke test; se quita el pendiente de Fase 8. |
 
 ---
 
@@ -103,6 +104,23 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`), grupos con locación y algu
 - **Rol:** cualquier usuario autenticado
 - **Pasos:** Inicio → "Cerrar sesión" (enlace al final)
 - **Esperado:** vuelve al login; no quedan pantallas de gestión accesibles
+
+#### TC-AUTH-09 — Mostrar/ocultar contraseña en login · **Smoke**
+- **Rol:** anónimo
+- **Pasos:** escribir una contraseña en el campo → tocar el ícono de ojo
+- **Esperado:** alterna entre oculta y visible; **el texto no se pierde** ni se borra; el ícono cambia (ojo abierto / tachado)
+- **Accesibilidad:** el botón anuncia "Mostrar contraseña" / "Ocultar contraseña"
+- **Referencia:** `planes/mobile-toggle-contrasena.md`
+
+#### TC-AUTH-10 — Toggle en registro (ambos campos)
+- **Rol:** anónimo
+- **Pasos:** en "Crear cuenta", alternar la visibilidad de **Contraseña** y de **Confirmar contraseña**
+- **Esperado:** **cada campo tiene su propio toggle independiente**; alternar uno no afecta al otro; los valores se conservan
+
+#### TC-AUTH-11 — Toggle en nueva contraseña
+- **Rol:** usuario en recuperación de contraseña
+- **Pasos:** en `/nueva-contrasena`, alternar los dos campos
+- **Esperado:** mismo comportamiento que `TC-AUTH-10`; los valores se conservan al alternar
 
 ---
 
@@ -561,6 +579,39 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`), grupos con locación y algu
 
 ---
 
+### TC-DASH — Dashboard de métricas anonimizadas (Maestro)
+
+#### TC-DASH-01 — Vista consolidada · **Smoke**
+- **Rol:** Maestro (raíz del árbol)
+- **Pasos:** Inicio → pestaña Maestro → "Estadísticas anonimizadas"
+- **Esperado:** chip "Toda mi rama" activo; tarjeta con el **total** de descendientes y los 3 gráficos (género, rango de edad, grado). El total coincide con el RPC `metricas_dashboard('consolidada')`
+
+#### TC-DASH-02 — Vista específica por instructor
+- **Pasos:** con un Maestro/Profesor con subordinados, tocar el chip de un instructor
+- **Esperado:** los conteos cambian a los de **solo esa rama**; coincide con `metricas_dashboard('especifica', p_instructor)`
+
+#### TC-DASH-03 — Rama sin descendientes
+- **Precondición:** usuario sin alumnos ni instructores por debajo
+- **Esperado:** estado vacío "No hay integrantes en tu rama descendente." (sin gráficos ni errores)
+
+#### TC-DASH-04 — Cambiar filtro refresca sin reiniciar
+- **Esperado:** alternar entre "Toda mi rama" e instructores actualiza total y gráficos en el momento
+
+#### TC-DASH-05 — Distribución por género
+- **Esperado:** la dona muestra Masculino / Femenino / Otro con conteo y porcentaje; la suma coincide con los perfiles con género cargado
+
+#### TC-DASH-06 — Distribución por rango de edad
+- **Esperado:** 6 barras (`0 a 7`, `8 a 11`, `12 a 14`, `15 a 17`, `18 a 30`, **Mayores de 30**); la última corresponde al bucket `30+` del RPC (31+)
+
+#### TC-DASH-07 — Distribución por grado
+- **Esperado:** barras en el **orden del enum** `grado`, con etiquetas de color / "Dan I…IX"; **no** se listan grados sin integrantes
+
+#### TC-DASH-08 — Privacidad, autorización y fail gracefully · **Smoke**
+- **Pasos:** (1) verificar que la pantalla **no** muestra nombres ni datos personales; (2) forzar un `p_instructor` ajeno (no autorizado) y cortar la red
+- **Esperado:** nunca se exponen datos personales; el RPC rechaza la vista específica ajena; con red cortada aparece mensaje genérico + **Reintentar**, sin excepciones crudas
+
+---
+
 ## 4. Matriz de roles y RLS
 
 Pruebas de seguridad que cruzan varios módulos. Se ejecutan con las **tres cuentas del seed**.
@@ -616,32 +667,34 @@ Subconjunto para correr antes de dar por cerrado cualquier cambio. Si alguno fal
 
 1. `TC-AUTH-03` Inicio de sesión correcto
 2. `TC-AUTH-02` Email duplicado
-3. `TC-ONB-01` Onboarding obligatorio
-4. `TC-LIN-01` Solicitud de linaje
-5. `TC-NAV-01` Tabs por facetas
-6. `TC-INI-01` Panel de Inicio con datos
-7. `TC-INI-04` Refresco sin reiniciar
-8. `TC-ALU-01` Directorio por RLS
-9. `TC-ALU-02` Alta de alumno
-10. `TC-GRU-06` Un alumno = un grupo
-11. `TC-LOC-05` Bloqueo de borrado de locación
-12. `TC-CLA-01` Crear clase
-13. `TC-ASI-04` Guardado atómico de asistencia
-14. `TC-CUO-02` Bloqueo de cuota duplicada
-15. `TC-ALQ-04` Enlace firmado del comprobante
-16. `TC-AUD-01` Auditoría de la rama
-17. `TC-MES-01` Crear mesa (abierta)
-18. `TC-POS-02` Grado aspirado calculado
-19. `TC-POS-08` Recaudación del Maestro
-20. `TC-EVA-03` Aprobar y ascender
-21. `TC-RLS-01` Recursividad de la auditoría
-22. `TC-ERR-01` Fail gracefully
+3. `TC-AUTH-09` Mostrar/ocultar contraseña
+4. `TC-ONB-01` Onboarding obligatorio
+5. `TC-LIN-01` Solicitud de linaje
+6. `TC-NAV-01` Tabs por facetas
+7. `TC-INI-01` Panel de Inicio con datos
+8. `TC-INI-04` Refresco sin reiniciar
+9. `TC-ALU-01` Directorio por RLS
+10. `TC-ALU-02` Alta de alumno
+11. `TC-GRU-06` Un alumno = un grupo
+12. `TC-LOC-05` Bloqueo de borrado de locación
+13. `TC-CLA-01` Crear clase
+14. `TC-ASI-04` Guardado atómico de asistencia
+15. `TC-CUO-02` Bloqueo de cuota duplicada
+16. `TC-ALQ-04` Enlace firmado del comprobante
+17. `TC-AUD-01` Auditoría de la rama
+18. `TC-MES-01` Crear mesa (abierta)
+19. `TC-POS-02` Grado aspirado calculado
+20. `TC-POS-08` Recaudación del Maestro
+21. `TC-EVA-03` Aprobar y ascender
+22. `TC-RLS-01` Recursividad de la auditoría
+23. `TC-ERR-01` Fail gracefully
+24. `TC-DASH-01` Dashboard en vista consolidada
+25. `TC-DASH-08` Privacidad y fail gracefully del dashboard
 
 ---
 
 ## 7. Pendientes de cobertura
 
-- **Fase 8 (Dashboard de métricas anonimizadas):** sin casos aún; se agregan al implementarse.
 - **Reasignación explícita de alumno de grupo:** pendiente de diseño (ver `pendientes-pruebas.md` #12).
 - **Torneos:** congelados; **no se cubren**.
 

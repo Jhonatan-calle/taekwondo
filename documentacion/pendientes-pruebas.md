@@ -4,6 +4,10 @@
 > quedaron pendientes (progreso del proyecto: flujo de acceso implementado; modo $ O → recovery
 > con deep link).
 > Cada item se tacha `[x]` cuando se verifica en el escenario real.
+>
+> **Los casos reproducibles (cómo debe funcionar cada función) están en
+> [`plan-de-pruebas.md`](./plan-de-pruebas.md).** Este archivo es la lista **viva de pendientes
+> puntuales**: bloqueos, fechas, follow-ups y lo que falta verificar.
 
 ## Pendientes
 

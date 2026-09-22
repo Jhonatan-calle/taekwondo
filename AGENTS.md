@@ -12,6 +12,9 @@
     restricciones (escuela; reglas de torneos congeladas).
   - `documentacion/databaseModel.md` → Modelo de datos (ER) y notas del módulo de torneos.
   - `documentacion/README.md` → Índice de documentación vigente/descartada.
+  - `documentacion/plan-de-pruebas.md` → **Catálogo de casos de prueba** (permanente, por módulo,
+    con IDs `TC-*`); se extiende con cada implementación.
+  - `documentacion/pendientes-pruebas.md` → Pendientes puntuales de verificación (bloqueos, fechas).
   - `documentacion/planes/` → Planes vigentes (hoy `bd-gestion-escuela.md`) y su historial de
     revisiones. Revisar antes de iniciar un nuevo plan para no duplicar ni contradecir.
   - `documentacion/descartado-web/` → ONLY historial del enfoque web; **no codear contra estos docs**.
@@ -63,6 +66,10 @@
 - Estar atento: proponer info nueva que deba quedar en los docs y advertir si el código deja
   desactualizado algún doc existente.
 - Mantener actualizado `documentacion/README.md` cuando se cree/mueva/descarte documentación.
+- **Mantener `documentacion/plan-de-pruebas.md`:** al implementar o modificar una función, **agregar o
+  actualizar sus casos de prueba** (ID `TC-<MÓDULO>-<NN>` estable, prioridad Smoke/Regresión, ficha
+  con rol, precondición, pasos y resultado esperado). Si la función cambia de comportamiento, el caso
+  se actualiza; los IDs no se reutilizan.
 - Se puede proponer crear nuevos documentos cuando aporten contexto y eviten repetir código o
   dejar código muerto.
 
@@ -84,6 +91,7 @@
 4. **Modo implementación:** pasar a código SOLO cuando el usuario lo apruebe explícitamente.
    Seguir el plan secuencialmente y marcar cada tarea con `[x]`.
 5. **Cierre:** verificar que el plan quede marcado como `Aprobado` con su fecha en metadatos
-   (sin renombrar ni mover el archivo), actualizar la documentación del proyecto y correr las
+   (sin renombrar ni mover el archivo), actualizar la documentación del proyecto (incluido
+   `documentacion/plan-de-pruebas.md`: agregar o extender los casos correspondientes) y correr las
    verificaciones del stack (BD: `supabase db push/lint --linked`; app: lint/typecheck/tests cuando
    exista `mobile/`).

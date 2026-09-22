@@ -48,8 +48,7 @@ jerarquía y disciplina del Taekwondo ITF. Fuente funcional: `srs-sistemaDeGesti
 
 ## 4. Exámenes de Graduación
 
-> - **Planificación:** los Maestros (`es_maestro`) aperturan mesas de examen (fecha, lugar, límite de
->   inscripción).
+> - **Planificación:** los Maestros (`es_maestro`) aperturan mesas de examen (fecha, lugar).
 > - **Inscripción:** los profesores postulan a sus **alumnos directos**; el sistema calcula
 >   automáticamente el **grado inmediato superior** al que aspiran.
 > - **Evaluación:** solo el **maestro examinador** (dueño de la mesa) carga el resultado

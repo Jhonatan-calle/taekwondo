@@ -113,8 +113,10 @@
    - **Implementado:** acciones `listarCuotasAlumno`, `listarCuotasPorPeriodo`, `registrarCuota` (con `creado_por = auth.uid()`) y `eliminarCuota`; seccion "Cuotas" en `instructor/alumno/[id]`, formulario `instructor/alumno/[id]/cuota` y listado de cobranzas `instructor/cuotas` (con estado pagado/pendiente por periodo). Referencia: `documentacion/planes/mobile-cuotas-alumnos.md`.
 
 ### Fase 7: Examenes de Graduacion y Promocion
-1. **Creacion de Mesas de Examen (Maestro):**
-   - Un Maestro calificado abre una mesa de examen definiendo la fecha, el lugar, el limite maximo de participantes y el estado como "abierta".
+1. **Creacion de Mesas de Examen (Maestro):** *(Implementado — Fase 7, ítem 1)*
+   - Un Maestro calificado abre una mesa de examen definiendo la fecha, el lugar y el estado como "abierta".
+   - **Nota (decision de producto):** el "limite de inscripcion" se elimino del modelo (`mesas_examen.limite_inscripcion` dropeada); el SRS §3.7 y las Reglas §4 se actualizaron para no contradecir. Si se quiere cupo por mesa, es una evolucion futura.
+   - **Implementado:** acciones `listarMesasExamen` (con conteo de postulados), `crearMesaExamen` (`maestro_id = auth.uid()`, estado `abierta`), `editarMesaExamen` y `cambiarEstadoMesa`; pantallas `maestro/mesas` (listado con estado y postulados), `maestro/mesas/nueva` (fecha + lugar con chips de locaciones u otro lugar) y `maestro/mesas/[id]` (detalle, editar, cerrar/finalizar). Referencia: `documentacion/planes/mobile-mesas-examen.md`.
 2. **Inscripcion y Postulacion (Profesor):**
    - Los profesores postulan a sus alumnos directos para la mesa de examen abierta.
    - El sistema calcula automaticamente el `grado_aspirado` (grado inmediato superior segun el enum `grado`). El profesor registra de manera manual el cobro del "derecho de examen".

@@ -106,7 +106,6 @@ erDiagram
         uuid maestro_id FK "maestro examinador (autoriza resultados)"
         date fecha
         string lugar
-        int limite_inscripcion
         string estado "abierta | cerrada | finalizada"
         timestamptz creado_en
     }

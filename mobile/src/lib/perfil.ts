@@ -153,6 +153,21 @@ export type CuotaAlumno = {
   monto: number | null
 }
 
+export type EstadoMesa = 'abierta' | 'cerrada' | 'finalizada'
+
+export type MesaExamen = Pick<
+  Database['public']['Tables']['mesas_examen']['Row'],
+  'id' | 'maestro_id' | 'fecha' | 'lugar'
+> & {
+  estado: EstadoMesa
+  cantidad_postulados: number
+}
+
+export type DatosNuevaMesa = {
+  fecha: string
+  lugar: string
+}
+
 export const ETIQUETAS_DIAS: Record<number, string> = {
   1: 'Lunes',
   2: 'Martes',

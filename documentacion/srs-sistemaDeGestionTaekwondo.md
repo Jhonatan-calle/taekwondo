@@ -66,7 +66,7 @@ Panel de control interactivo destinado a usuarios con personal subordinado:
 
 ## **3.7. Módulo de Exámenes de Graduación**
 
-* **Planificación:** Los Maestros pueden aperturar mesas de examen definiendo fecha, lugar y límite de inscripción.  
+* **Planificación:** Los Maestros pueden aperturar mesas de examen definiendo fecha y lugar.  
 * **Inscripción:** Los profesores postulan a sus alumnos aptos; el sistema debe calcular automáticamente el grado inmediato superior al que aspiran.  
 * **Gestión Financiera:** Registro del "derecho de examen". El maestro examinador podrá visualizar la recaudación total de la mesa.  
 * **Evaluación:** Carga de resultados finales (Aprobado, Desaprobado o Ausente) directamente en la planilla digital.  

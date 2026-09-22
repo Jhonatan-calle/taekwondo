@@ -603,7 +603,6 @@ export type Database = {
           estado: string
           fecha: string
           id: string
-          limite_inscripcion: number | null
           lugar: string | null
           maestro_id: string
         }
@@ -612,7 +611,6 @@ export type Database = {
           estado?: string
           fecha: string
           id?: string
-          limite_inscripcion?: number | null
           lugar?: string | null
           maestro_id: string
         }
@@ -621,7 +619,6 @@ export type Database = {
           estado?: string
           fecha?: string
           id?: string
-          limite_inscripcion?: number | null
           lugar?: string | null
           maestro_id?: string
         }

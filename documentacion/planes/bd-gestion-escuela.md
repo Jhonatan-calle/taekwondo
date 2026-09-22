@@ -59,7 +59,7 @@
 - `public.pagos_cuota`: `id, alumno_id → profiles, fecha, monto numeric(10,2), periodo text, observaciones, creado_por`, `unique (alumno_id, periodo)`.
 
 ### Fase 5 — Migración `examenes_graduacion`
-- `public.mesas_examen`: `id, maestro_id → profiles, fecha, lugar, limite_inscripcion int, estado ('abierta'|'cerrada'|'finalizada'), creado_en`.
+- `public.mesas_examen`: `id, maestro_id → profiles, fecha, lugar, estado ('abierta'|'cerrada'|'finalizada'), creado_en`.
 - `public.postulaciones_examen`: `id, mesa_id → mesas_examen, alumno_id → profiles, profesor_id → profiles, grado_aspirado public.grado, derecho_examen numeric(10,2), estado ('postulado'|'aprobado'|'desaprobado'|'ausente'), evaluado_por, evaluado_en`, `unique (mesa_id, alumno_id)`.
 - Refactor `graduaciones` (historial académico permanente): `grado_anterior public.grado`, `grado_nuevo public.grado`, `+ mesa_id → mesas_examen`, `resultado text not null default 'aprobado'`; drop `grado_anterior/grado_nuevo/grado_dan*` legacy y `aprobado bool`.
 - RPC `registrar_resultado_examen(p_postulacion uuid, p_resultado text)` (SECURITY DEFINER, valida `es_maestro` + dueño de la mesa): `aprobado` → `graduaciones` + `profiles.grado_actual = grado_aspirado` (vía `set_config('app.aprobacion_examen','on',true)`); `desaprobado`/`ausente` → solo estado de la postulación.

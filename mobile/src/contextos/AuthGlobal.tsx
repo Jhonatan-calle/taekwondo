@@ -34,6 +34,9 @@ import {
   type PagoCuota,
   type DatosPagoCuota,
   type CuotaAlumno,
+  type MesaExamen,
+  type DatosNuevaMesa,
+  type EstadoMesa,
   type FilaGrupoConRelaciones,
   type ClaseItem,
   type DatosNuevaClase,
@@ -91,6 +94,10 @@ type AuthGlobalValue = {
   listarCuotasPorPeriodo(periodo: string): Promise<ResultadoConsulta<CuotaAlumno[] | null>>
   registrarCuota(datos: DatosPagoCuota): Promise<{ error: string | null }>
   eliminarCuota(cuotaId: string): Promise<{ error: string | null }>
+  listarMesasExamen(): Promise<ResultadoConsulta<MesaExamen[] | null>>
+  crearMesaExamen(datos: DatosNuevaMesa): Promise<ResultadoCreacion>
+  editarMesaExamen(mesaId: string, datos: DatosNuevaMesa): Promise<{ error: string | null }>
+  cambiarEstadoMesa(mesaId: string, estado: EstadoMesa): Promise<{ error: string | null }>
   listarClases(grupoId?: string): Promise<ResultadoConsulta<ClaseItem[] | null>>
   obtenerClaseDetalle(claseId: string): Promise<ResultadoConsulta<ClaseItem | null>>
   crearClase(datos: DatosNuevaClase): Promise<ResultadoCreacion>
@@ -708,6 +715,115 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
         { modulo: 'cuotas', contexto: 'eliminarCuota' },
       )
       return error != null ? { error: MENSAJE_ERROR_GENERICO } : { error: null }
+    },
+    [sesion?.user?.id],
+  )
+
+  const listarMesasExamen = useCallback(
+    async (): Promise<ResultadoConsulta<MesaExamen[] | null>> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { data: null, error: MENSAJE_ERROR_GENERICO }
+
+      type FilaMesa = {
+        id: string
+        maestro_id: string
+        fecha: string
+        lugar: string | null
+        estado: string
+        postulaciones_examen: { id: string }[]
+      }
+
+      const promesa = supabase
+        .from('mesas_examen')
+        .select('id, maestro_id, fecha, lugar, estado, postulaciones_examen(id)')
+        .order('fecha', { ascending: false })
+        .returns<FilaMesa[]>()
+
+      return ejecutarConsulta<MesaExamen[] | null>(
+        Promise.resolve(
+          promesa.then(({ data, error }) => ({
+            data:
+              data?.map((fila) => ({
+                id: fila.id,
+                maestro_id: fila.maestro_id,
+                fecha: fila.fecha,
+                lugar: fila.lugar,
+                estado: fila.estado as EstadoMesa,
+                cantidad_postulados: fila.postulaciones_examen?.length ?? 0,
+              })) ?? null,
+            error,
+          })),
+        ),
+        { modulo: 'mesas_examen', contexto: 'listarMesasExamen' },
+      )
+    },
+    [sesion?.user?.id],
+  )
+
+  const crearMesaExamen = useCallback(
+    async (datos: DatosNuevaMesa): Promise<ResultadoCreacion> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { error: MENSAJE_ERROR_GENERICO }
+      const { data, error } = await ejecutarConsulta<{ id: string } | null>(
+        Promise.resolve(
+          supabase
+            .from('mesas_examen')
+            .insert({
+              maestro_id: usuarioId,
+              fecha: datos.fecha,
+              lugar: datos.lugar.trim(),
+              estado: 'abierta',
+            })
+            .select('id')
+            .single(),
+        ),
+        { modulo: 'mesas_examen', contexto: 'crearMesaExamen' },
+      )
+      return error != null || data == null
+        ? { error: MENSAJE_ERROR_GENERICO }
+        : { error: null, nuevoId: data.id }
+    },
+    [sesion?.user?.id],
+  )
+
+  const editarMesaExamen = useCallback(
+    async (mesaId: string, datos: DatosNuevaMesa): Promise<{ error: string | null }> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { error: MENSAJE_ERROR_GENERICO }
+      const { data, error } = await ejecutarConsulta<{ id: string } | null>(
+        Promise.resolve(
+          supabase
+            .from('mesas_examen')
+            .update({ fecha: datos.fecha, lugar: datos.lugar.trim() })
+            .eq('id', mesaId)
+            .eq('maestro_id', usuarioId)
+            .select('id')
+            .maybeSingle(),
+        ),
+        { modulo: 'mesas_examen', contexto: 'editarMesaExamen' },
+      )
+      return error != null || data == null ? { error: MENSAJE_ERROR_GENERICO } : { error: null }
+    },
+    [sesion?.user?.id],
+  )
+
+  const cambiarEstadoMesa = useCallback(
+    async (mesaId: string, estado: EstadoMesa): Promise<{ error: string | null }> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { error: MENSAJE_ERROR_GENERICO }
+      const { data, error } = await ejecutarConsulta<{ id: string } | null>(
+        Promise.resolve(
+          supabase
+            .from('mesas_examen')
+            .update({ estado })
+            .eq('id', mesaId)
+            .eq('maestro_id', usuarioId)
+            .select('id')
+            .maybeSingle(),
+        ),
+        { modulo: 'mesas_examen', contexto: 'cambiarEstadoMesa' },
+      )
+      return error != null || data == null ? { error: MENSAJE_ERROR_GENERICO } : { error: null }
     },
     [sesion?.user?.id],
   )
@@ -1332,6 +1448,10 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       listarCuotasPorPeriodo,
       registrarCuota,
       eliminarCuota,
+      listarMesasExamen,
+      crearMesaExamen,
+      editarMesaExamen,
+      cambiarEstadoMesa,
       listarClases,
       obtenerClaseDetalle,
       crearClase,
@@ -1385,6 +1505,10 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       listarCuotasPorPeriodo,
       registrarCuota,
       eliminarCuota,
+      listarMesasExamen,
+      crearMesaExamen,
+      editarMesaExamen,
+      cambiarEstadoMesa,
       listarClases,
       obtenerClaseDetalle,
       crearClase,

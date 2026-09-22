@@ -155,6 +155,16 @@
 - Eliminar una cuota mal cargada → desaparece del historial y el mes vuelve a "Pendiente".
 - **Fecha pasada permitida:** cargar una cuota de un mes anterior y verificar que se registra correctamente (el periodo y la fecha pueden diferir).
 
+### 17. Mesas de examen (dispositivo)
+- **Referencia:** `documentacion/planes/mobile-mesas-examen.md`.
+- Tab **Maestro** → "Mesas de examen" → "+ Nueva mesa": cargar fecha y lugar → la mesa queda en estado **"Abierta"**.
+- **Lugar:** elegir una locación propia desde los chips; probar también **"+ Otro lugar"** con texto libre.
+- Listado: verificar fecha, lugar, badge de estado y cantidad de postulados; las propias aparecen primero.
+- Detalle: **Editar mesa** (fecha/lugar) → verificar que se refleja al volver; **Cerrar mesa** → el estado pasa a "Cerrada" y aparece "Finalizar mesa".
+- **Gate:** un usuario **sin `es_maestro`** no ve la pestaña Maestro ni puede crear mesas.
+- Mesa ajena: al abrir una mesa de otro maestro, debe mostrarse en **solo lectura** (sin acciones de edición/cierre).
+- Verificar que `mesas_examen` ya no tiene la columna `limite_inscripcion` y que el formulario **no** la pide.
+
 ### 13. Editar grupo y bloquear borrado de locación (dispositivo)
 - **Referencia:** `documentacion/planes/mobile-editar-grupo-locacion.md`.
 - Detalle del grupo (`/instructor/grupo/[id]`) → botón **"Editar"** → cambiar nombre, locación y horarios → "Guardar cambios"; al volver se reflejan los cambios.

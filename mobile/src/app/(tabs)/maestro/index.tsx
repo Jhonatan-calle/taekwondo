@@ -17,7 +17,12 @@ export default function MaestroScreen() {
       <Text style={styles.subtitulo}>Poder de gestión sobre tu rama. Está disponible en próximas versiones.</Text>
 
       <View style={styles.menu}>
-        <FilaOpcionMenu titulo="Mesas de examen" descripcion="Planificar y abrir mesas de graduación" />
+        <FilaOpcionMenu
+          titulo="Mesas de examen"
+          descripcion="Planificar y abrir mesas de graduación"
+          habilitada
+          onPresionar={() => router.push('/maestro/mesas')}
+        />
         <FilaOpcionMenu titulo="Planilla técnica de evaluación" descripcion="Evaluar a los alumnos postulados" />
         <FilaOpcionMenu
           titulo="Auditoría de locaciones en cascada"

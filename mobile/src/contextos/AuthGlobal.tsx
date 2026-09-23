@@ -81,9 +81,13 @@ type AuthGlobalValue = {
   obtenerAlumnoDetalle(alumnoId: string): Promise<ResultadoConsulta<AlumnoDetalle | null>>
   altaAlumno(datos: DatosAltaAlumno): Promise<{ error: string | null }>
   listarInstructores(): Promise<ResultadoConsulta<InstructorLinaje[] | null>>
-  solicitarLinaje(maestroId: string): Promise<{ error: string | null }>
+  solicitarLinaje(maestroId: string, grado: Grado): Promise<{ error: string | null }>
   listarSolicitudesPendientes(): Promise<ResultadoConsulta<SolicitudLinaje[] | null>>
-  resolverSolicitudLinaje(solicitudId: string, resultado: 'aceptada' | 'rechazada'): Promise<{ error: string | null }>
+  resolverSolicitudLinaje(
+    solicitudId: string,
+    resultado: 'aceptada' | 'rechazada',
+    grado?: Grado,
+  ): Promise<{ error: string | null }>
   listarGrupos(): Promise<ResultadoConsulta<Grupo[] | null>>
   crearGrupo(datos: DatosNuevoGrupo): Promise<ResultadoCreacion>
   obtenerGrupoDetalle(grupoId: string): Promise<ResultadoConsulta<DetalleGrupo | null>>
@@ -134,7 +138,7 @@ type AuthGlobalValue = {
 }
 
 const CAMPOS_PERFIL_SELECT =
-  'nombre_completo, dni, fecha_nacimiento, peso_kg, genero, altura_cm, telefono, contacto_emergencia, datos_salud, grado_actual, es_maestro, es_profesor, maestro_id'
+  'nombre_completo, dni, fecha_nacimiento, peso_kg, genero, altura_cm, telefono, contacto_emergencia_nombre, contacto_emergencia_telefono, datos_salud, grado_actual, es_maestro, es_profesor, maestro_id'
 
 const SELECT_GRUPO =
   'id, nombre, locacion_id, locaciones(nombre), miembros_grupo(alumno_id), grupos_horarios(dia_semana, hora_inicio, hora_fin)'
@@ -320,7 +324,8 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
             genero: datos.genero,
             altura_cm: datos.altura_cm,
             telefono: datos.telefono,
-            contacto_emergencia: datos.contacto_emergencia,
+            contacto_emergencia_nombre: datos.contacto_emergencia_nombre,
+            contacto_emergencia_telefono: datos.contacto_emergencia_telefono,
             datos_salud: datos.datos_salud,
           })
           .eq('id', usuarioId)
@@ -354,7 +359,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
         Promise.resolve(
           supabase
             .from('profiles')
-            .select('id, nombre_completo, dni, fecha_nacimiento, genero, grado_actual, contacto_emergencia')
+            .select('id, nombre_completo, dni, fecha_nacimiento, genero, grado_actual, contacto_emergencia_nombre, contacto_emergencia_telefono')
             .eq('maestro_id', usuarioId)
             .order('nombre_completo', { ascending: true }),
         ),
@@ -373,7 +378,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
           supabase
             .from('profiles')
             .select(
-              'id, nombre_completo, dni, fecha_nacimiento, peso_kg, genero, altura_cm, telefono, contacto_emergencia, datos_salud, grado_actual, creado_en',
+              'id, nombre_completo, dni, fecha_nacimiento, peso_kg, genero, altura_cm, telefono, contacto_emergencia_nombre, contacto_emergencia_telefono, datos_salud, grado_actual, creado_en',
             )
             .eq('id', alumnoId)
             .eq('maestro_id', usuarioId)
@@ -398,7 +403,8 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
             p_grado_actual: datos.grado_actual,
             p_altura_cm: datos.altura_cm ?? undefined,
             p_telefono: datos.telefono ?? undefined,
-            p_contacto_emergencia: datos.contacto_emergencia ?? undefined,
+            p_contacto_emergencia_nombre: datos.contacto_emergencia_nombre,
+            p_contacto_emergencia_telefono: datos.contacto_emergencia_telefono,
             p_datos_salud: datos.datos_salud ?? undefined,
           }),
         ),
@@ -420,11 +426,13 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
   )
 
   const solicitarLinaje = useCallback(
-    async (maestroId: string): Promise<{ error: string | null }> => {
+    async (maestroId: string, grado: Grado): Promise<{ error: string | null }> => {
       const usuarioId = sesion?.user?.id
       if (usuarioId == null) return { error: MENSAJE_ERROR_GENERICO }
       const { data, error } = await ejecutarConsulta<boolean | null>(
-        Promise.resolve(supabase.rpc('solicitar_linaje', { p_instructor: maestroId })),
+        Promise.resolve(
+          supabase.rpc('solicitar_linaje', { p_instructor: maestroId, p_grado: grado }),
+        ),
         { modulo: 'perfil', contexto: 'solicitarLinaje' },
       )
       if (error != null || data !== true) return { error: MENSAJE_ERROR_GENERICO }
@@ -442,7 +450,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
         Promise.resolve(
           supabase
             .from('solicitudes_linaje')
-            .select('id, nombre_alumno, estado, creado_en')
+            .select('id, nombre_alumno, grado_solicitado, estado, creado_en')
             .eq('instructor_id', usuarioId)
             .eq('estado', 'pendiente')
             .order('creado_en', { ascending: true }),
@@ -454,10 +462,18 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
   )
 
   const resolverSolicitudLinaje = useCallback(
-    async (solicitudId: string, resultado: 'aceptada' | 'rechazada'): Promise<{ error: string | null }> => {
+    async (
+      solicitudId: string,
+      resultado: 'aceptada' | 'rechazada',
+      grado?: Grado,
+    ): Promise<{ error: string | null }> => {
       const { data, error } = await ejecutarConsulta<boolean | null>(
         Promise.resolve(
-          supabase.rpc('resolver_solicitud_linaje', { p_solicitud: solicitudId, p_resultado: resultado }),
+          supabase.rpc('resolver_solicitud_linaje', {
+            p_solicitud: solicitudId,
+            p_resultado: resultado,
+            p_grado: grado,
+          }),
         ),
         { modulo: 'perfil', contexto: 'resolverSolicitudLinaje' },
       )
@@ -661,7 +677,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
           Promise.resolve(
             supabase
               .from('profiles')
-              .select('id, nombre_completo, dni, fecha_nacimiento, genero, grado_actual, contacto_emergencia')
+              .select('id, nombre_completo, dni, fecha_nacimiento, genero, grado_actual, contacto_emergencia_nombre, contacto_emergencia_telefono')
               .eq('maestro_id', usuarioId)
               .order('nombre_completo', { ascending: true }),
           ),

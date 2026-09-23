@@ -21,7 +21,7 @@
 8. **Fecha de nacimiento en zona local:** se guarda `YYYY-MM-DD` local (no UTC) para no correr la edad; `calcularEdad` usa la hora local.
 
 ## Contexto / objetivo
-Cubrir el ítem 2 de la Fase 2 del workflow: **bloquear el acceso a la aplicacion principal hasta que el usuario complete su perfil** en `profiles`. Formulario obligatorio: Nombre Completo, DNI (unico, validado en la app antes de registrar), Fecha de Nacimiento (con calculo automatico de la edad cronologica), Peso (kg) y Genero. Complementarios del mismo formulario, no bloqueantes: Altura (cm), Contacto de Emergencia y Datos de Salud (si quedan vacios se completan luego desde el perfil).
+Cubrir el ítem 2 de la Fase 2 del workflow: **bloquear el acceso a la aplicacion principal hasta que el usuario complete su perfil** en `profiles`. Formulario obligatorio: Nombre Completo, DNI (unico, validado en la app antes de registrar), Fecha de Nacimiento (con calculo automatico de la edad cronologica), Peso (kg), Genero y **Contacto de Emergencia (nombre + telefono con formato)**. Complementarios no bloqueantes: Altura (cm), Telefono / Celular y Datos de Salud. *(Actualización posterior: el Contacto de Emergencia dejó de ser opcional; ver `planes/mobile-contacto-emergencia-obligatorio.md`.)*
 
 Todos los campos ya existen en `profiles`; el unico cambio de BD es el RPC de unicidad del DNI.
 
@@ -38,8 +38,8 @@ Todos los campos ya existen en `profiles`; el unico cambio de BD es el RPC de un
   - `grant execute ... to authenticated`; `revoke` de `anon` (por defecto).
 
 ### 2. `mobile/src/lib/perfil.ts` (nuevo)
-- Tipo `PerfilOnboarding` = `Pick<ProfilesRow, 'nombre_completo'|'dni'|'fecha_nacimiento'|'peso_kg'|'genero'|'altura_cm'|'contacto_emergencia'|'datos_salud'>`.
-- `perfilCompleto(perfil): boolean` → `nombre_completo.trim() !== '' && dni != null && fecha_nacimiento != null && peso_kg != null && genero != null`.
+- Tipo `PerfilOnboarding` = `Pick<ProfilesRow, 'nombre_completo'|'dni'|'fecha_nacimiento'|'peso_kg'|'genero'|'altura_cm'|'contacto_emergencia_nombre'|'contacto_emergencia_telefono'|'datos_salud'>`.
+- `perfilCompleto(perfil): boolean` → `nombre_completo.trim() !== '' && dni != null && fecha_nacimiento != null && peso_kg != null && genero != null` (+ **contacto de emergencia válido**, actualización posterior).
 - `calcularEdad(fechaISO: string | null): number | null` → anos cumplidos (hora local).
 - Validaciones puras: `esDniValido` (`/^\d{7,8}$/`), `esPesoValido` (>0 y <=300), `esAlturaValida` (vacia o 50–230), `fechaValidaNacimiento` (fecha valida, no futura, edad >= 4).
 
@@ -57,7 +57,7 @@ Todos los campos ya existen en `profiles`; el unico cambio de BD es el RPC de un
   - `(auth)` → `sesion == null`
   - `nueva-contrasena` → siempre accesible.
 - **`mobile/src/app/onboarding.tsx`** (nuevo): `ScrollView` + `KeyboardAvoidingView`.
-  - `CampoTexto` para nombre, DNI (teclado numerico), Peso (kg), Altura (cm, opcional), Contacto de Emergencia (opcional), Datos de Salud (opcional).
+  - `CampoTexto` para nombre, DNI (teclado numerico), Peso (kg), Altura (cm, opcional), **Contacto de Emergencia · Nombre (obligatorio)** y **· Teléfono (obligatorio, `phone-pad`)**, Datos de Salud (opcional).
   - Fecha de nacimiento: `Pressable` que abre `DateTimePicker` (`mode='date'`, `maximumDate={hoy}`, `display` segun plataforma); muestra "Edad calculada: X años" en vivo.
   - Genero: grupo segmentado de 3 `Pressable` (Masculino / Femenino / Otro).
   - Validacion previa con `perfil.ts` (errores inline por campo); al enviar: `verificarDniDisponible` → `completarPerfil` (maneja 23505 igual como red). Exito → `router.replace('/')` (el guard navega si no hay session? no: hay sesion, cambia `perfilCompleto`). Fallo inesperado → banner global (`reportarError`) + `errores_runtime`.

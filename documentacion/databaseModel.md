@@ -13,7 +13,8 @@ erDiagram
         numeric peso_kg
         numeric altura_cm
         string telefono
-        string contacto_emergencia
+        string contacto_emergencia_nombre "obligatorio (nombre del contacto)"
+        string contacto_emergencia_telefono "obligatorio (telefono con formato)"
         string datos_salud
         uuid maestro_id FK "árbol de linaje (ascendente); asignado/cambiado solo vía Service Role"
         bool grados_verificados

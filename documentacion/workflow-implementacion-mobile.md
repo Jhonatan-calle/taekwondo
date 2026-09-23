@@ -19,7 +19,7 @@
 4. **Grado Unificado:** Utilizar el enum `public.grado` que incluye los 10 Gups y los 9 Dans de manera secuencial para validaciones directas.
 5. **No Procesar Dinero:** Los pagos son puramente de caracter de registro de informacion (periodo, monto, fecha, comprobante de alquiler), sin integraciones de pasarelas de pago.
 6. **Valor de Alquiler Pactado (corrige v1.1, alineado al SRS §3.3):** La tabla `locaciones` almacena `nombre`, `direccion` (obligatoria), **`valor_alquiler` (obligatorio, >= 0)**, `creado_por` y `creado_en`. Al dar de alta (o editar) una locacion **SI** se solicita el **valor de alquiler pactado** (el acordado en el contrato). Este valor **NO** es el pago: el monto efectivamente pagado de cada periodo se registra unicamente en `pagos_alquiler` (`monto`, `periodo`, `fecha_pago`, `comprobante_url`) al ejecutar el pago.
-7. **Campos Omitidos del Perfil:** `profiles` incluye `altura_cm`, `telefono`, `contacto_emergencia` y `datos_salud`; estan contemplados en el onboarding y en el perfil (y el formato de grado se muestra por color, sin "Gup") aunque el SRS §3.1 no los liste como obligatorios.
+7. **Campos del Perfil:** `profiles` incluye `altura_cm`, `telefono`, `contacto_emergencia_nombre`, `contacto_emergencia_telefono` y `datos_salud`. El **Contacto de Emergencia (nombre + telefono con formato) es obligatorio** en el onboarding y en el alta de alumno; `altura_cm`, `telefono` y `datos_salud` siguen siendo opcionales. El formato de grado se muestra por color, sin "Gup". Referencia: `planes/mobile-contacto-emergencia-obligatorio.md`.
 8. **Clase Previa a Asistencia:** Todo registro en `asistencia` requiere una clase existente en `clases` con `hora_inicio`, `hora_fin`, `objetivo`, `contenido_tuls` y `preparacion_fisica` documentados; no se puede tomar asistencia sin crear antes la sesion.
 9. **Alumnos no son usuarios (decision v1):** la app movil es de uso exclusivo del staff (profesores y maestros). Los alumnos regulares no inician sesion ni tienen vistas en la app; son registros de `profiles` administrados por su profesor (**alta de alumno**, Fase 4). No existen flujos "del alumno": sin consulta de cuotas, sin historial academico, sin auto-linaje. La BD conserva la capacidad de usuarios alumnos (`profiles` + `auth.users`) para el futuro; el codigo no debe asumir sesion de alumno.
 
@@ -47,8 +47,8 @@
 2. **Onboarding Obligatorio de Perfil:**
    - Bloquear el acceso a la aplicacion principal hasta que el usuario complete su perfil en `profiles`.
    - Aplica unicamente al usuario del staff que ingresa (futuro profesor/maestro); los alumnos no completan onboarding: su ficha la crea el profesor en el alta de alumno (Fase 4).
-   - El formulario exige obligatoriamente: Nombre Completo, **DNI (unico, con validacion en la aplicacion movil antes de registrar)**, Fecha de Nacimiento (con calculo automatico de la edad cronologica), Peso (kg) y Genero.
-   - Campos complementarios de `profiles` capturados en el mismo formulario: **Altura (cm)** (numeric, opcional, uso en ficha tecnica/competicion), **Contacto de Emergencia** (string, opcional) y **Datos de Salud** (string, opcional). No bloquean la finalizacion del perfil; si quedan vacios se completan luego desde el perfil sin repetir el onboarding.
+   - El formulario exige obligatoriamente: Nombre Completo, **DNI (unico, con validacion en la aplicacion movil antes de registrar)**, Fecha de Nacimiento (con calculo automatico de la edad cronologica), Peso (kg), Genero y **Contacto de Emergencia (nombre + telefono con formato)**.
+   - Campos complementarios de `profiles` capturados en el mismo formulario: **Altura (cm)** (numeric, opcional, uso en ficha tecnica/competicion), **Telefono / Celular** (string, opcional) y **Datos de Salud** (string, opcional). No bloquean la finalizacion del perfil; si quedan vacios se completan luego desde el perfil sin repetir el onboarding. *(El contacto de emergencia dejo de ser opcional; ver `planes/mobile-contacto-emergencia-obligatorio.md`.)*
 3. **Establecimiento del Linaje (implementado, restringido al staff):**
    - El nuevo **profesor/maestro** **selecciona a su maestro/instructor superior de una lista** (decisión: en v1 se descarta el código de invitación; la alternativa por código queda fuera del alcance movil).
    - La selección genera una **solicitud pendiente** (`solicitudes_linaje`); el superior debe **aceptarla o rechazarla desde su cuenta** (sección "Solicitudes de vinculación" en la pantalla principal).
@@ -56,6 +56,7 @@
    - Salvo el Maestro raíz (`es_maestro = true`, sembrado por Service Role): no elige superior ni envía solicitud.
    - Los alumnos regulares **no participan de este flujo**: su linaje (`maestro_id`) queda fijado al momento del alta de alumno (Fase 4), sin solicitud de por medio.
    - Referencia: `documentacion/planes/mobile-establecimiento-linaje.md`.
+   - **Confirmación del cinturón (implementado):** el staff declara su grado al solicitar el linaje (obligatorio `dan_1+`); al aceptar, el superior **confirma o ajusta** ese grado, se persiste `grados_verificados = true` y se activa `es_profesor`. El grado declarado vive en la solicitud hasta la confirmación. Referencia: `documentacion/planes/mobile-linaje-confirmar-grado.md`.
 
 ### Fase 3: Arquitectura de Navegacion Dinamica por "Arbol de Poder"
 1. **Analisis del Perfil al Iniciar:**
@@ -64,7 +65,7 @@
    - **Vista Profesor:** Habilita la pestaña "Instructor" con opciones de gestion de sus alumnos directos (incluido el alta de alumnos), creacion de grupos, toma de asistencia, administracion de locaciones, registro de alquileres y postulacion de alumnos directos a examen. **Nota (v1.2 plan rutas condicionales):** la **visibilidad de la tab** depende de la bandera cruda `es_profesor`; el gate de Dan (`grado_actual >= 'dan_1'`) queda solo en el derivado `esProfesor` para la logica de negocio (el SRS exige Dan para ejercer la faceta).
    - **Vista Maestro (exige `es_maestro = true`):** Habilita la pestaña "Maestro" que incluye la planificacion y apertura de mesas de examen, acceso a la planilla tecnica de evaluacion y visualizacion de estadisticas/auditoria en cascada.
    - **No existe la Vista Alumno Regular:** los alumnos no tienen sesion ni navegacion propia en la app; son filas de `profiles` sin cuenta de usuario, administradas por su profesor.
-   - Un usuario autenticado sin `es_profesor` ni `es_maestro` no accede a pestañas de gestion; el otorgamiento de facetas lo efectua un superior o el Service Role.
+   - Un usuario autenticado sin `es_profesor` ni `es_maestro` no accede a pestañas de gestion; el otorgamiento de facetas lo efectua un superior o el Service Role. **Implementado:** el superior confirma el cinturon al aceptar el linaje (activa `es_profesor`); la faceta de Maestro (`es_maestro`) sigue siendo exclusiva del Service Role (el creador). Referencia: `documentacion/planes/mobile-linaje-confirmar-grado.md`.
    - **Implementado (Fase 3, ítem 2):** navegacion por tabs (Inicio/Instructor/Maestro) en `(tabs)`; ocultamiento condicional con `href: null` y proteccion de deep links con `<Redirect>` en cada landing; menús con filas deshabilitadas que cada Fase 4-8 activara. Referencia: `documentacion/planes/mobile-rutas-condicionales-navegacion.md`.
 3. **Inicio como panel operativo:** *(Implementado — posterior a Fase 7)*
    - La pestana "Inicio" deja de ser solo identidad + solicitudes + cerrar sesion y pasa a ser un **panel de gestion**: resumen del mes (cuotas pendientes, clases sin asistencia de los ultimos 7 dias, grupos y alumnos), **acciones rapidas** y el resumen de **rama** para el Maestro (alquileres vencidos, mesas abiertas y recaudacion).
@@ -74,7 +75,7 @@
 ### Fase 4: Modulo de Gestion de Alumnos, Grupos y Clases (Rol: Profesor)
 1. **Directorio y Alta de Alumnos Directos:** *(Implementado — Fase 4, ítem 1)*
    - Listar los estudiantes del instructor usando el filtro de RLS `maestro_id = auth.uid()`.
-   - **Alta de Alumno:** los alumnos no se registran solos; el profesor crea la ficha desde la app. Datos obligatorios: Nombre Completo, **DNI (unico, con validacion previa en la app)**, Fecha de Nacimiento (con calculo de la edad cronologica), Peso (kg), Genero y **Grado actual**. Opcionales: Altura (cm), Contacto de Emergencia y Datos de Salud.
+   - **Alta de Alumno:** los alumnos no se registran solos; el profesor crea la ficha desde la app. Datos obligatorios: Nombre Completo, **DNI (unico, con validacion previa en la app)**, Fecha de Nacimiento (con calculo de la edad cronologica), Peso (kg), Genero, **Grado actual** y **Contacto de Emergencia (nombre + telefono con formato)**. Opcionales: Altura (cm), Telefono / Celular y Datos de Salud.
    - Al crear la ficha, `profiles.maestro_id` queda fijado al profesor que la da de alta (linaje asignado en el alta; no modificable por el alumno).
    - **Implementado:** RPC `alta_alumno` (SECURITY DEFINER; valida `es_profesor`; elimina la FK `profiles.id -> auth.users` para alumnos sin cuenta) + pantallas `instructor/alumnos`, `instructor/alta-alumno` e `instructor/alumno/[id]` (detalle solo-lectura). Referencia: `documentacion/planes/mobile-directorio-alta-alumnos.md`.
 2. **Creacion de Grupos y Horarios:** *(Implementado — Fase 4, ítem 2)*
@@ -151,8 +152,9 @@
 1. **Verificaciones de Stack y Tipado:** *(Implementado — Fase 9, ítem 1)*
    - Ejecutar la comprobacion de tipos en TypeScript (`tsc`) y la herramienta de linting (`npm run lint`) en el directorio `mobile/` para garantizar la calidad del codigo.
    - **Implementado:** `npm run typecheck` y `npm run lint` en verde (`0 problems`). Se corrigieron los hallazgos que bloqueaban el lint: import y variable sin uso en `crear-cuenta`, precarga del perfil y carga de instructores en `onboarding` (supresión mínima `eslint-disable` sobre la regla `react-hooks/set-state-in-effect`) y eliminación de un `useEffect` redundante en la asistencia (ya cargaba `useFocusEffect`). Referencia: `documentacion/planes/mobile-verificaciones-stack.md`.
-2. **Pruebas Integrales de RLS (Arbol de Poder):**
+2. **Pruebas Integrales de RLS (Arbol de Poder):** *(Plan aprobado — Fase 9, ítem 2; ejecución pendiente)*
    - Probar los flujos clave utilizando tres perfiles de prueba diferentes para validar que los limites de visibilidad y edicion se aplican correctamente en la aplicacion real.
+   - **Plan:** `documentacion/planes/mobile-pruebas-rls-fase9.md` (v1.2, Aprobado). Corrida manual en dispositivo con los tres perfiles del seed (P0 Maestro, P1 Profesor nivel 1, P2 nivel 2/nieto) **más P3** (profesor ajeno creado en la prueba, con `grado_actual >= dan_1` fijado vía Service Role antes de conferir `es_profesor`). Incluye matriz de roles/RLS, recursividad, aislamiento, escritura restringida, gates anti-escalada, resiliencia, smoke final y bloque BD/API (B8).
 3. **Generacion de Build:**
    - Configurar y correr EAS Build para empaquetar la aplicacion en su formato correspondiente para distribucion y pruebas cerradas.
 

@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 import { aIsoLocal, formatearMonto, formatearPeriodo, mesActual, type SolicitudLinaje } from '@/lib/perfil';
+import { GRADOS_DAN, etiquetaGrado, type Grado } from '@/constants/grados';
 import { BotonAccion } from '@/components/BotonAccion';
 import { TarjetaMetrica } from '@/components/TarjetaMetrica';
 
@@ -73,6 +74,8 @@ export default function HomeScreen() {
   const [cargandoSolicitudes, setCargandoSolicitudes] = useState(false);
   const [errorSolicitudes, setErrorSolicitudes] = useState(false);
   const [resolviendoId, setResolviendoId] = useState<string | null>(null);
+  const [solicitudEnConfirmacion, setSolicitudEnConfirmacion] = useState<string | null>(null);
+  const [gradoConfirmado, setGradoConfirmado] = useState<Grado | null>(null);
 
   const cargarSolicitudes = useCallback(async () => {
     setCargandoSolicitudes(true);
@@ -196,14 +199,29 @@ export default function HomeScreen() {
     }, [cargarResumen, cargarSolicitudes, esInstructor]),
   );
 
-  const resolver = async (solicitudId: string, resultado: 'aceptada' | 'rechazada') => {
+  const resolver = async (
+    solicitudId: string,
+    resultado: 'aceptada' | 'rechazada',
+    grado?: Grado,
+  ) => {
     if (resolviendoId != null) return;
     setResolviendoId(solicitudId);
-    const { error } = await resolverSolicitudLinaje(solicitudId, resultado);
+    const { error } = await resolverSolicitudLinaje(solicitudId, resultado, grado);
     setResolviendoId(null);
     if (error != null) return;
     setSolicitudes((prev) => prev.filter((s) => s.id !== solicitudId));
     void cargarResumen();
+  };
+
+  const abrirConfirmacion = (sol: SolicitudLinaje) => {
+    setSolicitudEnConfirmacion(sol.id);
+    setGradoConfirmado(sol.grado_solicitado ?? null);
+  };
+
+  const confirmarAceptacion = async (sol: SolicitudLinaje) => {
+    if (gradoConfirmado == null) return;
+    setSolicitudEnConfirmacion(null);
+    await resolver(sol.id, 'aceptada', gradoConfirmado);
   };
 
   const nombre = perfil?.nombre_completo ?? sesion?.user?.email ?? 'usuario';
@@ -329,31 +347,90 @@ export default function HomeScreen() {
           ) : solicitudes.length === 0 ? (
             <Text style={styles.sinSolicitudes}>No tenés solicitudes pendientes.</Text>
           ) : (
-            solicitudes.map((sol) => (
-              <View key={sol.id} style={styles.solicitud}>
-                <Text style={styles.solicitudNombre}>{sol.nombre_alumno}</Text>
-                <View style={styles.filaAcciones}>
-                  <Pressable
-                    onPress={() => void resolver(sol.id, 'aceptada')}
-                    disabled={resolviendoId != null}
-                    style={[styles.botonAceptar, resolviendoId === sol.id && styles.botonDeshabilitado]}
-                    accessibilityRole="button"
-                  >
-                    <Text style={styles.botonAceptarTexto}>
-                      {resolviendoId === sol.id ? 'Aceptando…' : 'Aceptar'}
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => void resolver(sol.id, 'rechazada')}
-                    disabled={resolviendoId != null}
-                    style={[styles.botonRechazar, resolviendoId === sol.id && styles.botonDeshabilitado]}
-                    accessibilityRole="button"
-                  >
-                    <Text style={styles.botonRechazarTexto}>Rechazar</Text>
-                  </Pressable>
+            solicitudes.map((sol) => {
+              const enConfirmacion = solicitudEnConfirmacion === sol.id;
+              return (
+                <View key={sol.id} style={styles.solicitud}>
+                  <Text style={styles.solicitudNombre}>{sol.nombre_alumno}</Text>
+                  <Text style={styles.solicitudGrado}>
+                    Cinturón declarado: {etiquetaGrado(sol.grado_solicitado)}
+                  </Text>
+
+                  {enConfirmacion ? (
+                    <View>
+                      <Text style={styles.confirmarAyuda}>
+                        Confirmá el cinturón o ajústalo (primer Dan o superior):
+                      </Text>
+                      <View style={styles.filaGrado}>
+                        {GRADOS_DAN.map((opcion) => {
+                          const seleccionado = gradoConfirmado === opcion;
+                          return (
+                            <Pressable
+                              key={opcion}
+                              onPress={() => setGradoConfirmado(opcion)}
+                              style={[styles.chipGrado, seleccionado ? styles.chipGradoSeleccionado : null]}
+                              accessibilityRole="button"
+                              accessibilityState={{ selected: seleccionado }}
+                            >
+                              <Text
+                                style={[
+                                  styles.chipGradoTexto,
+                                  seleccionado ? styles.chipGradoTextoSeleccionado : null,
+                                ]}
+                              >
+                                {etiquetaGrado(opcion)}
+                              </Text>
+                            </Pressable>
+                          );
+                        })}
+                      </View>
+                      <View style={styles.filaAcciones}>
+                        <Pressable
+                          onPress={() => void confirmarAceptacion(sol)}
+                          disabled={resolviendoId != null || gradoConfirmado == null}
+                          style={[
+                            styles.botonAceptar,
+                            (resolviendoId != null || gradoConfirmado == null) && styles.botonDeshabilitado,
+                          ]}
+                          accessibilityRole="button"
+                        >
+                          <Text style={styles.botonAceptarTexto}>
+                            {resolviendoId === sol.id ? 'Confirmando…' : 'Confirmar y aceptar'}
+                          </Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={() => setSolicitudEnConfirmacion(null)}
+                          disabled={resolviendoId != null}
+                          style={[styles.botonRechazar, resolviendoId === sol.id && styles.botonDeshabilitado]}
+                          accessibilityRole="button"
+                        >
+                          <Text style={styles.botonRechazarTexto}>Cancelar</Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  ) : (
+                    <View style={styles.filaAcciones}>
+                      <Pressable
+                        onPress={() => abrirConfirmacion(sol)}
+                        disabled={resolviendoId != null}
+                        style={[styles.botonAceptar, resolviendoId === sol.id && styles.botonDeshabilitado]}
+                        accessibilityRole="button"
+                      >
+                        <Text style={styles.botonAceptarTexto}>Aceptar</Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={() => void resolver(sol.id, 'rechazada')}
+                        disabled={resolviendoId != null}
+                        style={[styles.botonRechazar, resolviendoId === sol.id && styles.botonDeshabilitado]}
+                        accessibilityRole="button"
+                      >
+                        <Text style={styles.botonRechazarTexto}>Rechazar</Text>
+                      </Pressable>
+                    </View>
+                  )}
                 </View>
-              </View>
-            ))
+              );
+            })
           )}
         </View>
       ) : null}
@@ -461,6 +538,41 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#111',
+  },
+  solicitudGrado: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 2,
+  },
+  confirmarAyuda: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 10,
+  },
+  filaGrado: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
+  chipGrado: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  chipGradoSeleccionado: {
+    backgroundColor: '#C62828',
+    borderColor: '#C62828',
+  },
+  chipGradoTexto: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#333',
+  },
+  chipGradoTextoSeleccionado: {
+    color: '#fff',
   },
   filaAcciones: {
     flexDirection: 'row',

@@ -13,7 +13,8 @@ export type PerfilOnboarding = Pick<
   | 'genero'
   | 'altura_cm'
   | 'telefono'
-  | 'contacto_emergencia'
+  | 'contacto_emergencia_nombre'
+  | 'contacto_emergencia_telefono'
   | 'datos_salud'
   | 'grado_actual'
   | 'es_maestro'
@@ -29,13 +30,14 @@ export type DatosPerfilACompletar = {
   genero: Genero
   altura_cm: number | null
   telefono: string | null
-  contacto_emergencia: string | null
+  contacto_emergencia_nombre: string
+  contacto_emergencia_telefono: string
   datos_salud: string | null
 }
 
 export type AlumnoDirecto = Pick<
   PerfilRow,
-  'id' | 'nombre_completo' | 'dni' | 'fecha_nacimiento' | 'genero' | 'grado_actual' | 'contacto_emergencia'
+  'id' | 'nombre_completo' | 'dni' | 'fecha_nacimiento' | 'genero' | 'grado_actual' | 'contacto_emergencia_nombre' | 'contacto_emergencia_telefono'
 >
 
 export type DatosAltaAlumno = {
@@ -47,7 +49,8 @@ export type DatosAltaAlumno = {
   grado_actual: Grado
   altura_cm: number | null
   telefono: string | null
-  contacto_emergencia: string | null
+  contacto_emergencia_nombre: string
+  contacto_emergencia_telefono: string
   datos_salud: string | null
 }
 
@@ -61,7 +64,8 @@ export type AlumnoDetalle = Pick<
   | 'genero'
   | 'altura_cm'
   | 'telefono'
-  | 'contacto_emergencia'
+  | 'contacto_emergencia_nombre'
+  | 'contacto_emergencia_telefono'
   | 'datos_salud'
   | 'grado_actual'
   | 'creado_en'
@@ -77,7 +81,7 @@ export type InstructorLinaje = {
 
 export type SolicitudLinaje = Pick<
   Database['public']['Tables']['solicitudes_linaje']['Row'],
-  'id' | 'nombre_alumno' | 'estado' | 'creado_en'
+  'id' | 'nombre_alumno' | 'grado_solicitado' | 'estado' | 'creado_en'
 >
 
 export type Locacion = Pick<
@@ -334,7 +338,9 @@ export function perfilCompleto(perfil: PerfilOnboarding | null): boolean {
     perfil.dni != null &&
     perfil.fecha_nacimiento != null &&
     perfil.peso_kg != null &&
-    perfil.genero != null
+    perfil.genero != null &&
+    esNombreContactoValido(perfil.contacto_emergencia_nombre) &&
+    esTelefonoContactoValido(perfil.contacto_emergencia_telefono)
   )
 }
 
@@ -389,6 +395,15 @@ export function esAlturaValida(altura: string): boolean {
 
 export function esTelefonoValido(telefono: string): boolean {
   if (telefono.trim() === '') return true
+  return /^[+0-9 ()-]{6,20}$/.test(telefono.trim())
+}
+
+// Contacto de emergencia: obligatorio (nombre + teléfono con formato).
+export function esNombreContactoValido(nombre: string): boolean {
+  return /^[A-Za-zÀ-ÿ' .-]{2,60}$/.test(nombre.trim())
+}
+
+export function esTelefonoContactoValido(telefono: string): boolean {
   return /^[+0-9 ()-]{6,20}$/.test(telefono.trim())
 }
 

@@ -10,16 +10,18 @@
 > Los **pendientes puntuales** (bloqueos, fechas, follow-ups) viven en `pendientes-pruebas.md`.
 
 ## Metadatos
-- **Versión:** 1.1
+- **Versión:** 1.3
 - **Estado:** Vigente
-- **Fecha:** 2026-09-22
-- **Cobertura:** 137 casos en 19 módulos (42 marcados Smoke)
+- **Fecha:** 2026-09-23
+- **Cobertura:** 141 casos en 19 módulos (42 marcados Smoke)
 
 ## Historial de revisiones
 | Versión | Fecha | Cambios |
 |---|---|---|
 | 1.0 | 2026-09-22 | Creación inicial: catálogo de casos por módulo (auth, onboarding, linaje, navegación, inicio, alumnos, grupos, locaciones, clases, asistencia, cuotas, alquileres, auditoría, mesas, postulación, evaluación), matriz de roles/RLS, resiliencia y smoke test. |
 | 1.1 | 2026-09-22 | Fase 8.1: nuevo módulo **TC-DASH** (dashboard de métricas anonimizadas) con 8 casos (2 Smoke) y dos entradas al smoke test; se quita el pendiente de Fase 8. |
+| 1.2 | 2026-09-23 | **Confirmación del cinturón en el linaje:** se actualizan `TC-LIN-01`/`TC-LIN-02` (declaración obligatoria `dan_1+` y confirmación/ajuste del grado con activación de `es_profesor`) y se agregan `TC-LIN-07` (Gup rechazado) y `TC-LIN-08` (ajuste al aceptar). Referencia: `planes/mobile-linaje-confirmar-grado.md`. |
+| 1.3 | 2026-09-23 | **Contacto de emergencia obligatorio** (nombre + teléfono con formato), para staff y alumnos: `TC-ONB-04` y `TC-ALU-04` dejan de ser "opcionales"; se agregan `TC-ONB-06` y `TC-ALU-09`. Referencia: `planes/mobile-contacto-emergencia-obligatorio.md`. |
 
 ---
 
@@ -35,13 +37,16 @@
 
 ## 2. Usuarios y datos de prueba
 
-Escenario creado por el seed (`planes/db-seed-auditoria.md` y `planes/db-seed-alumnos.md`).
+Escenario creado por el seed (`planes/db-seed-auditoria.md`).
 
-| Cuenta | Rol | Uso |
-|---|---|---|
-| `jhonatancallegaleano@gmail.com` | **Maestro** (raíz del árbol) | Mesas, auditoría, evaluación |
-| `seed-jhona@taekwondo.test` / `Seed123456!` | **Profesor** (nivel 1) | Gestión diaria, cuotas, postulación |
-| `seed-sensei@taekwondo.test` / `Seed123456!` | **Profesor** (nivel 2, nieto) | Probar **recursividad** de la auditoría |
+| Cuenta                           | Contraseña                       | Rol                           | Uso                                     |
+| -------------------------------- | -------------------------------- | ----------------------------- | --------------------------------------- |
+| `jhonatancallegaleano@gmail.com` | *(la del dueño; no se versiona)* | **Maestro** (raíz del árbol)  | Mesas, auditoría, evaluación            |
+| `jhona@taekwondo.test`           | `Seed123456!`                    | **Profesor** (nivel 1)        | Gestión diaria, cuotas, postulación     |
+| `sensei@taekwondo.test`          | `Seed123456!`                    | **Profesor** (nivel 2, nieto) | Probar **recursividad** de la auditoría |
+| `ajeno@taekwondo.test`           | `Seed123456!`                    | **Profesor ajeno** (P3)       | Casos de aislamiento horizontal         |
+
+> **Credenciales del seed:** `jhona@` y `sensei@` comparten la contraseña `Seed123456!` y se crean por **Admin API**. La cuenta del Maestro es personal del dueño (no está en el repositorio).
 
 **Datos del seed:**
 
@@ -52,10 +57,13 @@ Escenario creado por el seed (`planes/db-seed-auditoria.md` y `planes/db-seed-al
 | Seed Dojang Jhona B | Profesor Jhona | Sin pagos |
 | Seed Dojang Sensei | Sensei Seed | Vencida (2026-08) |
 
-Además: 6 alumnos de Sensei Seed (`Alumno Seed *`), grupos con locación y algunos pagos.
+Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Niños` y `Adultos Noche` del Maestro, `Seed Grupo Jhona`, `Seed Grupo Sensei`).
 
 > **Nota:** el seed es **aditivo e idempotente**; se puede re-ejecutar con
 > `npx supabase db query --linked -f supabase/seed-auditoria.sql`.
+> Las cuentas `jhona@` y `sensei@` se crean por **Admin API** (no por SQL).
+> Para dejar la base determinista se corre una **limpieza** que conserva
+> `jhonatancallegaleano@gmail.com` y `errores_runtime` (ver `planes/db-fix-mapeo-cuentas-seed.md`).
 
 ---
 
@@ -138,12 +146,17 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`), grupos con locación y algu
 - **Precondición:** un DNI ya registrado
 - **Esperado:** "El DNI ya está registrado." (pre-chequeo del RPC y/o `23505`)
 
-#### TC-ONB-04 — Campos complementarios opcionales
-- **Pasos:** completar solo los obligatorios (nombre, DNI, nacimiento, peso, género)
-- **Esperado:** deja finalizar; altura, teléfono, contacto de emergencia y datos de salud quedan `null`
+#### TC-ONB-04 — Campos complementarios
+- **Pasos:** completar los obligatorios (nombre, DNI, nacimiento, peso, género, **contacto de emergencia**) y dejar vacíos altura/teléfono/datos de salud
+- **Esperado:** deja finalizar; altura, teléfono y datos de salud quedan `null`; el **contacto de emergencia es obligatorio**
 
 #### TC-ONB-05 — Edad calculada
 - **Esperado:** al elegir la fecha de nacimiento se muestra la edad cronológica correcta
+
+#### TC-ONB-06 — Contacto de emergencia obligatorio
+- **Pasos:** intentar guardar sin nombre de contacto, o con un teléfono inválido (ej. `abc`)
+- **Esperado:** error inline y **no** deja guardar. El contacto exige **nombre + teléfono con formato** (`^[+0-9 ()-]{6,20}$`)
+- **Referencia:** `planes/mobile-contacto-emergencia-obligatorio.md`
 
 ---
 
@@ -151,13 +164,15 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`), grupos con locación y algu
 
 #### TC-LIN-01 — Solicitud de linaje · **Smoke**
 - **Rol:** usuario staff nuevo sin `maestro_id`
-- **Pasos:** onboarding → elegir instructor de la lista → enviar
-- **Esperado:** queda solicitud **pendiente**; `maestro_id` sigue `null`; en Inicio aparece el aviso "Tu instructor todavía no confirmó tu registro"
+- **Pasos:** onboarding → declarar el cinturón (chips **Dan I…Dan IX**) → elegir instructor de la lista → enviar
+- **Esperado:** con un Gup o sin grado **no deja continuar**; el grado declarado queda como **snapshot** en la solicitud; queda **pendiente**; `maestro_id` sigue `null`; en Inicio aparece el aviso "Tu instructor todavía no confirmó tu registro"
+- **Referencia:** `planes/mobile-linaje-confirmar-grado.md`
 
-#### TC-LIN-02 — Aceptar solicitud
+#### TC-LIN-02 — Aceptar solicitud y confirmar cinturón
 - **Rol:** instructor (con `es_profesor` o `es_maestro`)
-- **Pasos:** Inicio → "Solicitudes de alumnos" → **Aceptar**
-- **Esperado:** `maestro_id` se persiste (única vez); el aviso del alumno desaparece al refrescar
+- **Pasos:** Inicio → "Solicitudes de alumnos" → **Aceptar** → confirmar o **ajustar** el grado (Dan I…Dan IX) → "Confirmar y aceptar"
+- **Esperado:** `maestro_id` se persiste (única vez); `grado_actual` = grado confirmado con **`grados_verificados = true`**; se activa **`es_profesor`**; el aviso del alumno desaparece al refrescar
+- **Referencia:** `planes/mobile-linaje-confirmar-grado.md`
 
 #### TC-LIN-03 — Rechazar solicitud
 - **Esperado:** el alumno vuelve al onboarding (datos prellenados) a elegir de nuevo; la solicitud queda `rechazada`
@@ -172,6 +187,15 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`), grupos con locación y algu
 
 #### TC-LIN-06 — Lista de instructores vacía
 - **Esperado:** aviso bloqueante; al conferir un instructor, aparece y permite completar
+
+#### TC-LIN-07 — Grado Gup rechazado
+- **Pasos:** intentar declarar un cinturón Gup al pedir el linaje (llamada directa al RPC con `azul`)
+- **Esperado:** `ERROR: El grado debe ser primer Dan o superior.` (validación en servidor, no solo UI)
+
+#### TC-LIN-08 — Ajuste del cinturón al aceptar
+- **Pasos:** solicitud con grado declarado **Dan I** → al aceptar, ajustar a **Dan II**
+- **Esperado:** el perfil queda con `grado_actual = dan_2` y `es_profesor = true`. Al **rechazar**, el grado y `es_profesor` **no** cambian
+- **Referencia:** `planes/mobile-linaje-confirmar-grado.md`
 
 ---
 
@@ -243,7 +267,7 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`), grupos con locación y algu
 - **Esperado:** bloqueado con "El DNI ya está registrado."
 
 #### TC-ALU-04 — Opcionales del alta
-- **Esperado:** altura, teléfono, contacto de emergencia y datos de salud son opcionales; vacíos quedan `null`
+- **Esperado:** altura, teléfono y datos de salud son opcionales; vacíos quedan `null`. El **contacto de emergencia (nombre + teléfono) es obligatorio**
 
 #### TC-ALU-05 — Etiquetas de grado por color · **Smoke**
 - **Esperado:** "Blanco", "Amarillo punta verde", …, "Dan I"…"Dan IX" (sin "Gup") en listado, detalle y chips
@@ -256,6 +280,11 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`), grupos con locación y algu
 
 #### TC-ALU-08 — Deep link sin faceta
 - **Esperado:** `/instructor/alumnos` o `/instructor/alta-alumno` → redirect a Inicio
+
+#### TC-ALU-09 — Contacto de emergencia obligatorio en el alta
+- **Pasos:** intentar guardar el alumno sin contacto de emergencia o con un teléfono inválido; y llamar directo al RPC `alta_alumno` sin los campos
+- **Esperado:** error inline en la app y **rechazo del RPC** (`Contacto de emergencia: nombre/teléfono inválido.`)
+- **Referencia:** `planes/mobile-contacto-emergencia-obligatorio.md`
 
 ---
 

@@ -1,7 +1,7 @@
 # Plan: Seed de datos para prueba manual (auditoría en cascada) — `db-seed-auditoria.md`
 
 ## Metadatos
-- **Versión:** 1.0
+- **Versión:** 1.1
 - **Estado:** Aprobado
 - **Fecha:** 2026-09-21
 - **Fecha de aprobación:** 2026-09-21
@@ -10,6 +10,7 @@
 | Versión | Fecha | Cambios |
 |---|---|---|
 | 1.0 | 2026-09-21 | Borrador inicial y aprobación: seed **aditivo e idempotente** para probar manualmente la auditoría en cascada (Fase 5, ítem 3) y los pagos de alquiler (ítem 2). Crea un **árbol de 3 niveles** con cuentas de login reales, locaciones por dueño y los 3 estados de pago. Corrige además un `comprobante_url` roto de una prueba previa. |
+| 1.1 | 2026-09-22 | **Corrección de raíz (v2 del seed):** los perfiles se resuelven por **email de auth** en lugar de `nombre_completo` (causa del drift: el login `seed-jhona@` quedaba huérfano y `seed-sensei@` mapeaba a otro perfil). Emails de prueba simplificados a **`jhona@taekwondo.test`** (nivel 1) y **`sensei@taekwondo.test`** (nivel 2). Se agrega una **limpieza determinista** (conserva la cuenta real y `errores_runtime`) descrita en `planes/db-fix-mapeo-cuentas-seed.md`. |
 
 ## Restricciones y Correcciones Previas (No repetir)
 1. **No borrar la cuenta real** `jhonatancallegaleano@gmail.com` ni los datos ya cargados.
@@ -38,8 +39,8 @@ Creadas con contraseña conocida (`email_confirm: true`). El trigger `on_auth_us
 
 | Email | Contraseña | Rol |
 |---|---|---|
-| `seed-sensei@taekwondo.test` | `Seed123456!` | Profesor (nivel 2) |
-| `seed-jhona@taekwondo.test` | `Seed123456!` | Profesor (nivel 1) |
+| `jhona@taekwondo.test` | `Seed123456!` | Profesor (nivel 1) |
+| `sensei@taekwondo.test` | `Seed123456!` | Profesor (nivel 2) |
 
 ### 2. Archivo `supabase/seed-auditoria.sql`
 Bloque `do $$ … $$` idempotente que siembra:
@@ -98,7 +99,7 @@ npx supabase db query --linked -f supabase/seed-auditoria.sql
 3. Verificar los estados: **Al día** (Banda Norte), **Vencida · 2 meses** (Jhona A), **Sin pagos** (Jhona B), **Vencida · 1 mes** (Sensei).
 4. Probar el filtro por instructor.
 5. Abrir el detalle de una locación de subordinado.
-6. Iniciar sesión como `seed-sensei@taekwondo.test` y registrar un pago **con comprobante** para probar el flujo completo.
+6. Iniciar sesión como `sensei@taekwondo.test` y registrar un pago **con comprobante** para probar el flujo completo.
 
 ## Criterios de Aceptación y Verificación
 - [x] Cuentas de login creadas con contraseña conocida para los niveles 1 y 2.

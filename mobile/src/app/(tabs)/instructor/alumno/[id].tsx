@@ -146,7 +146,8 @@ export default function AlumnoDetalleScreen() {
         <Fila etiqueta="Peso" valor={alumno.peso_kg != null ? `${alumno.peso_kg} kg` : 'Sin datos'} />
         <Fila etiqueta="Altura" valor={alumno.altura_cm != null ? `${alumno.altura_cm} cm` : 'Sin datos'} />
         <Fila etiqueta="Teléfono" valor={alumno.telefono ?? 'Sin datos'} />
-        <Fila etiqueta="Contacto de emergencia" valor={alumno.contacto_emergencia ?? 'Sin datos'} />
+        <Fila etiqueta="Contacto de emergencia" valor={alumno.contacto_emergencia_nombre} />
+        <Fila etiqueta="Teléfono de emergencia" valor={alumno.contacto_emergencia_telefono} />
         <Fila etiqueta="Datos de salud" valor={alumno.datos_salud ?? 'Sin datos'} />
         <Fila etiqueta="Alta" valor={formatearFechaHora(alumno.creado_en)} />
       </View>

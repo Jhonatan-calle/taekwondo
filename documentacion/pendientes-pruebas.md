@@ -39,7 +39,7 @@
 - Completar (nombre, DNI, fecha nacimiento, peso, genero) → navega a `index`; el perfil queda guardado y el onboarding no reaparece al reiniciar.
 - DNI duplicado (registrar dos cuentas con el mismo DNI) → "El DNI ya está registrado." (pre-chequeo del RPC y/o 23505).
 - Fecha no valida / futura / edad < 4 → error inline; ver la edad calculada al elegir la fecha.
-- Complementarios vacios (altura, contacto de emergencia, datos de salud) no bloquean; quedan `null` en `profiles`.
+- Complementarios vacios (altura, telefono, datos de salud) no bloquean; quedan `null` en `profiles`. El **contacto de emergencia (nombre + telefono) es obligatorio**.
 - Red cortada al guardar → banner generico + fila `critical` (`modulo='perfil'`) en `errores_runtime`.
 - **Referencia:** `documentacion/planes/mobile-onboarding-perfil.md`.
 

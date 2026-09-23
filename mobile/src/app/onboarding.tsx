@@ -5,14 +5,16 @@ import { useRouter } from 'expo-router';
 import { CampoTexto } from '@/components/CampoTexto';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 import { useErrorGlobal } from '@/contextos/ErrorGlobal';
-import { etiquetaGrado } from '@/constants/grados';
+import { GRADOS_DAN, etiquetaGrado, type Grado } from '@/constants/grados';
 import { MENSAJE_ERROR_GENERICO } from '@/lib/errores';
 import {
   aIsoLocal,
   calcularEdad,
   esAlturaValida,
   esDniValido,
+  esNombreContactoValido,
   esPesoValido,
+  esTelefonoContactoValido,
   esTelefonoValido,
   fechaValidaNacimiento,
   MENSAJE_DNI_DUPLICADO,
@@ -29,7 +31,20 @@ const OPCIONES_GENERO: { valor: Genero; etiqueta: string }[] = [
 ];
 
 type ErroresFormulario = Partial<
-  Record<'nombre' | 'dni' | 'fechaNacimiento' | 'peso' | 'genero' | 'altura' | 'telefono' | 'instructor', string>
+  Record<
+    | 'nombre'
+    | 'dni'
+    | 'fechaNacimiento'
+    | 'peso'
+    | 'genero'
+    | 'altura'
+    | 'telefono'
+    | 'contactoNombre'
+    | 'contactoTelefono'
+    | 'instructor'
+    | 'grado',
+    string
+  >
 >;
 
 function formatearFecha(fecha: Date): string {
@@ -56,7 +71,8 @@ export default function OnboardingScreen() {
   const [peso, setPeso] = useState('');
   const [altura, setAltura] = useState('');
   const [telefono, setTelefono] = useState('');
-  const [contactoEmergencia, setContactoEmergencia] = useState('');
+  const [contactoEmergenciaNombre, setContactoEmergenciaNombre] = useState('');
+  const [contactoEmergenciaTelefono, setContactoEmergenciaTelefono] = useState('');
   const [datosSalud, setDatosSalud] = useState('');
   const [genero, setGenero] = useState<Genero | null>(null);
   const [fechaSeleccionada, setFechaSeleccionada] = useState<Date | null>(null);
@@ -65,6 +81,7 @@ export default function OnboardingScreen() {
   const [cargandoInstructores, setCargandoInstructores] = useState(false);
   const [errorInstructores, setErrorInstructores] = useState(false);
   const [instructorSeleccionado, setInstructorSeleccionado] = useState<string | null>(null);
+  const [gradoDeclarado, setGradoDeclarado] = useState<Grado | null>(null);
   const [errores, setErrores] = useState<ErroresFormulario>({});
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
@@ -87,7 +104,8 @@ export default function OnboardingScreen() {
     setPeso(perfil.peso_kg != null ? String(perfil.peso_kg) : '');
     setAltura(perfil.altura_cm != null ? String(perfil.altura_cm) : '');
     setTelefono(perfil.telefono ?? '');
-    setContactoEmergencia(perfil.contacto_emergencia ?? '');
+    setContactoEmergenciaNombre(perfil.contacto_emergencia_nombre);
+    setContactoEmergenciaTelefono(perfil.contacto_emergencia_telefono);
     setDatosSalud(perfil.datos_salud ?? '');
     setGenero(perfil.genero);
     if (perfil.fecha_nacimiento != null) {
@@ -128,7 +146,16 @@ export default function OnboardingScreen() {
     if (genero == null) e.genero = 'Seleccioná tu género.';
     if (!esAlturaValida(altura)) e.altura = 'Altura inválida (de 50 a 230 cm).';
     if (!esTelefonoValido(telefono)) e.telefono = 'Teléfono inválido.';
+    if (!esNombreContactoValido(contactoEmergenciaNombre)) {
+      e.contactoNombre = 'Ingresá el nombre del contacto de emergencia.';
+    }
+    if (!esTelefonoContactoValido(contactoEmergenciaTelefono)) {
+      e.contactoTelefono = 'Ingresá un teléfono de contacto válido (ej. 1155551234).';
+    }
     if (necesitaLinaje) {
+      if (gradoDeclarado == null) {
+        e.grado = 'Seleccioná tu cinturón (primer Dan o superior).';
+      }
       if (cargandoInstructores) {
         e.instructor = 'La lista de instructores se está cargando…';
       } else if (errorInstructores) {
@@ -164,7 +191,8 @@ export default function OnboardingScreen() {
         genero: genero as Genero,
         altura_cm: altura.trim() === '' ? null : parsearNumero(altura),
         telefono: telefono.trim() === '' ? null : telefono.trim(),
-        contacto_emergencia: contactoEmergencia.trim() === '' ? null : contactoEmergencia.trim(),
+        contacto_emergencia_nombre: contactoEmergenciaNombre.trim(),
+        contacto_emergencia_telefono: contactoEmergenciaTelefono.trim(),
         datos_salud: datosSalud.trim() === '' ? null : datosSalud.trim(),
       };
       const resultado = await completarPerfil(datos);
@@ -173,8 +201,8 @@ export default function OnboardingScreen() {
         if (resultado.error === MENSAJE_ERROR_GENERICO) reportarError();
         return;
       }
-      if (necesitaLinaje && instructorSeleccionado != null) {
-        const resultadoLinaje = await solicitarLinaje(instructorSeleccionado);
+      if (necesitaLinaje && instructorSeleccionado != null && gradoDeclarado != null) {
+        const resultadoLinaje = await solicitarLinaje(instructorSeleccionado, gradoDeclarado);
         if (resultadoLinaje.error) {
           setError(resultadoLinaje.error);
           if (resultadoLinaje.error === MENSAJE_ERROR_GENERICO) reportarError();
@@ -299,10 +327,19 @@ export default function OnboardingScreen() {
           error={errores.telefono}
         />
         <CampoTexto
-          label="Contacto de emergencia (opcional)"
-          placeholder="Nombre y teléfono"
-          value={contactoEmergencia}
-          onChangeText={setContactoEmergencia}
+          label="Contacto de emergencia · Nombre *"
+          placeholder="Nombre del contacto"
+          value={contactoEmergenciaNombre}
+          onChangeText={setContactoEmergenciaNombre}
+          error={errores.contactoNombre}
+        />
+        <CampoTexto
+          label="Contacto de emergencia · Teléfono *"
+          keyboardType="phone-pad"
+          placeholder="Ej. 1155551234"
+          value={contactoEmergenciaTelefono}
+          onChangeText={setContactoEmergenciaTelefono}
+          error={errores.contactoTelefono}
         />
         <CampoTexto
           label="Datos de salud (opcional)"
@@ -313,6 +350,30 @@ export default function OnboardingScreen() {
 
         {necesitaLinaje ? (
           <View style={styles.bloque}>
+            <Text style={styles.label}>Tu cinturón *</Text>
+            <Text style={styles.edad}>
+              Indicá tu grado (primer Dan o superior). Tu instructor lo confirmará al aceptar tu registro.
+            </Text>
+            <View style={styles.filaGrado}>
+              {GRADOS_DAN.map((opcion) => {
+                const seleccionado = gradoDeclarado === opcion;
+                return (
+                  <Pressable
+                    key={opcion}
+                    onPress={() => setGradoDeclarado(opcion)}
+                    style={[styles.chipGrado, seleccionado ? styles.chipGradoSeleccionado : null]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: seleccionado }}
+                  >
+                    <Text style={[styles.chipGradoTexto, seleccionado ? styles.chipGradoTextoSeleccionado : null]}>
+                      {etiquetaGrado(opcion)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {errores.grado ? <Text style={styles.errorTexto}>{errores.grado}</Text> : null}
+
             <Text style={styles.label}>Tu instructor / maestro *</Text>
             <Text style={styles.edad}>
               Lo elegís ahora; tu instructor deberá confirmar tu registro desde su cuenta.
@@ -501,6 +562,32 @@ const styles = StyleSheet.create({
   },
   dataInstructorSeleccionado: {
     color: '#f5d8d8',
+  },
+  filaGrado: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 6,
+    marginBottom: 14,
+  },
+  chipGrado: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  chipGradoSeleccionado: {
+    backgroundColor: '#C62828',
+    borderColor: '#C62828',
+  },
+  chipGradoTexto: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#333',
+  },
+  chipGradoTextoSeleccionado: {
+    color: '#fff',
   },
   reintentar: {
     marginTop: 8,

@@ -12,7 +12,9 @@ import {
   calcularEdad,
   esAlturaValida,
   esDniValido,
+  esNombreContactoValido,
   esPesoValido,
+  esTelefonoContactoValido,
   esTelefonoValido,
   fechaValidaNacimiento,
   MENSAJE_DNI_DUPLICADO,
@@ -28,7 +30,10 @@ const OPCIONES_GENERO: { valor: Genero; etiqueta: string }[] = [
 ];
 
 type ErroresFormulario = Partial<
-  Record<'nombre' | 'dni' | 'fechaNacimiento' | 'peso' | 'genero' | 'grado' | 'altura' | 'telefono', string>
+  Record<
+    'nombre' | 'dni' | 'fechaNacimiento' | 'peso' | 'genero' | 'grado' | 'altura' | 'telefono' | 'contactoNombre' | 'contactoTelefono',
+    string
+  >
 >;
 
 function formatearFecha(fecha: Date): string {
@@ -46,7 +51,8 @@ export default function AltaAlumnoScreen() {
   const [peso, setPeso] = useState('');
   const [altura, setAltura] = useState('');
   const [telefono, setTelefono] = useState('');
-  const [contactoEmergencia, setContactoEmergencia] = useState('');
+  const [contactoEmergenciaNombre, setContactoEmergenciaNombre] = useState('');
+  const [contactoEmergenciaTelefono, setContactoEmergenciaTelefono] = useState('');
   const [datosSalud, setDatosSalud] = useState('');
   const [genero, setGenero] = useState<Genero | null>(null);
   const [grado, setGrado] = useState<Grado>('blanco');
@@ -74,6 +80,12 @@ export default function AltaAlumnoScreen() {
     if (genero == null) e.genero = 'Seleccioná el género.';
     if (!esAlturaValida(altura)) e.altura = 'Altura inválida (de 50 a 230 cm).';
     if (!esTelefonoValido(telefono)) e.telefono = 'Teléfono inválido.';
+    if (!esNombreContactoValido(contactoEmergenciaNombre)) {
+      e.contactoNombre = 'Ingresá el nombre del contacto de emergencia.';
+    }
+    if (!esTelefonoContactoValido(contactoEmergenciaTelefono)) {
+      e.contactoTelefono = 'Ingresá un teléfono de contacto válido (ej. 1155551234).';
+    }
     return e;
   };
 
@@ -100,7 +112,8 @@ export default function AltaAlumnoScreen() {
         grado_actual: grado,
         altura_cm: altura.trim() === '' ? null : parsearNumero(altura),
         telefono: telefono.trim() === '' ? null : telefono.trim(),
-        contacto_emergencia: contactoEmergencia.trim() === '' ? null : contactoEmergencia.trim(),
+        contacto_emergencia_nombre: contactoEmergenciaNombre.trim(),
+        contacto_emergencia_telefono: contactoEmergenciaTelefono.trim(),
         datos_salud: datosSalud.trim() === '' ? null : datosSalud.trim(),
       };
       const resultado = await altaAlumno(datos);
@@ -247,10 +260,19 @@ export default function AltaAlumnoScreen() {
           error={errores.telefono}
         />
         <CampoTexto
-          label="Contacto de emergencia (opcional)"
-          placeholder="Nombre y teléfono"
-          value={contactoEmergencia}
-          onChangeText={setContactoEmergencia}
+          label="Contacto de emergencia · Nombre *"
+          placeholder="Nombre del contacto"
+          value={contactoEmergenciaNombre}
+          onChangeText={setContactoEmergenciaNombre}
+          error={errores.contactoNombre}
+        />
+        <CampoTexto
+          label="Contacto de emergencia · Teléfono *"
+          keyboardType="phone-pad"
+          placeholder="Ej. 1155551234"
+          value={contactoEmergenciaTelefono}
+          onChangeText={setContactoEmergenciaTelefono}
+          error={errores.contactoTelefono}
         />
         <CampoTexto
           label="Datos de salud (opcional)"

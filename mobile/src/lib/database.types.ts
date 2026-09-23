@@ -847,7 +847,8 @@ export type Database = {
       profiles: {
         Row: {
           altura_cm: number | null
-          contacto_emergencia: string | null
+          contacto_emergencia_nombre: string
+          contacto_emergencia_telefono: string
           creado_en: string
           datos_salud: string | null
           dni: string | null
@@ -865,7 +866,8 @@ export type Database = {
         }
         Insert: {
           altura_cm?: number | null
-          contacto_emergencia?: string | null
+          contacto_emergencia_nombre?: string
+          contacto_emergencia_telefono?: string
           creado_en?: string
           datos_salud?: string | null
           dni?: string | null
@@ -883,7 +885,8 @@ export type Database = {
         }
         Update: {
           altura_cm?: number | null
-          contacto_emergencia?: string | null
+          contacto_emergencia_nombre?: string
+          contacto_emergencia_telefono?: string
           creado_en?: string
           datos_salud?: string | null
           dni?: string | null
@@ -978,6 +981,7 @@ export type Database = {
           alumno_id: string
           creado_en: string
           estado: string
+          grado_solicitado: Database["public"]["Enums"]["grado"] | null
           id: string
           instructor_id: string
           nombre_alumno: string
@@ -987,6 +991,7 @@ export type Database = {
           alumno_id: string
           creado_en?: string
           estado?: string
+          grado_solicitado?: Database["public"]["Enums"]["grado"] | null
           id?: string
           instructor_id: string
           nombre_alumno?: string
@@ -996,6 +1001,7 @@ export type Database = {
           alumno_id?: string
           creado_en?: string
           estado?: string
+          grado_solicitado?: Database["public"]["Enums"]["grado"] | null
           id?: string
           instructor_id?: string
           nombre_alumno?: string
@@ -1069,7 +1075,8 @@ export type Database = {
       alta_alumno: {
         Args: {
           p_altura_cm?: number
-          p_contacto_emergencia?: string
+          p_contacto_emergencia_nombre: string
+          p_contacto_emergencia_telefono: string
           p_datos_salud?: string
           p_dni: string
           p_fecha_nacimiento: string
@@ -1207,7 +1214,11 @@ export type Database = {
         Returns: boolean
       }
       resolver_solicitud_linaje: {
-        Args: { p_resultado: string; p_solicitud: string }
+        Args: {
+          p_grado?: Database["public"]["Enums"]["grado"]
+          p_resultado: string
+          p_solicitud: string
+        }
         Returns: boolean
       }
       sincronizar_resultado_en_vivo: {
@@ -1220,7 +1231,13 @@ export type Database = {
         }
         Returns: undefined
       }
-      solicitar_linaje: { Args: { p_instructor: string }; Returns: boolean }
+      solicitar_linaje: {
+        Args: {
+          p_grado: Database["public"]["Enums"]["grado"]
+          p_instructor: string
+        }
+        Returns: boolean
+      }
       verificar_dni_disponible: { Args: { p_dni: string }; Returns: boolean }
     }
     Enums: {

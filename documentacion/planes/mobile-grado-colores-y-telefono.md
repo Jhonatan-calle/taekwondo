@@ -30,7 +30,7 @@ El usuario pidió que la UI deje de mostrar "10º Gup"…"1º Gup" y en cambio m
 ### 2. BD — `supabase/migrations/20260921151255_contacto_telefono.sql`
 - `alter table public.profiles add column telefono text;`
 - `drop function if exists public.alta_alumno(text, text, date, numeric, public.genero, public.grado, numeric, text, text);`
-- `create function public.alta_alumno(..., p_altura_cm numeric default null, p_telefono text default null, p_contacto_emergencia text default null, p_datos_salud text default null)` SECURITY DEFINER; incluye `telefono` en el `insert`.
+- `create function public.alta_alumno(..., p_altura_cm numeric default null, p_telefono text default null, p_contacto_emergencia text default null, p_datos_salud text default null)` SECURITY DEFINER; incluye `telefono` en el `insert`. *(Posterior: `p_contacto_emergencia` se separó en nombre + teléfono obligatorios; ver `planes/mobile-contacto-emergencia-obligatorio.md`.)*
 - `revoke`/`grant` con la firma nueva (11 args).
 
 ### 3. `mobile/src/lib/perfil.ts`
@@ -42,7 +42,7 @@ El usuario pidió que la UI deje de mostrar "10º Gup"…"1º Gup" y en cambio m
 - `CAMPOS_PERFIL_SELECT` + `telefono`; `completarPerfil` guarda `telefono`; `obtenerAlumnoDetalle` lo selecciona; `altaAlumno` envía `p_telefono: datos.telefono ?? undefined`.
 
 ### 5. Formularios y detalle
-- `mobile/src/app/onboarding.tsx`: estado/prefill + `CampoTexto` "Teléfono / Celular (opcional)" (`phone-pad`) antes de contacto de emergencia.
+- `mobile/src/app/onboarding.tsx`: estado/prefill + `CampoTexto` "Teléfono / Celular (opcional)" (`phone-pad`) y, luego, **Contacto de Emergencia · Nombre / Teléfono (obligatorios, con formato)**.
 - `mobile/src/app/(tabs)/instructor/alta-alumno.tsx`: ídem.
 - `mobile/src/app/(tabs)/instructor/alumno/[id].tsx`: `<Fila etiqueta="Teléfono" …>`.
 

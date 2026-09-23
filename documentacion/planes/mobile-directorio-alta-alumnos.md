@@ -28,15 +28,15 @@ Cubrir el ítem 1 de la Fase 4 del workflow: el profesor puede **listar sus alum
 
 ### 1. BD — `supabase/migrations/20260921135535_alta_alumnos.sql`
 - `alter table public.profiles drop constraint if exists profiles_id_fkey;`
-- RPC `alta_alumno(p_nombre_completo text, p_dni text, p_fecha_nacimiento date, p_peso_kg numeric, p_genero public.genero, p_grado_actual public.grado, p_altura_cm numeric default null, p_telefono text default null, p_contacto_emergencia text default null, p_datos_salud text default null) returns uuid` — SECURITY DEFINER, `search_path = public`, grant `authenticated`, revoke `public`/`anon`. *(v posterior: `p_telefono` se agregó en `mobile-grado-colores-y-telefono`; ver ese plan.)*
-  - Valida: llamador con `es_profesor = true`; nombre no vacío; DNI `^\d{7,8}$` y no duplicado; fecha no nula/no futura; peso > 0; género/grado no nulos; altura opcional en [50, 230].
+- RPC `alta_alumno(p_nombre_completo text, p_dni text, p_fecha_nacimiento date, p_peso_kg numeric, p_genero public.genero, p_grado_actual public.grado, p_altura_cm numeric default null, p_telefono text default null, p_contacto_emergencia text default null, p_datos_salud text default null) returns uuid` — SECURITY DEFINER, `search_path = public`, grant `authenticated`, revoke `public`/`anon`. *(v posterior: `p_telefono` se agregó en `mobile-grado-colores-y-telefono`; ver ese plan. Y luego `p_contacto_emergencia` se reemplazó por `p_contacto_emergencia_nombre` + `p_contacto_emergencia_telefono` (obligatorios) en `planes/mobile-contacto-emergencia-obligatorio.md`.)*
+  - Valida: llamador con `es_profesor = true`; nombre no vacío; DNI `^\d{7,8}$` y no duplicado; fecha no nula/no futura; peso > 0; género/grado no nulos; altura opcional en [50, 230]; **contacto de emergencia obligatorio** (nombre ≥2 y teléfono `^[+0-9 ()-]{6,20}$`).
   - Inserta `id = gen_random_uuid()`, `maestro_id = auth.uid()`; retorna el `id` creado.
 
 ### 2. Types — regenerar `mobile/src/lib/database.types.ts`
 - `npx supabase db push --linked` → `npx supabase lint --linked` → `npx supabase gen types typescript --linked > mobile/src/lib/database.types.ts` (tipa `alta_alumno` y saca la FK `auth.users`).
 
 ### 3. `mobile/src/lib/perfil.ts`
-- `AlumnoDirecto` (`id, nombre_completo, dni, fecha_nacimiento, genero, grado_actual, contacto_emergencia`), `DatosAltaAlumno`, `AlumnoDetalle` (ficha completa + `telefono` + `creado_en`).
+- `AlumnoDirecto` (`id, nombre_completo, dni, fecha_nacimiento, genero, grado_actual, contacto_emergencia_nombre, contacto_emergencia_telefono`), `DatosAltaAlumno`, `AlumnoDetalle` (ficha completa + `telefono` + `creado_en`). *(Los dos campos de contacto reemplazan a `contacto_emergencia`; ver `planes/mobile-contacto-emergencia-obligatorio.md`.)*
 
 ### 4. `mobile/src/contextos/AuthGlobal.tsx`
 - `listarAlumnosDirectos()` → `profiles.select(...).eq('maestro_id', uid).order('nombre_completo')` (RLS `profiles_select_maestro_directo`).

@@ -1,35 +1,33 @@
 -- ============================================================
 -- Seed: db_seed_auditoria
 -- Proyecto: Taekwondo ITF
--- Fecha: 2026-09-21
+-- Fecha: 2026-09-22 (v2)
 -- Descripción:
---   Escenario de prueba manual para la AUDITORÍA EN CASCADA
---   (Fase 5, ítem 3) y los PAGOS DE ALQUILER (Fase 5, ítem 2).
+--   Escenario determinista de prueba manual para la AUDITORÍA EN
+--   CASCADA, los PAGOS DE ALQUILER y las pruebas de RLS (Fase 9).
 --
 --   Árbol de 3 niveles para probar la recursividad:
---     Jhonatan (Maestro, cuenta real)
---       └── Profesor Jhona (ya existía)
---              └── Sensei Seed (NUEVO, es_profesor)
+--     Jhonatan (Maestro, cuenta real)  jhonatancallegaleano@gmail.com
+--       └── Profesor Jhona (nivel 1)   jhona@taekwondo.test    / Seed123456!
+--              └── Sensei Seed (nivel 2, es_profesor)
+--                                     sensei@taekwondo.test   / Seed123456!
 --                     └── 6 alumnos sin cuenta
 --
---   - ADITIVO e IDEMPOTENTE: se puede correr N veces; usa
---     `on conflict do nothing` y busca por claves naturales.
---   - NO borra datos existentes.
---   - SIN comprobantes (comprobante_url = null): no se apunta a
---     archivos inexistentes en el bucket.
+--   CORRECCIÓN v2: los perfiles se resuelven por EMAIL de auth
+--   (no por `nombre_completo`), que era la causa del drift anterior.
+--   Se re-escribe el nombre canónico del perfil igualmente.
 --
---   Las cuentas de login se crean por Admin API (no aquí):
---     seed-sensei@taekwondo.test  / Seed123456!
---     seed-jhona@taekwondo.test   / Seed123456!
---   El trigger `on_auth_user_created` crea sus filas en `profiles`.
+--   - ADITIVO e IDEMPOTENTE: se puede correr N veces (guarda por
+--     clave natural: dni, nombre de locación/grupo, periodo de pago).
+--   - NO borra datos existentes.
+--   - SIN comprobantes (comprobante_url = null).
+--   - Las cuentas de login se crean por Admin API (no aquí).
 --
 --   Ejecutar con: npx supabase db query --linked -f <este archivo>
 -- ============================================================
 
--- ============================================================
--- 0. Contexto: sembrar facetas y linaje con los flags del
---    proyecto (los triggers anti-escalada los exigen).
--- ============================================================
+-- Flags del sistema: los triggers anti-escalada solo se disparan con
+-- auth.uid() no nulo, pero se dejan por robustez/documentación.
 select set_config('app.concesion_profesor', 'on', true);
 select set_config('app.concesion_maestro', 'on', true);
 select set_config('app.derivacion_linaje', 'on', true);
@@ -37,102 +35,138 @@ select set_config('app.derivacion_linaje', 'on', true);
 do $$
 declare
   v_maestro uuid;        -- Jhonatan (cuenta real)
-  v_jhona uuid;          -- Profesor Jhona (perfil previo)
-  v_sensei uuid;         -- Sensei Seed (cuenta nueva)
-  v_loc_banda uuid;      -- locación real existente
+  v_jhona uuid;          -- jhona@taekwondo.test (nivel 1)
+  v_sensei uuid;         -- sensei@taekwondo.test (nivel 2)
+  v_loc_banda uuid;
   v_loc_jhona_a uuid;
   v_loc_jhona_b uuid;
   v_loc_sensei uuid;
-  v_grupo_ninos uuid;
-  v_grupo_adultos uuid;
-  v_grupo_jhona uuid;
-  v_grupo_sensei uuid;
+  v_grupo uuid;
 begin
   -- ----------------------------------------------------------
-  -- 1. Personas base
+  -- 1. Personas base resueltas POR EMAIL
   -- ----------------------------------------------------------
-  select id into v_maestro from public.profiles
-   where nombre_completo = 'Jhonatan Calle Galeano' limit 1;
-
-  select id into v_jhona from public.profiles
-   where nombre_completo = 'Profesor Jhona' limit 1;
-
-  select id into v_sensei from public.profiles
-   where nombre_completo = 'Sensei Seed' limit 1;
+  select id into v_maestro from auth.users where email = 'jhonatancallegaleano@gmail.com';
+  select id into v_jhona   from auth.users where email = 'jhona@taekwondo.test';
+  select id into v_sensei  from auth.users where email = 'sensei@taekwondo.test';
 
   if v_maestro is null then
-    raise exception 'No se encontró el perfil de Jhonatan Calle Galeano.';
+    raise exception 'Falta la cuenta real jhonatancallegaleano@gmail.com';
   end if;
-
-  -- Crear/actualizar "Sensei Seed" (nivel 2) con faceta de profesor.
+  if v_jhona is null then
+    raise exception 'Falta la cuenta jhona@taekwondo.test (crearla por Admin API antes del seed)';
+  end if;
   if v_sensei is null then
-    insert into public.profiles (id, nombre_completo, dni, genero, grado_actual,
-                                 es_profesor, grados_verificados, maestro_id)
-    values (gen_random_uuid(), 'Sensei Seed', '90000001', 'masculino', 'dan_2',
-            true, true, coalesce(v_jhona, v_maestro))
-    returning id into v_sensei;
-  else
-    update public.profiles
-       set es_profesor = true,
-           grado_actual = coalesce(grado_actual, 'dan_2'),
-           maestro_id = coalesce(maestro_id, coalesce(v_jhona, v_maestro))
-     where id = v_sensei;
+    raise exception 'Falta la cuenta sensei@taekwondo.test (crearla por Admin API antes del seed)';
   end if;
 
-  -- Profesor Jhona: asegurar faceta y linaje con el Maestro.
-  if v_jhona is not null then
-    update public.profiles
-       set es_profesor = true,
-           maestro_id = coalesce(maestro_id, v_maestro)
-     where id = v_jhona;
-  end if;
+  -- Asegurar filas de perfil (el trigger on_auth_user_created las crea).
+  insert into public.profiles (id, nombre_completo) values (v_maestro, 'Jhonatan Calle Galeano')
+    on conflict (id) do nothing;
+  insert into public.profiles (id, nombre_completo) values (v_jhona, 'Profesor Jhona')
+    on conflict (id) do nothing;
+  insert into public.profiles (id, nombre_completo) values (v_sensei, 'Sensei Seed')
+    on conflict (id) do nothing;
 
   -- ----------------------------------------------------------
-  -- 2. Alumnos sin cuenta del nivel 2 (alumnos de Sensei Seed)
+  -- 2. Perfil P1 (Profesor Jhona): nivel 1
   -- ----------------------------------------------------------
-  insert into public.profiles (id, nombre_completo, dni, genero, grado_actual, maestro_id)
-  values
-    (gen_random_uuid(), 'Alumno Seed Blanco',   '90000101', 'masculino', 'blanco', v_sensei),
-    (gen_random_uuid(), 'Alumno Seed Amarillo', '90000102', 'femenino',  'amarillo', v_sensei),
-    (gen_random_uuid(), 'Alumno Seed Verde',    '90000103', 'masculino', 'verde', v_sensei),
-    (gen_random_uuid(), 'Alumno Seed Azul',     '90000104', 'femenino',  'azul', v_sensei),
-    (gen_random_uuid(), 'Alumno Seed Rojo',     '90000105', 'masculino', 'rojo', v_sensei),
-    (gen_random_uuid(), 'Alumno Seed Dan',      '90000106', 'femenino',  'dan_1', v_sensei)
-  on conflict do nothing;
+  update public.profiles
+     set nombre_completo = 'Profesor Jhona',
+         es_profesor = true,
+         es_maestro = false,
+         grado_actual = coalesce(grado_actual, 'dan_1'),
+         grados_verificados = true,
+         maestro_id = v_maestro,
+         dni = coalesce(dni, '90000011'),
+         fecha_nacimiento = coalesce(fecha_nacimiento, '1990-05-10'),
+         peso_kg = coalesce(peso_kg, 75),
+         genero = coalesce(genero, 'masculino'::public.genero),
+         contacto_emergencia_nombre = coalesce(nullif(contacto_emergencia_nombre, ''), 'Contacto Jhona'),
+         contacto_emergencia_telefono = coalesce(nullif(contacto_emergencia_telefono, ''), '1155500001')
+   where id = v_jhona;
 
   -- ----------------------------------------------------------
-  -- 3. Locaciones por DUEÑO (para poder auditar en cascada)
+  -- 3. Perfil P2 (Sensei Seed): nivel 2
   -- ----------------------------------------------------------
-  -- 3.a Locación real (la conserva); queda a nombre del Maestro.
-  select id into v_loc_banda from public.locaciones
-   where nombre = 'Banda Norte' limit 1;
+  update public.profiles
+     set nombre_completo = 'Sensei Seed',
+         es_profesor = true,
+         es_maestro = false,
+         grado_actual = coalesce(grado_actual, 'dan_2'),
+         grados_verificados = true,
+         maestro_id = v_jhona,
+         dni = coalesce(dni, '90000012'),
+         fecha_nacimiento = coalesce(fecha_nacimiento, '1992-08-20'),
+         peso_kg = coalesce(peso_kg, 80),
+         genero = coalesce(genero, 'masculino'::public.genero),
+         contacto_emergencia_nombre = coalesce(nullif(contacto_emergencia_nombre, ''), 'Contacto Sensei'),
+         contacto_emergencia_telefono = coalesce(nullif(contacto_emergencia_telefono, ''), '1155500002')
+   where id = v_sensei;
 
+  -- ----------------------------------------------------------
+  -- 3.b Perfil P0 (Jhonatan): asegurar faceta y contacto de
+  --     emergencia (la cuenta real conserva el resto de sus datos).
+  -- ----------------------------------------------------------
+  update public.profiles
+     set es_maestro = true,
+         es_profesor = true,
+         contacto_emergencia_nombre = coalesce(nullif(contacto_emergencia_nombre, ''), 'Contacto Jhonatan'),
+         contacto_emergencia_telefono = coalesce(nullif(contacto_emergencia_telefono, ''), '1155500000')
+   where id = v_maestro;
+
+  -- ----------------------------------------------------------
+  -- 4. Alumnos sin cuenta del nivel 2 (alumnos de Sensei Seed)
+  -- ----------------------------------------------------------
+  insert into public.profiles (
+    id, nombre_completo, dni, genero, grado_actual, maestro_id,
+    contacto_emergencia_nombre, contacto_emergencia_telefono
+  )
+  select gen_random_uuid(), x.nombre, x.dni, x.genero::public.genero, x.grado::public.grado, v_sensei,
+         x.contacto_nombre, x.contacto_telefono
+    from (values
+      ('Alumno Seed Blanco',   '90000101', 'masculino', 'blanco',   'Contacto Blanco',   '1155500101'),
+      ('Alumno Seed Amarillo', '90000102', 'femenino',  'amarillo', 'Contacto Amarillo', '1155500102'),
+      ('Alumno Seed Verde',    '90000103', 'masculino', 'verde',    'Contacto Verde',    '1155500103'),
+      ('Alumno Seed Azul',     '90000104', 'femenino',  'azul',     'Contacto Azul',     '1155500104'),
+      ('Alumno Seed Rojo',     '90000105', 'masculino', 'rojo',     'Contacto Rojo',     '1155500105'),
+      ('Alumno Seed Dan',      '90000106', 'femenino',  'dan_1',    'Contacto Dan',      '1155500106')
+    ) as x(nombre, dni, genero, grado, contacto_nombre, contacto_telefono)
+   where not exists (select 1 from public.profiles p where p.dni = x.dni);
+
+  -- Backfill de contacto para alumnos ya existentes (el insert no los re-crea).
+  update public.profiles p
+     set contacto_emergencia_nombre = coalesce(nullif(p.contacto_emergencia_nombre, ''), 'Contacto ' || p.nombre_completo),
+         contacto_emergencia_telefono = coalesce(nullif(p.contacto_emergencia_telefono, ''), '115550' || right(p.dni, 4))
+   where p.maestro_id = v_sensei
+     and (p.contacto_emergencia_nombre = '' or p.contacto_emergencia_telefono = '');
+
+  -- ----------------------------------------------------------
+  -- 5. Locaciones por DUEÑO (para auditar en cascada)
+  -- ----------------------------------------------------------
+  v_loc_banda := null;
+  select id into v_loc_banda from public.locaciones where nombre = 'Banda Norte' limit 1;
   if v_loc_banda is null then
     insert into public.locaciones (nombre, direccion, valor_alquiler, creado_por)
-    values ('Banda Norte', 'Americo vidal 456', 5000, v_maestro)
+    values ('Banda Norte', 'Americo Vidal 456', 5000, v_maestro)
     returning id into v_loc_banda;
   end if;
 
-  -- 3.b Locaciones de PROFESOR JHONA (subordinado directo del Maestro)
-  select id into v_loc_jhona_a from public.locaciones
-   where nombre = 'Seed Dojang Jhona A' limit 1;
-  if v_loc_jhona_a is null and v_jhona is not null then
+  select id into v_loc_jhona_a from public.locaciones where nombre = 'Seed Dojang Jhona A' limit 1;
+  if v_loc_jhona_a is null then
     insert into public.locaciones (nombre, direccion, valor_alquiler, creado_por)
     values ('Seed Dojang Jhona A', 'Av. Subordinado 100', 12000, v_jhona)
     returning id into v_loc_jhona_a;
   end if;
 
-  select id into v_loc_jhona_b from public.locaciones
-   where nombre = 'Seed Dojang Jhona B' limit 1;
-  if v_loc_jhona_b is null and v_jhona is not null then
+  select id into v_loc_jhona_b from public.locaciones where nombre = 'Seed Dojang Jhona B' limit 1;
+  if v_loc_jhona_b is null then
     insert into public.locaciones (nombre, direccion, valor_alquiler, creado_por)
     values ('Seed Dojang Jhona B', 'Av. Subordinado 200', 8500, v_jhona)
     returning id into v_loc_jhona_b;
   end if;
 
-  -- 3.c Locación de SENSEI SEED (nivel 2: prueba la recursividad)
-  select id into v_loc_sensei from public.locaciones
-   where nombre = 'Seed Dojang Sensei' limit 1;
+  select id into v_loc_sensei from public.locaciones where nombre = 'Seed Dojang Sensei' limit 1;
   if v_loc_sensei is null then
     insert into public.locaciones (nombre, direccion, valor_alquiler, creado_por)
     values ('Seed Dojang Sensei', 'Calle Nivel 2 - 300', 9900, v_sensei)
@@ -140,40 +174,34 @@ begin
   end if;
 
   -- ----------------------------------------------------------
-  -- 4. Grupos con locación asignada
+  -- 6. Grupos con locación asignada (uno por dueño + base del Maestro)
   -- ----------------------------------------------------------
-  select id into v_grupo_ninos from public.grupos where nombre = 'Niños' limit 1;
-  if v_grupo_ninos is not null and v_loc_banda is not null then
-    update public.grupos set locacion_id = v_loc_banda where id = v_grupo_ninos;
-  end if;
-
-  select id into v_grupo_adultos from public.grupos where nombre = 'Adultos Noche' limit 1;
-  if v_grupo_adultos is not null then
-    update public.grupos set locacion_id = coalesce(locacion_id, v_loc_banda) where id = v_grupo_adultos;
-  end if;
-
-  -- Grupo de Profesor Jhona
-  if v_jhona is not null then
-    select id into v_grupo_jhona from public.grupos
-     where nombre = 'Seed Grupo Jhona' limit 1;
-    if v_grupo_jhona is null then
-      insert into public.grupos (profesor_id, nombre, locacion_id)
-      values (v_jhona, 'Seed Grupo Jhona', v_loc_jhona_a)
-      returning id into v_grupo_jhona;
-    end if;
-  end if;
-
-  -- Grupo de Sensei Seed (nivel 2)
-  select id into v_grupo_sensei from public.grupos
-   where nombre = 'Seed Grupo Sensei' limit 1;
-  if v_grupo_sensei is null then
+  select id into v_grupo from public.grupos where nombre = 'Niños' limit 1;
+  if v_grupo is null then
     insert into public.grupos (profesor_id, nombre, locacion_id)
-    values (v_sensei, 'Seed Grupo Sensei', v_loc_sensei)
-    returning id into v_grupo_sensei;
+    values (v_maestro, 'Niños', v_loc_banda);
+  end if;
+
+  select id into v_grupo from public.grupos where nombre = 'Adultos Noche' limit 1;
+  if v_grupo is null then
+    insert into public.grupos (profesor_id, nombre, locacion_id)
+    values (v_maestro, 'Adultos Noche', v_loc_banda);
+  end if;
+
+  select id into v_grupo from public.grupos where nombre = 'Seed Grupo Jhona' and profesor_id = v_jhona limit 1;
+  if v_grupo is null then
+    insert into public.grupos (profesor_id, nombre, locacion_id)
+    values (v_jhona, 'Seed Grupo Jhona', v_loc_jhona_a);
+  end if;
+
+  select id into v_grupo from public.grupos where nombre = 'Seed Grupo Sensei' and profesor_id = v_sensei limit 1;
+  if v_grupo is null then
+    insert into public.grupos (profesor_id, nombre, locacion_id)
+    values (v_sensei, 'Seed Grupo Sensei', v_loc_sensei);
   end if;
 
   -- ----------------------------------------------------------
-  -- 5. Pagos de alquiler: cubrir los 3 ESTADOS del auditor
+  -- 7. Pagos de alquiler: los 3 ESTADOS del auditor
   -- ----------------------------------------------------------
   -- Al día: último pago = mes actual (2026-09).
   insert into public.pagos_alquiler (locacion_id, monto, periodo, fecha_pago, comprobante_url, creado_por)
@@ -181,37 +209,23 @@ begin
   on conflict do nothing;
 
   -- Vencida (2 meses): último pago = 2026-07.
-  if v_loc_jhona_a is not null then
-    insert into public.pagos_alquiler (locacion_id, monto, periodo, fecha_pago, comprobante_url, creado_por)
-    values (v_loc_jhona_a, 12000, '2026-07', '2026-07-04', null, v_jhona)
-    on conflict do nothing;
-  end if;
+  insert into public.pagos_alquiler (locacion_id, monto, periodo, fecha_pago, comprobante_url, creado_por)
+  values (v_loc_jhona_a, 12000, '2026-07', '2026-07-04', null, v_jhona)
+  on conflict do nothing;
 
-  -- Sin pagos: la locación Jhona B no recibe pagos (caso explícito).
+  -- Sin pagos: Seed Dojang Jhona B no recibe pagos (caso explícito).
 
   -- Vencida (1 mes) en el nivel 2: último pago = 2026-08.
   insert into public.pagos_alquiler (locacion_id, monto, periodo, fecha_pago, comprobante_url, creado_por)
   values (v_loc_sensei, 9900, '2026-08', '2026-08-06', null, v_sensei)
   on conflict do nothing;
 
-  raise notice 'Seed de auditoría aplicado. Sensei=% Jhona=%', v_sensei, v_jhona;
+  raise notice 'Seed v2 aplicado. Maestro=% Jhona=% Sensei=%', v_maestro, v_jhona, v_sensei;
 end;
 $$;
 
 -- ============================================================
--- 6. Limpieza del comprobante roto del pago previo
---    (apunta a un archivo que no existe en el bucket).
--- ============================================================
-update public.pagos_alquiler
-   set comprobante_url = null
- where comprobante_url is not null
-   and not exists (
-     select 1 from storage.objects o
-      where o.bucket_id = 'comprobantes' and o.name = comprobante_url
-   );
-
--- ============================================================
--- 7. Verificación
+-- 8. Verificación
 -- ============================================================
 select
   (select count(*) from public.profiles)        as perfiles,

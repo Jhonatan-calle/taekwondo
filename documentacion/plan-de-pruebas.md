@@ -10,10 +10,10 @@
 > Los **pendientes puntuales** (bloqueos, fechas, follow-ups) viven en `pendientes-pruebas.md`.
 
 ## Metadatos
-- **Versión:** 1.3
+- **Versión:** 1.4
 - **Estado:** Vigente
 - **Fecha:** 2026-09-23
-- **Cobertura:** 141 casos en 19 módulos (42 marcados Smoke)
+- **Cobertura:** 143 casos en 19 módulos (42 marcados Smoke)
 
 ## Historial de revisiones
 | Versión | Fecha | Cambios |
@@ -22,6 +22,7 @@
 | 1.1 | 2026-09-22 | Fase 8.1: nuevo módulo **TC-DASH** (dashboard de métricas anonimizadas) con 8 casos (2 Smoke) y dos entradas al smoke test; se quita el pendiente de Fase 8. |
 | 1.2 | 2026-09-23 | **Confirmación del cinturón en el linaje:** se actualizan `TC-LIN-01`/`TC-LIN-02` (declaración obligatoria `dan_1+` y confirmación/ajuste del grado con activación de `es_profesor`) y se agregan `TC-LIN-07` (Gup rechazado) y `TC-LIN-08` (ajuste al aceptar). Referencia: `planes/mobile-linaje-confirmar-grado.md`. |
 | 1.3 | 2026-09-23 | **Contacto de emergencia obligatorio** (nombre + teléfono con formato), para staff y alumnos: `TC-ONB-04` y `TC-ALU-04` dejan de ser "opcionales"; se agregan `TC-ONB-06` y `TC-ALU-09`. Referencia: `planes/mobile-contacto-emergencia-obligatorio.md`. |
+| 1.4 | 2026-09-23 | **Refresco del linaje en tiempo real:** se agregan `TC-LIN-09` (el solicitante ve el cambio en vivo sin re-loguear) y `TC-LIN-10` (el superior ve las solicitudes nuevas/resueltas en vivo). Referencia: `planes/mobile-refresco-linaje-tiempo-real.md`. |
 
 ---
 
@@ -196,6 +197,18 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 - **Pasos:** solicitud con grado declarado **Dan I** → al aceptar, ajustar a **Dan II**
 - **Esperado:** el perfil queda con `grado_actual = dan_2` y `es_profesor = true`. Al **rechazar**, el grado y `es_profesor` **no** cambian
 - **Referencia:** `planes/mobile-linaje-confirmar-grado.md`
+
+#### TC-LIN-09 — Refresco en vivo del solicitante
+- **Rol:** solicitante pendiente, con la app abierta en el Inicio
+- **Pasos:** en otro dispositivo, el superior **Aceptar** (o **Rechazar**) la solicitud
+- **Esperado:** **sin tocar la app**, desaparece el aviso "Tu instructor todavía no confirmó tu registro" y se habilita la pestaña **Instructor** (al aceptar) o vuelve al **onboarding** (al rechazar). No hace falta salir ni re-loguear
+- **Referencia:** `planes/mobile-refresco-linaje-tiempo-real.md`
+
+#### TC-LIN-10 — Solicitudes del superior en vivo
+- **Rol:** instructor/maestro con "Solicitudes de alumnos" en pantalla
+- **Pasos:** que otra cuenta envíe una solicitud de linaje, y luego resolverla desde otro dispositivo
+- **Esperado:** la solicitud **aparece sola** en la lista y **desaparece** al resolverse, sin recuperar foco
+- **Referencia:** `planes/mobile-refresco-linaje-tiempo-real.md`
 
 ---
 

@@ -57,6 +57,7 @@
    - Los alumnos regulares **no participan de este flujo**: su linaje (`maestro_id`) queda fijado al momento del alta de alumno (Fase 4), sin solicitud de por medio.
    - Referencia: `documentacion/planes/mobile-establecimiento-linaje.md`.
    - **Confirmación del cinturón (implementado):** el staff declara su grado al solicitar el linaje (obligatorio `dan_1+`); al aceptar, el superior **confirma o ajusta** ese grado, se persiste `grados_verificados = true` y se activa `es_profesor`. El grado declarado vive en la solicitud hasta la confirmación. Referencia: `documentacion/planes/mobile-linaje-confirmar-grado.md`.
+   - **Refresco en vivo (implementado):** Realtime (Postgres Changes) sobre `profiles` y `solicitudes_linaje`: el solicitante ve la confirmación/rechazo **sin re-loguear** y el superior ve las solicitudes nuevas/resueltas **en vivo**. Referencia: `documentacion/planes/mobile-refresco-linaje-tiempo-real.md`.
 
 ### Fase 3: Arquitectura de Navegacion Dinamica por "Arbol de Poder"
 1. **Analisis del Perfil al Iniciar:**

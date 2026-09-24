@@ -134,6 +134,7 @@ type AuthGlobalValue = {
   listarAlumnosDeGrupo(grupoId: string): Promise<ResultadoConsulta<AlumnoGrupo[] | null>>
   listarAsistenciaClase(claseId: string): Promise<ResultadoConsulta<AsistenciaItem[] | null>>
   guardarAsistenciaClase(claseId: string, registros: AsistenciaItem[]): Promise<{ error: string | null }>
+  refrescarMiPerfil(): Promise<void>
   cerrarSesion(): Promise<void>
 }
 
@@ -214,6 +215,13 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
     await refrescarLinajeEnCurso(usuarioId)
   }, [refrescarLinajeEnCurso])
 
+  // Refresco manual del propio perfil (fallback del Realtime, al recuperar foco).
+  const refrescarMiPerfil = useCallback(async (): Promise<void> => {
+    const usuarioId = sesion?.user?.id
+    if (usuarioId == null) return
+    await refrescarPerfil(usuarioId)
+  }, [sesion?.user?.id, refrescarPerfil])
+
   useEffect(() => {
     let activo = true
 
@@ -253,6 +261,35 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       data.subscription.unsubscribe()
     }
   }, [refrescarPerfil])
+
+  // Realtime del linaje: el solicitante reacciona en vivo cuando el superior
+  // confirma/rechaza (update de su perfil y de su solicitud).
+  useEffect(() => {
+    const usuarioId = sesion?.user?.id
+    if (usuarioId == null) return
+
+    const canal = supabase
+      .channel(`linaje:${usuarioId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${usuarioId}` },
+        () => {
+          void refrescarPerfil(usuarioId)
+        },
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'solicitudes_linaje', filter: `alumno_id=eq.${usuarioId}` },
+        () => {
+          void refrescarLinajeEnCurso(usuarioId)
+        },
+      )
+      .subscribe()
+
+    return () => {
+      void supabase.removeChannel(canal)
+    }
+  }, [sesion?.user?.id, refrescarPerfil, refrescarLinajeEnCurso])
 
   const iniciarSesion = useCallback(
     async (email: string, password: string): Promise<ResultadoAuth> => {
@@ -1777,6 +1814,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       listarAlumnosDeGrupo,
       listarAsistenciaClase,
       guardarAsistenciaClase,
+      refrescarMiPerfil,
       cerrarSesion,
     }),
     [
@@ -1842,6 +1880,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       listarAlumnosDeGrupo,
       listarAsistenciaClase,
       guardarAsistenciaClase,
+      refrescarMiPerfil,
       cerrarSesion,
     ],
   )

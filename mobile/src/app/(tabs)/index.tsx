@@ -1,9 +1,10 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 import { aIsoLocal, formatearMonto, formatearPeriodo, mesActual, type SolicitudLinaje } from '@/lib/perfil';
 import { GRADOS_DAN, etiquetaGrado, type Grado } from '@/constants/grados';
+import { supabase } from '@/lib/supabase';
 import { BotonAccion } from '@/components/BotonAccion';
 import { TarjetaMetrica } from '@/components/TarjetaMetrica';
 
@@ -60,6 +61,7 @@ export default function HomeScreen() {
     listarLocacionesAuditadas,
     listarMesasExamen,
     listarPostulacionesMesa,
+    refrescarMiPerfil,
     cerrarSesion,
   } = useAuthGlobal();
   const router = useRouter();
@@ -195,9 +197,34 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       void cargarResumen();
+      void refrescarMiPerfil();
       if (esInstructor) void cargarSolicitudes();
-    }, [cargarResumen, cargarSolicitudes, esInstructor]),
+    }, [cargarResumen, cargarSolicitudes, esInstructor, refrescarMiPerfil]),
   );
+
+  // Realtime: el superior ve las solicitudes nuevas/resueltas en vivo.
+  const usuarioId = sesion?.user?.id;
+  useEffect(() => {
+    if (usuarioId == null || !esInstructor) return;
+    const canal = supabase
+      .channel(`solicitudes:${usuarioId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'solicitudes_linaje',
+          filter: `instructor_id=eq.${usuarioId}`,
+        },
+        () => {
+          void cargarSolicitudes();
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(canal);
+    };
+  }, [usuarioId, esInstructor, cargarSolicitudes]);
 
   const resolver = async (
     solicitudId: string,

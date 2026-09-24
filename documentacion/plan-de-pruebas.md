@@ -13,7 +13,7 @@
 - **Versión:** 1.4
 - **Estado:** Vigente
 - **Fecha:** 2026-09-23
-- **Cobertura:** 144 casos en 19 módulos (43 marcados Smoke)
+- **Cobertura:** 151 casos en 20 módulos (44 marcados Smoke)
 
 ## Historial de revisiones
 | Versión | Fecha | Cambios |
@@ -36,6 +36,13 @@
 | 1.15 | 2026-09-23 | Prueba manual: `TC-ALU-03`, `TC-ALU-04` y `TC-ALU-09` verificados; mensaje del nombre de contacto inválido diferenciado del vacío. Referencia: `planes/mobile-contacto-emergencia-obligatorio.md` (v1.1). |
 | 1.16 | 2026-09-24 | Prueba manual: `TC-GRU-01`, `TC-GRU-02`, `TC-GRU-03`, `TC-GRU-05`, `TC-GRU-06`, `TC-GRU-07` y `TC-GRU-08` marcados ✅ verificados. |
 | 1.17 | 2026-09-24 | Ajuste de UX en Locaciones: el botón "Eliminar locación" con grupos asociados ahora responde con una alerta explicativa (`TC-LOC-05` actualizado). Referencia: `planes/mobile-editar-grupo-locacion.md` (v1.1). |
+| 1.18 | 2026-09-24 | Prueba manual: `TC-LOC-01`, `TC-LOC-02`, `TC-LOC-03`, `TC-LOC-04`, `TC-LOC-05` y `TC-LOC-06` marcados ✅ verificados. |
+| 1.19 | 2026-09-24 | **Objetivo de clase por elementos ITF:** `TC-CLA-01/02/05` actualizados, nuevo `TC-CLA-07` (tope de 2) y nuevo módulo **`TC-OBJ`** (distribución por elemento). Referencia: `planes/mobile-objetivo-clase-elementos.md`. |
+| 1.20 | 2026-09-24 | Se **elimina `preparacion_fisica`** y se amplía el campo "Detalles (opcional)"; `TC-CLA-01/02` ajustados. Referencia: `planes/mobile-objetivo-clase-elementos.md` (v1.2). |
+| 1.21 | 2026-09-24 | Prueba manual: `TC-CLA-01`…`TC-CLA-07` y `TC-OBJ-01/02/03/06` marcados ✅ verificados. |
+| 1.22 | 2026-09-24 | Prueba manual: `TC-ASI-01`…`TC-ASI-04` marcados ✅ verificados. |
+| 1.23 | 2026-09-24 | **Auditoría agrupada por rama:** `TC-AUD-04` pasa a "filtro por rama", `TC-AUD-05` ajustado y nuevo `TC-AUD-08` (agrupamiento). Referencia: `planes/mobile-auditoria-rama-agrupada.md`. |
+| 1.24 | 2026-09-24 | Prueba manual: `TC-INI-05`, `TC-AUD-01`…`TC-AUD-05` y `TC-AUD-08` marcados ✅ verificados. |
 
 ---
 
@@ -288,7 +295,7 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 - **Pasos:** registrar una cuota → volver al Inicio
 - **Esperado:** el contador se actualiza **sin reiniciar la app**
 
-#### TC-INI-05 — Resumen del Maestro
+#### TC-INI-05 — Resumen del Maestro · ✅ verificado (2026-09-24)
 - **Rol:** Maestro
 - **Esperado:** bloque "Tu rama" con **alquileres vencidos** de subordinados, **mesas abiertas** y **recaudación**; acciones rápidas de Maestro
 
@@ -380,25 +387,25 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 
 ### TC-LOC — Locaciones
 
-#### TC-LOC-01 — Alta de locación · **Smoke**
+#### TC-LOC-01 — Alta de locación · **Smoke** · ✅ verificado (2026-09-24)
 - **Pasos:** Instructor → "Locaciones" → "+ Nueva locación" → nombre, dirección y **valor de alquiler pactado**
 - **Esperado:** se guarda y aparece en el listado con el monto
 
-#### TC-LOC-02 — Validaciones
+#### TC-LOC-02 — Validaciones · ✅ verificado (2026-09-24)
 - **Esperado:** nombre, dirección y monto son obligatorios; el monto debe ser > 0
 
-#### TC-LOC-03 — Editar locación
+#### TC-LOC-03 — Editar locación · ✅ verificado (2026-09-24)
 - **Esperado:** permite cambiar nombre, dirección y **valor pactado**; se refleja al volver al detalle
 
-#### TC-LOC-04 — Detalle con grupos asociados
+#### TC-LOC-04 — Detalle con grupos asociados · ✅ verificado (2026-09-24)
 - **Esperado:** muestra los grupos que usan la locación; cada uno navegable
 
-#### TC-LOC-05 — Bloqueo de borrado · **Smoke**
+#### TC-LOC-05 — Bloqueo de borrado · **Smoke** · ✅ verificado (2026-09-24)
 - **Precondición:** locación con grupos asociados
 - **Esperado:** el botón "Eliminar locación" se ve deshabilitado pero **responde al toque** con una **alerta explicativa** (cuántos grupos hay y que hay que reasignarlos); el RPC `eliminar_locacion_segura` también rechaza
 - **Referencia:** `planes/mobile-editar-grupo-locacion.md`
 
-#### TC-LOC-06 — Borrado permitido
+#### TC-LOC-06 — Borrado permitido · ✅ verificado (2026-09-24)
 - **Precondición:** locación **sin** grupos
 - **Esperado:** se elimina correctamente
 
@@ -412,40 +419,45 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 
 ### TC-CLA — Clases
 
-#### TC-CLA-01 — Crear clase · **Smoke**
-- **Pasos:** "Toma de asistencia" → "+ Nueva clase" → grupo, fecha, hora inicio/fin, objetivo, tuls, preparación física
+#### TC-CLA-01 — Crear clase · **Smoke** · ✅ verificado (2026-09-24)
+- **Pasos:** "Toma de asistencia" → "+ Nueva clase" → grupo, fecha, hora inicio/fin, **objetivo (1–2 elementos del ciclo ITF, modal)**, detalle opcional
 - **Esperado:** se crea y aparece en el listado
 
-#### TC-CLA-02 — Campos obligatorios
-- **Esperado:** sin objetivo/tuls/preparación física no deja guardar
+#### TC-CLA-02 — Campos obligatorios · ✅ verificado (2026-09-24)
+- **Esperado:** sin **al menos un objetivo** no deja guardar
 
-#### TC-CLA-03 — Horario válido
+#### TC-CLA-03 — Horario válido · ✅ verificado (2026-09-24)
 - **Esperado:** `hora_fin` debe ser posterior a `hora_inicio` (formato HH:mm)
 
-#### TC-CLA-04 — Badge "Hoy"
+#### TC-CLA-04 — Badge "Hoy" · ✅ verificado (2026-09-24)
 - **Esperado:** la clase de la fecha actual se marca con el badge **"Hoy"**
 
-#### TC-CLA-05 — Detalle de la clase
-- **Esperado:** ficha técnica completa + botón "Tomar asistencia" + "Ver grupo"
+#### TC-CLA-05 — Detalle de la clase · ✅ verificado (2026-09-24)
+- **Esperado:** ficha técnica completa (muestra los **elementos del objetivo** y, si hay, los **Detalles**) + botón "Tomar asistencia" + "Ver grupo"
 
-#### TC-CLA-06 — Clases por grupo
+#### TC-CLA-06 — Clases por grupo · ✅ verificado (2026-09-24)
 - **Esperado:** el filtro por grupo muestra solo las clases de ese grupo
+
+#### TC-CLA-07 — Tope de 2 objetivos · ✅ verificado (2026-09-24)
+- **Pasos:** en el modal de objetivos, elegir 2 y tocar un tercero
+- **Esperado:** aviso **"Podés elegir hasta 2 objetivos."** y **no** se agrega; se pueden destildar
+- **Referencia:** `planes/mobile-objetivo-clase-elementos.md`
 
 ---
 
 ### TC-ASI — Control de asistencia
 
-#### TC-ASI-01 — Toma de asistencia · **Smoke**
+#### TC-ASI-01 — Toma de asistencia · **Smoke** · ✅ verificado (2026-09-24)
 - **Pasos:** detalle de clase → "Tomar asistencia"
 - **Esperado:** lista **solo** los alumnos activos del grupo; arranca con **todos Presente**
 
-#### TC-ASI-02 — Marcado de un toque
+#### TC-ASI-02 — Marcado de un toque · ✅ verificado (2026-09-24)
 - **Esperado:** un toque alterna Presente ↔ Ausente; los contadores se actualizan en vivo
 
-#### TC-ASI-03 — Todos presentes / ausentes
+#### TC-ASI-03 — Todos presentes / ausentes · ✅ verificado (2026-09-24)
 - **Esperado:** marcan el conjunto completo de una vez
 
-#### TC-ASI-04 — Guardado atómico · **Smoke**
+#### TC-ASI-04 — Guardado atómico · **Smoke** · ✅ verificado (2026-09-24)
 - **Pasos:** marcar y "Guardar asistencia" → reabrir la clase
 - **Esperado:** se refleja lo guardado (todo o nada)
 
@@ -454,6 +466,37 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 
 #### TC-ASI-06 — Fail gracefully
 - **Esperado:** red cortada al guardar → banner genérico + fila en `errores_runtime` (`modulo='asistencia'`)
+
+---
+
+### TC-OBJ — Objetivos de clase (distribución)
+
+#### TC-OBJ-01 — Distribución por elemento · **Smoke** · ✅ verificado (2026-09-24)
+- **Rol:** profesor con clases cargadas
+- **Pasos:** Instructor → "Objetivos de clase"
+- **Esperado:** barras por cada uno de los 5 elementos con `N clases · X%`; el **% se calcula sobre menciones** y los cinco **suman 100%**
+- **Referencia:** `planes/mobile-objetivo-clase-elementos.md`
+
+#### TC-OBJ-02 — Filtro de período · ✅ verificado (2026-09-24)
+- **Pasos:** alternar **Mes actual / Últimos 3 meses / Todo**
+- **Esperado:** el conteo y los % cambian según las clases del período; una clase fuera del rango no se cuenta
+
+#### TC-OBJ-03 — Filtro de grupo · ✅ verificado (2026-09-24)
+- **Pasos:** elegir un grupo puntual (y "Todos")
+- **Esperado:** solo se consideran las clases de ese grupo
+
+#### TC-OBJ-04 — Sin clases
+- **Esperado:** si no hay clases en el período → mensaje guía (no error)
+
+#### TC-OBJ-05 — Aislamiento (RLS)
+- **Esperado:** otro profesor **no** ve clases propias ni sus objetivos (solo las suyas)
+
+#### TC-OBJ-06 — Refresco al volver · ✅ verificado (2026-09-24)
+- **Pasos:** crear una clase nueva con otro objetivo → volver a "Objetivos de clase"
+- **Esperado:** la distribución se actualiza **sin reiniciar** (`useFocusEffect`)
+
+#### TC-OBJ-07 — Fail gracefully
+- **Esperado:** con red cortada, la vista muestra el mensaje de error + "Reintentar", sin romperse
 
 ---
 
@@ -523,23 +566,28 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 
 ### TC-AUD — Auditoría en cascada (Maestro)
 
-#### TC-AUD-01 — Listado de la rama · **Smoke**
+#### TC-AUD-01 — Listado de la rama · **Smoke** · ✅ verificado (2026-09-24)
 - **Rol:** Maestro
 - **Esperado:** ve locaciones de **toda su rama** con **dueño** y valor pactado
 
-#### TC-AUD-02 — Estados de pago
+#### TC-AUD-02 — Estados de pago · ✅ verificado (2026-09-24)
 - **Esperado:** "Al día" / "Vencida · N meses" / "Sin pagos", derivados del último periodo pagado
 
-#### TC-AUD-03 — Recursividad · **Smoke**
+#### TC-AUD-03 — Recursividad · **Smoke** · ✅ verificado (2026-09-24)
 - **Rol:** Maestro (nivel 0)
 - **Esperado:** ve las locaciones de **Sensei Seed (nivel 2)**, no solo las de su subordinado directo
 - **Referencia:** `planes/mobile-auditoria-cascada.md`
 
-#### TC-AUD-04 — Filtro por instructor
-- **Esperado:** al elegir un instructor, solo se ven sus locaciones
+#### TC-AUD-04 — Filtro por rama · ✅ verificado (2026-09-24)
+- **Esperado:** al elegir un **subordinado directo**, se ven **todas** las locaciones de su **rama** (las propias y las de sus descendientes)
 
-#### TC-AUD-05 — Detalle auditado
-- **Esperado:** historial de pagos + comprobante (enlace firmado); **solo lectura**
+#### TC-AUD-05 — Detalle auditado · ✅ verificado (2026-09-24)
+- **Esperado:** historial de pagos + comprobante (enlace firmado); **solo lectura**; el dueño se muestra como **“De su rama”** si no es legible
+
+#### TC-AUD-08 — Agrupamiento por rama · ✅ verificado (2026-09-24)
+- **Pasos:** abrir la auditoría con una rama que tenga un sub-instructor (Jhona → Sensei)
+- **Esperado:** un **bloque por subordinado directo**; las locaciones de descendientes indirectos van **dentro de ese bloque**, marcadas **“De su rama”** y **sin** nombre; **no** aparece el literal “Instructor”
+- **Referencia:** `planes/mobile-auditoria-rama-agrupada.md`
 
 #### TC-AUD-06 — Aislamiento
 - **Esperado:** un usuario ajeno **no** ve nada

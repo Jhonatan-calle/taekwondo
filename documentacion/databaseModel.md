@@ -89,9 +89,8 @@ erDiagram
         date fecha
         time hora_inicio
         time hora_fin
-        string objetivo
-        string contenido_tuls
-        string preparacion_fisica
+        elemento_clase[] elementos_objetivo "1 o 2 elementos del ciclo ITF"
+        string objetivo_detalle "texto libre, opcional"
         timestamptz creado_en
     }
 
@@ -312,7 +311,10 @@ erDiagram
   descendente** —las funciones `es_subordinado_de`/`descendientes` son **recursivas**, así que
   alcanzan nietos— y firma los comprobantes (`comprobantes_select_superior`, política de
   **Storage** sobre `storage.objects`; **no existe tabla de comprobantes**). La vista es de **solo
-  lectura** y **no** expone datos personales de alumnos (privacidad en cascada).
+  lectura** y **no** expone datos personales de alumnos (privacidad en cascada). La app **agrupa**
+  esa vista por **subordinado directo** usando el helper `rama_descendientes(p_ancestro)` →
+  `(descendiente_id, raiz_id)`: devuelve **solo ids** (estructura organizacional, no nombres) para
+  ubicar las locaciones de descendientes indirectos dentro del bloque del directo, marcadas "De su rama".
   **Vencimientos:** el modelo **no almacena** fecha de vencimiento; el estado de pago se **deriva**
   del último periodo pagado (`al_dia` / `vencida` con meses adeudados / `sin_pagos`).
 - **Horarios 📋 y membresía única:** los horarios de un grupo viven en `grupos_horarios` (día

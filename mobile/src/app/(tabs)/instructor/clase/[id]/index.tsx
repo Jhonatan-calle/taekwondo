@@ -4,6 +4,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 import { useErrorGlobal } from '@/contextos/ErrorGlobal';
 import { MENSAJE_ERROR_GENERICO } from '@/lib/errores';
+import { etiquetaElemento } from '@/constants/elementosClase';
 import type { ClaseItem } from '@/lib/perfil';
 
 function formatearFecha(fechaISO: string): string {
@@ -80,19 +81,20 @@ export default function ClaseDetalleScreen() {
       </View>
 
       <View style={styles.tarjeta}>
-        <Text style={styles.tarjetaTitulo}>Objetivo de la sesión</Text>
-        <Text style={styles.tarjetaContenido}>{clase.objetivo || 'Sin especificar'}</Text>
+        <Text style={styles.tarjetaTitulo}>Objetivo de la clase</Text>
+        <Text style={styles.tarjetaContenido}>
+          {clase.elementos_objetivo.length > 0
+            ? clase.elementos_objetivo.map((e) => etiquetaElemento(e)).join(' · ')
+            : 'Sin especificar'}
+        </Text>
       </View>
 
-      <View style={styles.tarjeta}>
-        <Text style={styles.tarjetaTitulo}>Contenido de Tuls / Formas</Text>
-        <Text style={styles.tarjetaContenido}>{clase.contenido_tuls || 'Sin especificar'}</Text>
-      </View>
-
-      <View style={styles.tarjeta}>
-        <Text style={styles.tarjetaTitulo}>Preparación física</Text>
-        <Text style={styles.tarjetaContenido}>{clase.preparacion_fisica || 'Sin especificar'}</Text>
-      </View>
+      {clase.objetivo_detalle ? (
+        <View style={styles.tarjeta}>
+          <Text style={styles.tarjetaTitulo}>Detalles</Text>
+          <Text style={styles.tarjetaContenido}>{clase.objetivo_detalle}</Text>
+        </View>
+      ) : null}
 
       <View style={styles.acciones}>
         <Pressable

@@ -185,7 +185,7 @@ Agregar y exponer en `AuthGlobalValue` (más `valor` memo y deps), todos envuelt
 #### 4.2. `clase/[id]/index.tsx` (detalle)
 - Reemplazar el botón placeholder "Ver grupo" por el botón primario **"Tomar asistencia"**
   → `router.push('/instructor/clase/${id}/asistencia')`.
-- Mantener la ficha técnica actual (objetivo, tuls, preparación física) y "Ver grupo" como acción secundaria.
+- Mantener la ficha técnica actual (elementos del objetivo ITF, detalle opcional) y "Ver grupo" como acción secundaria.
 
 #### 4.3. `clase/[id]/asistencia.tsx` (nueva pantalla)
 - **Carga** (`useFocusEffect`): `obtenerClaseDetalle(id)`, `listarAlumnosDeGrupo(clase.grupo_id)` y

@@ -38,6 +38,12 @@ export default function InstructorScreen() {
           onPresionar={() => router.push('/instructor/clases')}
         />
         <FilaOpcionMenu
+          titulo="Objetivos de clase"
+          descripcion="Distribución de la práctica por elemento ITF"
+          habilitada
+          onPresionar={() => router.push('/instructor/objetivos')}
+        />
+        <FilaOpcionMenu
           titulo="Cuotas de alumnos"
           descripcion="Registrar los pagos mensuales"
           habilitada

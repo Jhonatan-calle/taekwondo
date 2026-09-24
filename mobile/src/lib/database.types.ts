@@ -121,37 +121,34 @@ export type Database = {
       }
       clases: {
         Row: {
-          contenido_tuls: string | null
           creado_en: string
+          elementos_objetivo: Database["public"]["Enums"]["elemento_clase"][] | null
           fecha: string
           grupo_id: string
           hora_fin: string
           hora_inicio: string
           id: string
-          objetivo: string | null
-          preparacion_fisica: string | null
+          objetivo_detalle: string | null
         }
         Insert: {
-          contenido_tuls?: string | null
           creado_en?: string
+          elementos_objetivo?: Database["public"]["Enums"]["elemento_clase"][] | null
           fecha: string
           grupo_id: string
           hora_fin: string
           hora_inicio: string
           id?: string
-          objetivo?: string | null
-          preparacion_fisica?: string | null
+          objetivo_detalle?: string | null
         }
         Update: {
-          contenido_tuls?: string | null
           creado_en?: string
+          elementos_objetivo?: Database["public"]["Enums"]["elemento_clase"][] | null
           fecha?: string
           grupo_id?: string
           hora_fin?: string
           hora_inicio?: string
           id?: string
-          objetivo?: string | null
-          preparacion_fisica?: string | null
+          objetivo_detalle?: string | null
         }
         Relationships: [
           {
@@ -1105,6 +1102,10 @@ export type Database = {
         Returns: undefined
       }
       descendientes: { Args: { p_ancestro: string }; Returns: string[] }
+      rama_descendientes: {
+        Args: { p_ancestro: string }
+        Returns: { descendiente_id: string; raiz_id: string }[]
+      }
       editar_grupo: {
         Args: {
           p_grupo_id: string
@@ -1241,6 +1242,12 @@ export type Database = {
       verificar_dni_disponible: { Args: { p_dni: string }; Returns: boolean }
     }
     Enums: {
+      elemento_clase:
+        | "movimientos_fundamentales"
+        | "formas"
+        | "accesorios"
+        | "matsogi"
+        | "hosin_sul"
       genero: "masculino" | "femenino" | "otro"
       grado:
         | "blanco"
@@ -1404,6 +1411,13 @@ export const Constants = {
   },
   public: {
     Enums: {
+      elemento_clase: [
+        "movimientos_fundamentales",
+        "formas",
+        "accesorios",
+        "matsogi",
+        "hosin_sul",
+      ],
       genero: ["masculino", "femenino", "otro"],
       grado: [
         "blanco",

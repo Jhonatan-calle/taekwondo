@@ -92,7 +92,7 @@ export default function AuditoriaDetalleScreen() {
     <ScrollView style={styles.pantalla} contentContainerStyle={styles.contenido}>
       <View style={styles.cabecera}>
         <Text style={styles.nombre}>{locacion.nombre}</Text>
-        <Text style={styles.dueno}>{locacion.dueno_nombre}</Text>
+        <Text style={styles.dueno}>{locacion.dueno_nombre ?? 'De su rama'}</Text>
         <Text style={styles.direccion}>{locacion.direccion}</Text>
       </View>
 

@@ -1,21 +1,27 @@
 import { useCallback, useState } from 'react';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { CampoTexto } from '@/components/CampoTexto';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 import { useErrorGlobal } from '@/contextos/ErrorGlobal';
 import { MENSAJE_ERROR_GENERICO } from '@/lib/errores';
 import {
+  ELEMENTOS_CLASE,
+  MAX_ELEMENTOS_CLASE,
+  etiquetaElemento,
+  etiquetaElementoCorta,
+  type ElementoClase,
+} from '@/constants/elementosClase';
+import {
   aIsoLocal,
   esHoraValida,
-  esTextoRequerido,
   horaFinPosterior,
   type Grupo,
 } from '@/lib/perfil';
 
 type ErroresFormulario = Partial<
-  Record<'grupo' | 'fecha' | 'horaInicio' | 'horaFin' | 'objetivo' | 'contenidoTuls' | 'preparacionFisica', string>
+  Record<'grupo' | 'fecha' | 'horaInicio' | 'horaFin' | 'objetivo', string>
 >;
 
 function formatearFechaLegible(fecha: Date): string {
@@ -35,9 +41,9 @@ export default function NuevaClaseScreen() {
   const [mostrarSelectorFecha, setMostrarSelectorFecha] = useState(false);
   const [horaInicio, setHoraInicio] = useState('18:00');
   const [horaFin, setHoraFin] = useState('19:30');
-  const [objetivo, setObjetivo] = useState('');
-  const [contenidoTuls, setContenidoTuls] = useState('');
-  const [preparacionFisica, setPreparacionFisica] = useState('');
+  const [elementosObjetivo, setElementosObjetivo] = useState<ElementoClase[]>([]);
+  const [objetivoDetalle, setObjetivoDetalle] = useState('');
+  const [modalObjetivos, setModalObjetivos] = useState(false);
 
   const [cargandoGrupos, setCargandoGrupos] = useState(true);
   const [errores, setErrores] = useState<ErroresFormulario>({});
@@ -70,6 +76,18 @@ export default function NuevaClaseScreen() {
     if (fecha != null) setFechaSeleccionada(fecha);
   };
 
+  const alternarElemento = (elemento: ElementoClase) => {
+    if (elementosObjetivo.includes(elemento)) {
+      setElementosObjetivo(elementosObjetivo.filter((e) => e !== elemento));
+      return;
+    }
+    if (elementosObjetivo.length >= MAX_ELEMENTOS_CLASE) {
+      Alert.alert('Máximo 2 objetivos', 'Podés elegir hasta 2 objetivos.');
+      return;
+    }
+    setElementosObjetivo([...elementosObjetivo, elemento]);
+  };
+
   const validar = (): ErroresFormulario => {
     const e: ErroresFormulario = {};
     if (grupoId == null) e.grupo = 'Seleccioná un grupo para la clase.';
@@ -78,10 +96,8 @@ export default function NuevaClaseScreen() {
     if (esHoraValida(horaInicio) && esHoraValida(horaFin) && !horaFinPosterior(horaInicio, horaFin)) {
       e.horaFin = 'La hora de fin debe ser posterior a la hora de inicio.';
     }
-    if (!esTextoRequerido(objetivo)) e.objetivo = 'Documentá el objetivo técnico de la sesión.';
-    if (!esTextoRequerido(contenidoTuls)) e.contenidoTuls = 'Indicá las formas o tuls a practicar.';
-    if (!esTextoRequerido(preparacionFisica)) {
-      e.preparacionFisica = 'Detallá los ejercicios de preparación física planificados.';
+    if (elementosObjetivo.length === 0) {
+      e.objetivo = 'Seleccioná al menos un objetivo (máximo 2).';
     }
     return e;
   };
@@ -100,9 +116,8 @@ export default function NuevaClaseScreen() {
         fecha: aIsoLocal(fechaSeleccionada),
         hora_inicio: horaInicio.trim(),
         hora_fin: horaFin.trim(),
-        objetivo: objetivo.trim(),
-        contenido_tuls: contenidoTuls.trim(),
-        preparacion_fisica: preparacionFisica.trim(),
+        elementos_objetivo: elementosObjetivo,
+        objetivo_detalle: objetivoDetalle.trim() === '' ? null : objetivoDetalle.trim(),
       });
 
       if (resultado.error) {
@@ -132,8 +147,8 @@ export default function NuevaClaseScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.subtitulo}>
-          Planificá la sesión de entrenamiento vinculada a un grupo y fecha. Toda la documentación técnica es
-          obligatoria.
+          Planificá la sesión de entrenamiento vinculada a un grupo y fecha. El objetivo se elige entre los
+          elementos del ciclo ITF (1 o 2).
         </Text>
 
         {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
@@ -211,35 +226,32 @@ export default function NuevaClaseScreen() {
           </View>
         </View>
 
-        {/* Planificación Marcial Obligatoria */}
-        <CampoTexto
-          label="Objetivo de la sesión *"
-          value={objetivo}
-          onChangeText={setObjetivo}
-          placeholder="Ej. Perfeccionamiento de distancia y contraataque con giro talón"
-          multiline
-          numberOfLines={3}
-          error={errores.objetivo}
-        />
+        {/* Objetivo por elementos del ciclo ITF */}
+        <Text style={styles.etiqueta}>Objetivo de la clase *</Text>
+        <Pressable
+          onPress={() => setModalObjetivos(true)}
+          style={styles.selectorObjetivo}
+          accessibilityRole="button"
+        >
+          <Text
+            style={elementosObjetivo.length === 0 ? styles.selectorPlaceholder : styles.selectorValor}
+          >
+            {elementosObjetivo.length === 0
+              ? 'Elegir objetivos'
+              : elementosObjetivo.map((e) => etiquetaElementoCorta(e)).join(' · ')}
+          </Text>
+          <Text style={styles.selectorIcono}>▾</Text>
+        </Pressable>
+        {errores.objetivo ? <Text style={styles.errorCampo}>{errores.objetivo}</Text> : null}
 
         <CampoTexto
-          label="Contenido de Tuls / Formas *"
-          value={contenidoTuls}
-          onChangeText={setContenidoTuls}
-          placeholder="Ej. Dan-Gun y Do-San; corrección de posturas L y flexión de rodilla"
+          label="Detalles (opcional)"
+          value={objetivoDetalle}
+          onChangeText={setObjetivoDetalle}
+          placeholder="Ej. corrección de posturas L, combinaciones, etc."
           multiline
-          numberOfLines={3}
-          error={errores.contenidoTuls}
-        />
-
-        <CampoTexto
-          label="Preparación física *"
-          value={preparacionFisica}
-          onChangeText={setPreparacionFisica}
-          placeholder="Ej. Circuito Tabata 20s x 10s: burpees, abdominales y movilidad de cadera"
-          multiline
-          numberOfLines={3}
-          error={errores.preparacionFisica}
+          numberOfLines={6}
+          style={styles.campoDetalles}
         />
 
         <Pressable
@@ -251,6 +263,41 @@ export default function NuevaClaseScreen() {
           <Text style={styles.botonTexto}>{enviando ? 'Guardando…' : 'Crear clase'}</Text>
         </Pressable>
       </ScrollView>
+
+      {/* Modal de selección de objetivos */}
+      <Modal
+        visible={modalObjetivos}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setModalObjetivos(false)}
+      >
+        <Pressable style={styles.modalFondo} onPress={() => setModalObjetivos(false)}>
+          <Pressable style={styles.modalTarjeta} onPress={() => {}}>
+            <Text style={styles.modalTitulo}>Objetivos de la clase</Text>
+            <Text style={styles.modalAyuda}>Elegí 1 o 2 elementos del ciclo ITF.</Text>
+            {ELEMENTOS_CLASE.map((elemento) => {
+              const activo = elementosObjetivo.includes(elemento);
+              return (
+                <Pressable
+                  key={elemento}
+                  onPress={() => alternarElemento(elemento)}
+                  style={[styles.opcion, activo ? styles.opcionActiva : null]}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: activo }}
+                >
+                  <Text style={[styles.opcionTexto, activo ? styles.opcionTextoActivo : null]}>
+                    {activo ? '✓  ' : ''}
+                    {etiquetaElemento(elemento)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+            <Pressable onPress={() => setModalObjetivos(false)} style={styles.modalBoton}>
+              <Text style={styles.modalBotonTexto}>Listo</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -363,6 +410,37 @@ const styles = StyleSheet.create({
   iconoCalendario: {
     fontSize: 16,
   },
+  selectorObjetivo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+    marginBottom: 16,
+  },
+  selectorPlaceholder: {
+    fontSize: 15,
+    color: '#999',
+    flex: 1,
+  },
+  selectorValor: {
+    fontSize: 15,
+    color: '#111',
+    flex: 1,
+  },
+  selectorIcono: {
+    fontSize: 14,
+    color: '#666',
+    marginLeft: 8,
+  },
+  campoDetalles: {
+    minHeight: 128,
+    textAlignVertical: 'top',
+  },
   filaHoras: {
     flexDirection: 'row',
     gap: 12,
@@ -387,6 +465,62 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   botonTexto: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalFondo: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  modalTarjeta: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: 20,
+    paddingBottom: 32,
+  },
+  modalTitulo: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111',
+  },
+  modalAyuda: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  opcion: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 8,
+    backgroundColor: '#fafafa',
+  },
+  opcionActiva: {
+    borderColor: '#C62828',
+    backgroundColor: '#fdf0f0',
+  },
+  opcionTexto: {
+    fontSize: 14,
+    color: '#333',
+  },
+  opcionTextoActivo: {
+    color: '#C62828',
+    fontWeight: '600',
+  },
+  modalBoton: {
+    backgroundColor: '#C62828',
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  modalBotonTexto: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',

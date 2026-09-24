@@ -247,6 +247,34 @@
 
 ---
 
+### 23. DEMO (prioridad Maestro) — pendientes para mañana
+- **Fecha de registro:** 2026-09-24
+- **Contexto:** primera muestra a un **Maestro de la escuela**. Se prioriza el **rol Maestro** y el
+  guion de demo por sobre cubrir todo el catálogo. Guion completo: `guion-demo.md` (raíz, **gitignored**).
+- **Cuentas:** **Maestro** `jhonatancallegaleano@gmail.com` (dueño) y **Profesor** `jhona@taekwondo.test` / `Seed123456!`.
+
+**Bloques a probar (checklist):**
+- [x] Inicio Maestro “Tu rama” (`TC-INI-05`) — ✅ 2026-09-24
+- [x] Auditoría agrupada por rama (`TC-AUD-01…05`, `TC-AUD-08`) — ✅ 2026-09-24
+- [ ] Mesas de examen (`TC-MES-01/02/04/05/06`) — **rol Maestro**
+- [ ] Postulación (`TC-POS-01…04`, `TC-POS-08`) — **rol Profesor `jhona@`**; recaudación como Maestro
+- [ ] Planilla/evaluación (`TC-EVA-01/03/05/06/09`) — **rol Maestro** ⚠️ **usa “Alumno Prueba 1”** (cambia el grado)
+- [ ] Dashboard de métricas (`TC-DASH-01`) — **rol Maestro**
+- [ ] Datos poblados para la demo: mesa **abierta con postulados**; locación **vencida** (ya hay: Seed Dojang Jhona A); comprobante de un pago (opcional).
+- [ ] Plan B si falla la red: capturas / video.
+
+**Migraciones:** `objetivo_clase_elementos`, `quitar_preparacion_fisica` y `rama_descendientes` **ya aplicadas** (`db push`).
+
+---
+
+## Por dónde vamos (resumen de sesión)
+- **Catálogo:** 156 casos en 18 módulos; **49 verificados** (auth, onboarding, linaje, navegación, inicio, alumnos, grupos, locaciones, clases, asistencia, objetivos, auditoría y panel Maestro).
+- **Bloques cerrados:** Auth/login, Onboarding, Linaje (Realtime), Alumnos, Grupos, Locaciones, Clases+Objetivos, Asistencia, Auditoría+Inicio Maestro.
+- **Siguiente sesión:** continuar el **guion de demo** (Mesas → Postulación → Planilla → Dashboard) y, cuando haya tiempo, los `TC` de **RLS/aislamiento** con la cuenta `sensei@`.
+- **Pendiente técnico:** `db lint` sigue reportando 1 issue **preexistente** de **torneos** (`llave_id` ambiguo en `sincronizar_resultado_en_vivo`) — congelado, no se toca.
+
+---
+
 🗒️ Actualizar este archivo (tachar items, agregar folow-ups de fecha) cada vez que se haga una
 prueba manual o se descubra un nuevo pendiente.
 

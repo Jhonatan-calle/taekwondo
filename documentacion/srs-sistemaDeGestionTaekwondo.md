@@ -51,6 +51,8 @@ Se establece una jerarquía predefinida inamovible:
 
 * Configuración de grupos asociados a un salón (locación) y horarios específicos.  
 * Asignación dinámica de alumnos a sus respectivos grupos y turnos.
+* Planificación de la sesión con **1 o 2 objetivos** elegidos entre los elementos del ciclo de composición del Taekwondo ITF —**Movimientos Fundamentales (Gibon Dongjak)**, **Formas (Tules)**, **Entrenamiento con Accesorios (Dallyon)**, **Ejercicios de Combate (Matsogi)** y **Defensa Personal (Hosin Sul)**— más un **detalle opcional** de la sesión.
+* **Vista de distribución de objetivos** para el profesor: porcentaje de clases dedicado a cada elemento (con filtros de período y grupo), con el fin de detectar qué contenidos reforzar.
 
 ## **3.5. Asistencia y Pagos**
 

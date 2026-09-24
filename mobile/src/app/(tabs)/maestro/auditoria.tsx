@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View, type ListRenderItem } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 import { useErrorGlobal } from '@/contextos/ErrorGlobal';
@@ -17,7 +17,21 @@ const ETIQUETA_ESTADO: Record<LocacionAuditada['estado_pago'], string> = {
   sin_pagos: 'Sin pagos',
 };
 
-function FilaLocacion({ locacion, onPresionar }: { locacion: LocacionAuditada; onPresionar: () => void }) {
+type SeccionRama = {
+  raizId: string | null;
+  titulo: string;
+  locaciones: LocacionAuditada[];
+};
+
+function FilaLocacion({
+  locacion,
+  indirecta,
+  onPresionar,
+}: {
+  locacion: LocacionAuditada;
+  indirecta: boolean;
+  onPresionar: () => void;
+}) {
   return (
     <Pressable
       onPress={onPresionar}
@@ -26,7 +40,7 @@ function FilaLocacion({ locacion, onPresionar }: { locacion: LocacionAuditada; o
     >
       <View style={styles.filaContenido}>
         <Text style={styles.nombre}>{locacion.nombre}</Text>
-        <Text style={styles.dueno}>{locacion.dueno_nombre}</Text>
+        <Text style={styles.dueno}>{indirecta ? 'De su rama' : locacion.dueno_nombre ?? 'De su rama'}</Text>
         <Text style={styles.datos}>Pactado: {formatearMonto(locacion.valor_alquiler)}</Text>
         <Text style={styles.datos}>
           {locacion.ultimo_periodo_pagado != null
@@ -60,21 +74,24 @@ function badgeTextoEstilo(estado: LocacionAuditada['estado_pago']) {
 }
 
 export default function AuditoriaScreen() {
-  const { listarLocacionesAuditadas, listarInstructoresSubordinados } = useAuthGlobal();
+  const { listarLocacionesAuditadas, listarInstructoresSubordinados, listarRamaDescendientes } =
+    useAuthGlobal();
   const { reportarError } = useErrorGlobal();
   const router = useRouter();
 
   const [locaciones, setLocaciones] = useState<LocacionAuditada[]>([]);
   const [instructores, setInstructores] = useState<InstructorLinaje[]>([]);
-  const [instructorFiltro, setInstructorFiltro] = useState<string | null>(null);
+  const [raizPorDescendiente, setRaizPorDescendiente] = useState<Map<string, string>>(new Map());
+  const [ramaFiltro, setRamaFiltro] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(false);
 
   const cargar = useCallback(async () => {
     setCargando(true);
-    const [resultadoLocaciones, resultadoInstructores] = await Promise.all([
-      listarLocacionesAuditadas(instructorFiltro ?? undefined),
+    const [resultadoLocaciones, resultadoInstructores, resultadoRama] = await Promise.all([
+      listarLocacionesAuditadas(),
       listarInstructoresSubordinados(),
+      listarRamaDescendientes(),
     ]);
 
     if (resultadoLocaciones.error != null || resultadoLocaciones.data == null) {
@@ -86,8 +103,11 @@ export default function AuditoriaScreen() {
     }
 
     if (resultadoInstructores.data != null) setInstructores(resultadoInstructores.data);
+    if (resultadoRama.data != null) {
+      setRaizPorDescendiente(new Map(resultadoRama.data.map((fila) => [fila.descendiente_id, fila.raiz_id])));
+    }
     setCargando(false);
-  }, [instructorFiltro, listarLocacionesAuditadas, listarInstructoresSubordinados, reportarError]);
+  }, [listarLocacionesAuditadas, listarInstructoresSubordinados, listarRamaDescendientes, reportarError]);
 
   useFocusEffect(
     useCallback(() => {
@@ -95,12 +115,43 @@ export default function AuditoriaScreen() {
     }, [cargar]),
   );
 
-  const renderItem: ListRenderItem<LocacionAuditada> = ({ item }) => (
-    <FilaLocacion
-      locacion={item}
-      onPresionar={() => router.push(`/maestro/auditoria/${item.id}`)}
-    />
+  // Secciones: una por subordinado directo (raíz de rama) + "De su rama".
+  const secciones = useMemo<SeccionRama[]>(() => {
+    const nombreDirecto = new Map(instructores.map((i) => [i.id, i.nombre_completo]));
+    const grupos = new Map<string, LocacionAuditada[]>();
+    const sueltas: LocacionAuditada[] = [];
+
+    for (const locacion of locaciones) {
+      const raiz = raizPorDescendiente.get(locacion.dueno_id) ?? null;
+      if (raiz != null && nombreDirecto.has(raiz)) {
+        const lista = grupos.get(raiz) ?? [];
+        lista.push(locacion);
+        grupos.set(raiz, lista);
+      } else {
+        sueltas.push(locacion);
+      }
+    }
+
+    const seccionesDirectas: SeccionRama[] = instructores
+      .map((instructor) => ({
+        raizId: instructor.id,
+        titulo: instructor.nombre_completo,
+        locaciones: grupos.get(instructor.id) ?? [],
+      }))
+      .filter((seccion) => seccion.locaciones.length > 0);
+
+    if (sueltas.length > 0) {
+      seccionesDirectas.push({ raizId: null, titulo: 'De su rama', locaciones: sueltas });
+    }
+    return seccionesDirectas;
+  }, [locaciones, instructores, raizPorDescendiente]);
+
+  const seccionesVisibles = useMemo(
+    () => (ramaFiltro == null ? secciones : secciones.filter((s) => s.raizId === ramaFiltro)),
+    [secciones, ramaFiltro],
   );
+
+  const totalVisibles = seccionesVisibles.reduce((total, s) => total + s.locaciones.length, 0);
 
   return (
     <View style={styles.pantalla}>
@@ -113,25 +164,20 @@ export default function AuditoriaScreen() {
       {instructores.length > 0 ? (
         <View style={styles.filtros}>
           <Pressable
-            onPress={() => setInstructorFiltro(null)}
-            style={[styles.chipFiltro, instructorFiltro == null ? styles.chipFiltroActivo : null]}
+            onPress={() => setRamaFiltro(null)}
+            style={[styles.chipFiltro, ramaFiltro == null ? styles.chipFiltroActivo : null]}
           >
-            <Text style={[styles.chipTexto, instructorFiltro == null ? styles.chipTextoActivo : null]}>
+            <Text style={[styles.chipTexto, ramaFiltro == null ? styles.chipTextoActivo : null]}>
               Toda mi rama
             </Text>
           </Pressable>
           {instructores.map((instructor) => (
             <Pressable
               key={instructor.id}
-              onPress={() => setInstructorFiltro(instructor.id)}
-              style={[styles.chipFiltro, instructorFiltro === instructor.id ? styles.chipFiltroActivo : null]}
+              onPress={() => setRamaFiltro(instructor.id)}
+              style={[styles.chipFiltro, ramaFiltro === instructor.id ? styles.chipFiltroActivo : null]}
             >
-              <Text
-                style={[
-                  styles.chipTexto,
-                  instructorFiltro === instructor.id ? styles.chipTextoActivo : null,
-                ]}
-              >
+              <Text style={[styles.chipTexto, ramaFiltro === instructor.id ? styles.chipTextoActivo : null]}>
                 {instructor.nombre_completo}
               </Text>
             </Pressable>
@@ -150,21 +196,39 @@ export default function AuditoriaScreen() {
             <Text style={styles.reintentarTexto}>Reintentar</Text>
           </Pressable>
         </View>
-      ) : locaciones.length === 0 ? (
+      ) : totalVisibles === 0 ? (
         <View style={styles.centro}>
           <Text style={styles.aviso}>
-            {instructorFiltro != null
-              ? 'Este instructor no tiene locaciones registradas.'
+            {ramaFiltro != null
+              ? 'Esta rama no tiene locaciones registradas.'
               : 'Todavía no hay locaciones en tu rama descendente.'}
           </Text>
         </View>
       ) : (
-        <FlatList
-          data={locaciones}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={styles.lista}
-        />
+        <ScrollView contentContainerStyle={styles.lista}>
+          {seccionesVisibles.map((seccion) => {
+            const vencidas = seccion.locaciones.filter((l) => l.estado_pago === 'vencida').length;
+            return (
+              <View key={seccion.raizId ?? 'rama'} style={styles.seccion}>
+                <View style={styles.seccionCabecera}>
+                  <Text style={styles.seccionTitulo}>{seccion.titulo}</Text>
+                  <Text style={styles.seccionResumen}>
+                    {seccion.locaciones.length} locación(es)
+                    {vencidas > 0 ? ` · ${vencidas} vencida(s)` : ''}
+                  </Text>
+                </View>
+                {seccion.locaciones.map((locacion) => (
+                  <FilaLocacion
+                    key={locacion.id}
+                    locacion={locacion}
+                    indirecta={seccion.raizId != null && locacion.dueno_id !== seccion.raizId}
+                    onPresionar={() => router.push(`/maestro/auditoria/${locacion.id}`)}
+                  />
+                ))}
+              </View>
+            );
+          })}
+        </ScrollView>
       )}
     </View>
   );
@@ -213,6 +277,25 @@ const styles = StyleSheet.create({
   },
   lista: {
     padding: 20,
+  },
+  seccion: {
+    marginBottom: 20,
+  },
+  seccionCabecera: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#C62828',
+    paddingBottom: 6,
+    marginBottom: 10,
+  },
+  seccionTitulo: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#111',
+  },
+  seccionResumen: {
+    fontSize: 12,
+    color: '#777',
+    marginTop: 2,
   },
   fila: {
     flexDirection: 'row',

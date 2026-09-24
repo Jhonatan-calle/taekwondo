@@ -11,6 +11,7 @@
 |---|---|---|
 | 1.0 | 2026-09-21 | Borrador inicial: pestaña de Auditoría para el Maestro con locaciones, montos, estado de pago derivado y comprobantes de toda su rama descendente (SRS §2). |
 | 1.1 | 2026-09-21 | Correcciones de revisión: (1) se aclara que `comprobantes_select_superior` es una política de **Supabase Storage** (`storage.objects`) y **no** una tabla —no existe tabla de comprobantes; (2) se documenta la verificación de `locaciones.valor_alquiler` como **existente** (no se crea migración redundante de columna) y se corrige la **contradicción residual** del `workflow-implementacion-mobile.md` (decía que el valor del alquiler "no se solicita", contra el SRS §3.3); (3) se agregan criterios de verificación con `supabase db push`. |
+| 1.2 | 2026-09-24 | **Auditoría agrupada por rama** (plan `mobile-auditoria-rama-agrupada.md`): se agrupa por subordinado directo con las locaciones de toda su rama; las de descendientes indirectos se marcan "De su rama" (privacidad) y el filtro pasa a ser **por rama**. Nuevo helper `rama_descendientes` (solo ids). |
 
 ## Restricciones y Correcciones Previas (No repetir)
 1. **Torneos y web congelados:** no tocar tablas de torneos ni `web/`.

@@ -1,5 +1,6 @@
 import type { Database } from '@/lib/database.types'
 import { GRADOS, esGradoDan, etiquetaGrado, type Grado } from '@/constants/grados'
+import { ELEMENTOS_CLASE, type ElementoClase } from '@/constants/elementosClase'
 
 type PerfilRow = Database['public']['Tables']['profiles']['Row']
 export type Genero = Database['public']['Enums']['genero']
@@ -127,11 +128,18 @@ export type LocacionAuditada = {
   direccion: string
   valor_alquiler: number
   dueno_id: string
-  dueno_nombre: string
+  dueno_nombre: string | null
   ultimo_periodo_pagado: string | null
   ultimo_monto: number | null
   estado_pago: EstadoPagoAlquiler
   meses_adeudados: number
+}
+
+// Mapa de rama para la auditoría agrupada: cada descendiente con el
+// subordinado directo del Maestro que encabeza su rama (solo ids).
+export type RamaDescendiente = {
+  descendiente_id: string
+  raiz_id: string
 }
 
 export type PagoCuota = Pick<
@@ -508,9 +516,8 @@ export type ClaseItem = {
   fecha: string
   hora_inicio: string
   hora_fin: string
-  objetivo: string | null
-  contenido_tuls: string | null
-  preparacion_fisica: string | null
+  elementos_objetivo: ElementoClase[]
+  objetivo_detalle: string | null
 }
 
 export type DatosNuevaClase = {
@@ -518,9 +525,36 @@ export type DatosNuevaClase = {
   fecha: string
   hora_inicio: string
   hora_fin: string
-  objetivo: string
-  contenido_tuls: string
-  preparacion_fisica: string
+  elementos_objetivo: ElementoClase[]
+  objetivo_detalle: string | null
+}
+
+export type ResumenObjetivo = {
+  elemento: ElementoClase
+  clases: number
+  porcentaje: number
+}
+
+// Distribución de la práctica por elemento del ciclo ITF.
+// El porcentaje se calcula sobre el total de MENCIONES (cada clase aporta 1 por
+// cada objetivo elegido), por lo que los porcentajes suman 100%.
+export function resumirObjetivos(clases: ClaseItem[]): ResumenObjetivo[] {
+  const conteo = new Map<ElementoClase, number>()
+  for (const elemento of ELEMENTOS_CLASE) conteo.set(elemento, 0)
+  for (const clase of clases) {
+    for (const elemento of clase.elementos_objetivo) {
+      conteo.set(elemento, (conteo.get(elemento) ?? 0) + 1)
+    }
+  }
+  const menciones = ELEMENTOS_CLASE.reduce((total, elemento) => total + (conteo.get(elemento) ?? 0), 0)
+  return ELEMENTOS_CLASE.map((elemento) => {
+    const cantidad = conteo.get(elemento) ?? 0
+    return {
+      elemento,
+      clases: cantidad,
+      porcentaje: menciones === 0 ? 0 : (cantidad / menciones) * 100,
+    }
+  })
 }
 
 export type AlumnoGrupo = Pick<AlumnoDirecto, 'id' | 'nombre_completo' | 'grado_actual' | 'dni'>

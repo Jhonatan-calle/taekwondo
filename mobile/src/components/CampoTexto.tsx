@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Pressable, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native'
+import { Pressable, StyleSheet, Text, TextInput, View, type StyleProp, type TextInputProps, type TextStyle } from 'react-native'
 import { IconoOjo } from '@/components/IconoOjo'
 
 type CampoTextoProps = {
@@ -7,9 +7,11 @@ type CampoTextoProps = {
   error?: string | null
   /** Habilita el botón de mostrar/ocultar (solo para campos de contraseña). */
   esContrasena?: boolean
+  /** Estilo extra para el input (p. ej. altura mínima en campos multilínea). */
+  style?: StyleProp<TextStyle>
 } & Omit<TextInputProps, 'style'>
 
-export function CampoTexto({ label, error, esContrasena = false, ...rest }: CampoTextoProps) {
+export function CampoTexto({ label, error, esContrasena = false, style, ...rest }: CampoTextoProps) {
   // La contraseña arranca oculta; el toggle es local a cada campo.
   const [visible, setVisible] = useState(false)
 
@@ -22,6 +24,7 @@ export function CampoTexto({ label, error, esContrasena = false, ...rest }: Camp
             styles.entrada,
             esContrasena ? styles.entradaConToggle : null,
             error ? styles.entradaError : null,
+            style,
           ]}
           placeholderTextColor="#999"
           secureTextEntry={esContrasena ? !visible : rest.secureTextEntry}

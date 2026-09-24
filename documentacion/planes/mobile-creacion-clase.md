@@ -9,6 +9,7 @@
 | Versión | Fecha | Cambios |
 |---|---|---|
 | 1.0 | 2026-09-21 | Borrador inicial: Planificación completa del ítem 3 de la Fase 4 del workflow: creación de sesiones de entrenamiento en `clases` vinculadas a un grupo y fecha, con horarios y documentación técnica obligatoria (`hora_inicio`, `hora_fin`, `objetivo`, `contenido_tuls`, `preparacion_fisica`), políticas RLS para `clases`, integración en el menú del instructor y habilitación de la opción "Toma de asistencia" como portal de clases. |
+| 1.1 | 2026-09-24 | **Cambio de campos (plan `mobile-objetivo-clase-elementos.md`):** `objetivo` (texto libre) y `contenido_tuls` se reemplazan por **`elementos_objetivo` (1–2 elementos del ciclo ITF)** + **`objetivo_detalle` opcional**; `preparacion_fisica` se elimina. Se agrega la vista **"Objetivos de clase"** (distribución por elemento). |
 
 ## Restricciones y Correcciones Previas (No repetir)
 1. **Torneos y web congelados:** No tocar tablas ni lógica de torneos (`torneos`, `inscripciones`, etc.) ni la plataforma web (`web/`).

@@ -33,6 +33,7 @@ import {
   type PagoAlquiler,
   type DatosPagoAlquiler,
   type LocacionAuditada,
+  type RamaDescendiente,
   type PagoCuota,
   type DatosPagoCuota,
   type CuotaAlumno,
@@ -53,6 +54,7 @@ import {
   type MetricasDashboard,
 } from '@/lib/perfil'
 import type { Grado } from '@/constants/grados'
+import type { ElementoClase } from '@/constants/elementosClase'
 import { gradoSiguiente } from '@/constants/grados'
 
 export type ResultadoAuth = { error: string | null; pendienteConfirmacion?: boolean }
@@ -104,7 +106,8 @@ type AuthGlobalValue = {
   obtenerUrlComprobante(path: string): Promise<ResultadoConsulta<string | null>>
   eliminarPagoAlquiler(pagoId: string, comprobantePath: string | null): Promise<{ error: string | null }>
   listarInstructoresSubordinados(): Promise<ResultadoConsulta<InstructorLinaje[] | null>>
-  listarLocacionesAuditadas(instructorId?: string): Promise<ResultadoConsulta<LocacionAuditada[] | null>>
+  listarLocacionesAuditadas(): Promise<ResultadoConsulta<LocacionAuditada[] | null>>
+  listarRamaDescendientes(): Promise<ResultadoConsulta<RamaDescendiente[] | null>>
   obtenerMetricasDashboard(
     vista: VistaMetricas,
     instructorId?: string,
@@ -609,7 +612,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
   // Auditoría en cascada (SRS §2): la RLS `*_select_superior` ya limita a la
   // rama descendente del usuario; aquí solo se arma el resumen para la UI.
   const listarLocacionesAuditadas = useCallback(
-    async (instructorId?: string): Promise<ResultadoConsulta<LocacionAuditada[] | null>> => {
+    async (): Promise<ResultadoConsulta<LocacionAuditada[] | null>> => {
       const usuarioId = sesion?.user?.id
       if (usuarioId == null) return { data: null, error: MENSAJE_ERROR_GENERICO }
 
@@ -623,16 +626,14 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
         pagos_alquiler: { periodo: string; monto: number }[]
       }
 
-      let consulta = supabase
+      // La RLS `*_select_superior` ya limita a la rama; el filtro por rama se
+      // resuelve en la pantalla (con `listarRamaDescendientes`).
+      const consulta = supabase
         .from('locaciones')
         .select(
           'id, nombre, direccion, valor_alquiler, creado_por, profiles!locaciones_creado_por_fkey(id, nombre_completo), pagos_alquiler(periodo, monto)',
         )
         .order('nombre', { ascending: true })
-
-      if (instructorId != null && instructorId !== '') {
-        consulta = consulta.eq('creado_por', instructorId)
-      }
 
       const periodoActual = mesActual()
 
@@ -651,7 +652,8 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
                 direccion: fila.direccion,
                 valor_alquiler: fila.valor_alquiler,
                 dueno_id: fila.creado_por,
-                dueno_nombre: fila.profiles?.nombre_completo ?? 'Instructor',
+                // Puede ser null: la RLS oculta el perfil de descendientes indirectos.
+                dueno_nombre: fila.profiles?.nombre_completo ?? null,
                 ultimo_periodo_pagado: ultimo?.periodo ?? null,
                 ultimo_monto: ultimo?.monto ?? null,
                 estado_pago: estado,
@@ -662,6 +664,22 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
           })),
         ),
         { modulo: 'auditoria', contexto: 'listarLocacionesAuditadas' },
+      )
+    },
+    [sesion?.user?.id],
+  )
+
+  const listarRamaDescendientes = useCallback(
+    async (): Promise<ResultadoConsulta<RamaDescendiente[] | null>> => {
+      const usuarioId = sesion?.user?.id
+      if (usuarioId == null) return { data: null, error: MENSAJE_ERROR_GENERICO }
+      return ejecutarConsulta<RamaDescendiente[] | null>(
+        Promise.resolve(
+          supabase
+            .rpc('rama_descendientes', { p_ancestro: usuarioId })
+            .returns<RamaDescendiente[]>(),
+        ),
+        { modulo: 'auditoria', contexto: 'listarRamaDescendientes' },
       )
     },
     [sesion?.user?.id],
@@ -1534,7 +1552,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
 
       let consulta = supabase
         .from('clases')
-        .select('id, grupo_id, fecha, hora_inicio, hora_fin, objetivo, contenido_tuls, preparacion_fisica, grupos!inner(nombre, profesor_id)')
+        .select('id, grupo_id, fecha, hora_inicio, hora_fin, elementos_objetivo, objetivo_detalle, grupos!inner(nombre, profesor_id)')
         .eq('grupos.profesor_id', usuarioId)
         .order('fecha', { ascending: false })
         .order('hora_inicio', { ascending: false })
@@ -1549,9 +1567,8 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
         fecha: string
         hora_inicio: string
         hora_fin: string
-        objetivo: string | null
-        contenido_tuls: string | null
-        preparacion_fisica: string | null
+        elementos_objetivo: ElementoClase[] | null
+        objetivo_detalle: string | null
         grupos: { nombre: string } | null
       }
 
@@ -1566,9 +1583,8 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
                 fecha: fila.fecha,
                 hora_inicio: fila.hora_inicio,
                 hora_fin: fila.hora_fin,
-                objetivo: fila.objetivo,
-                contenido_tuls: fila.contenido_tuls,
-                preparacion_fisica: fila.preparacion_fisica,
+                elementos_objetivo: fila.elementos_objetivo ?? [],
+                objetivo_detalle: fila.objetivo_detalle,
               })) ?? null,
             error,
           })),
@@ -1590,15 +1606,14 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
         fecha: string
         hora_inicio: string
         hora_fin: string
-        objetivo: string | null
-        contenido_tuls: string | null
-        preparacion_fisica: string | null
+        elementos_objetivo: ElementoClase[] | null
+        objetivo_detalle: string | null
         grupos: { nombre: string } | null
       }
 
       const promesa = supabase
         .from('clases')
-        .select('id, grupo_id, fecha, hora_inicio, hora_fin, objetivo, contenido_tuls, preparacion_fisica, grupos!inner(nombre, profesor_id)')
+        .select('id, grupo_id, fecha, hora_inicio, hora_fin, elementos_objetivo, objetivo_detalle, grupos!inner(nombre, profesor_id)')
         .eq('id', claseId)
         .eq('grupos.profesor_id', usuarioId)
         .maybeSingle()
@@ -1616,9 +1631,8 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
                 fecha: data.fecha,
                 hora_inicio: data.hora_inicio,
                 hora_fin: data.hora_fin,
-                objetivo: data.objetivo,
-                contenido_tuls: data.contenido_tuls,
-                preparacion_fisica: data.preparacion_fisica,
+                elementos_objetivo: data.elementos_objetivo ?? [],
+                objetivo_detalle: data.objetivo_detalle,
               },
               error: null,
             }
@@ -1644,9 +1658,8 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
               fecha: datos.fecha,
               hora_inicio: datos.hora_inicio.trim(),
               hora_fin: datos.hora_fin.trim(),
-              objetivo: datos.objetivo.trim(),
-              contenido_tuls: datos.contenido_tuls.trim(),
-              preparacion_fisica: datos.preparacion_fisica.trim(),
+              elementos_objetivo: datos.elementos_objetivo,
+              objetivo_detalle: datos.objetivo_detalle?.trim() || null,
             })
             .select('id')
             .single(),
@@ -1806,6 +1819,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       eliminarPagoAlquiler,
       listarInstructoresSubordinados,
       listarLocacionesAuditadas,
+      listarRamaDescendientes,
       obtenerMetricasDashboard,
       listarCuotasAlumno,
       listarCuotasPorPeriodo,
@@ -1873,6 +1887,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       eliminarPagoAlquiler,
       listarInstructoresSubordinados,
       listarLocacionesAuditadas,
+      listarRamaDescendientes,
       obtenerMetricasDashboard,
       listarCuotasAlumno,
       listarCuotasPorPeriodo,

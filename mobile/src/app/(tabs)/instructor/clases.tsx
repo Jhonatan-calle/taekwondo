@@ -4,6 +4,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 import { useErrorGlobal } from '@/contextos/ErrorGlobal';
 import { MENSAJE_ERROR_GENERICO } from '@/lib/errores';
+import { etiquetaElementoCorta } from '@/constants/elementosClase';
 import type { ClaseItem, Grupo } from '@/lib/perfil';
 
 function formatearFecha(fechaISO: string): string {
@@ -47,9 +48,9 @@ function FilaClase({ clase, onPresionar }: { clase: ClaseItem; onPresionar: () =
           </Text>
         </View>
         <Text style={styles.nombreGrupo}>{clase.nombre_grupo ?? 'Grupo'}</Text>
-        {clase.objetivo ? (
+        {clase.elementos_objetivo.length > 0 ? (
           <Text style={styles.objetivo} numberOfLines={2}>
-            {clase.objetivo}
+            {clase.elementos_objetivo.map((e) => etiquetaElementoCorta(e)).join(' · ')}
           </Text>
         ) : null}
       </View>

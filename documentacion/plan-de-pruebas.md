@@ -10,7 +10,7 @@
 > Los **pendientes puntuales** (bloqueos, fechas, follow-ups) viven en `pendientes-pruebas.md`.
 
 ## Metadatos
-- **Versión:** 1.37
+- **Versión:** 1.39
 - **Estado:** Vigente
 - **Fecha:** 2026-09-24
 - **Cobertura:** 160 casos en 18 módulos (44 marcados Smoke)
@@ -56,6 +56,8 @@
 | 1.35 | 2026-09-24 | Prueba manual: `TC-MES-08` (nuevo escenario) y `TC-MES-12` (visibilidad solo directos) marcados ✅ verificados; **módulo Mesas de examen completo**. |
 | 1.36 | 2026-09-24 | **Refuerzo del fix de parpadeo de onboarding:** `TC-AUTH-12` ampliado (gate por usuario + reintento único; no reaparece al re-loguear/cambiar de cuenta). Referencia: `planes/mobile-fix-flicker-onboarding-login.md` (v1.3). |
 | 1.37 | 2026-09-24 | Prueba manual: `TC-POS-01`…`TC-POS-05` (lista de mesas del superior, candidatos con grado aspirado, postular con derecho, duplicado y grado máximo) marcados ✅ verificados. |
+| 1.38 | 2026-09-24 | `TC-POS-06` (mesa cerrada) actualizado al comportamiento real (desaparece del listado; el aviso de "cerrada" queda solo accesible por deep link) y marcado ✅ verificado; se registra la mejora futura en `pendientes-pruebas.md`. |
+| 1.39 | 2026-09-24 | Prueba manual: **módulos Postulación y Planilla/evaluación completos.** `TC-POS-07`…`TC-POS-10` y `TC-EVA-01`, `TC-EVA-03`…`TC-EVA-12` marcados ✅ verificados. |
 
 ---
 
@@ -683,20 +685,26 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 - **Precondición:** alumno en `dan_9`
 - **Esperado:** deshabilitado con "Ya alcanzó el grado máximo"
 
-#### TC-POS-06 — Mesa cerrada
-- **Esperado:** con la mesa cerrada, el profesor **no** puede postular ni editar el cobro
+#### TC-POS-06 — Mesa cerrada · ✅ verificado (2026-09-24)
+- **Esperado:** al cerrar la mesa, **desaparece del listado** de Postulación del profesor (ese listado
+  es solo de mesas **abiertas**). El detalle de una mesa cerrada muestra *"Esta mesa está cerrada: ya
+  no se pueden hacer postulaciones."* y sin acciones de postular/editar/cerrar, pero **hoy solo es
+  alcanzable por deep link** (el listado ya no la ofrece)
+- **Mejora futura:** que el profesor pueda ver el detalle de una mesa cerrada y cómo les fue a sus
+  alumnos — registrado en `pendientes-pruebas.md`
+- **Referencia:** `planes/mobile-postulacion-examen.md`
 
-#### TC-POS-07 — Alumno ajeno
+#### TC-POS-07 — Alumno ajeno · ✅ verificado (2026-09-24)
 - **Esperado:** no aparece en la lista de candidatos del profesor
 
-#### TC-POS-08 — Recaudación del Maestro · **Smoke**
+#### TC-POS-08 — Recaudación del Maestro · **Smoke** · ✅ verificado (2026-09-24)
 - **Rol:** Maestro dueño de la mesa
 - **Esperado:** ve la **recaudación total** (suma de derechos) + cobrados/pendientes + detalle de postulaciones (SRS §3.7)
 
-#### TC-POS-09 — Editar cobro y quitar
+#### TC-POS-09 — Editar cobro y quitar · ✅ verificado (2026-09-24)
 - **Esperado:** "Editar cobro" actualiza el monto (y la recaudación); "Quitar" saca la postulación
 
-#### TC-POS-10 — Postular fuera de jerarquía
+#### TC-POS-10 — Postular fuera de jerarquía · ✅ verificado (2026-09-24)
 - **Rol:** profesor
 - **Pasos:** un profesor que **no** es dueño ni subordinado directo del dueño de la mesa intenta
   postular (por RPC/API, salteando la UI)
@@ -708,45 +716,45 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 
 ### TC-EVA — Planilla técnica y evaluación (Maestro)
 
-#### TC-EVA-01 — Abrir planilla con mesa cerrada · **Smoke**
+#### TC-EVA-01 — Abrir planilla con mesa cerrada · **Smoke** · ✅ verificado (2026-09-24)
 - **Rol:** Maestro dueño de la mesa
 - **Esperado:** ve cada postulado con **nombre, edad, peso** y `grado actual → aspirado`
 
 #### TC-EVA-02 — Mesa abierta · ✅ verificado (2026-09-24)
 - **Esperado:** el botón está deshabilitado con la nota "Cerrá la mesa para poder evaluar"; al presionarlo ofrece cerrarla
 
-#### TC-EVA-03 — Aprobar · **Smoke**
+#### TC-EVA-03 — Aprobar · **Smoke** · ✅ verificado (2026-09-24)
 - **Pasos:** cargar **Aprobado** → confirmar
 - **Esperado:** asciende el `grado_actual` del alumno (verificable en su detalle) y registra la fila en `graduaciones`
 
-#### TC-EVA-04 — Desaprobar / Ausente
+#### TC-EVA-04 — Desaprobar / Ausente · ✅ verificado (2026-09-24)
 - **Esperado:** **no** cambian el grado del alumno
 
-#### TC-EVA-05 — Mención especial
+#### TC-EVA-05 — Mención especial · ✅ verificado (2026-09-24)
 - **Pasos:** marcar la casilla + Aprobado
 - **Esperado:** desenlace "Aprobado · Mención especial" y `graduaciones.mencion_especial = true`; el grado sube **un** nivel
 
-#### TC-EVA-06 — Doble graduación
+#### TC-EVA-06 — Doble graduación · ✅ verificado (2026-09-24)
 - **Precondición:** alumno entre `blanco` y `azul_punta_roja`
 - **Esperado:** el grado sube **dos** niveles y `graduaciones.promocion_doble = true`
 
-#### TC-EVA-07 — Límite de doble graduación
+#### TC-EVA-07 — Límite de doble graduación · ✅ verificado (2026-09-24)
 - **Precondición:** alumno `rojo`, `rojo_punta_negra` o dan
 - **Esperado:** el botón **no** aparece (máximo: mención especial)
 
-#### TC-EVA-08 — Doble + mención
+#### TC-EVA-08 — Doble + mención · ✅ verificado (2026-09-24)
 - **Esperado:** se pueden combinar; el badge muestra ambos
 
-#### TC-EVA-09 — Grado otorgado
+#### TC-EVA-09 — Grado otorgado · ✅ verificado (2026-09-24)
 - **Esperado:** tras evaluar, "Aspira a" pasa a mostrar **"Grado otorgado"** con el grado real (en doble, el +2)
 
-#### TC-EVA-10 — Irreversibilidad
+#### TC-EVA-10 — Irreversibilidad · ✅ verificado (2026-09-24)
 - **Esperado:** una postulación evaluada muestra badge y **no** permite volver a cargar (el RPC rechaza)
 
-#### TC-EVA-11 — Mesa ajena
+#### TC-EVA-11 — Mesa ajena · ✅ verificado (2026-09-24)
 - **Esperado:** solo mensaje de **solo lectura**, sin datos técnicos
 
-#### TC-EVA-12 — Resumen "Evaluados X de Y"
+#### TC-EVA-12 — Resumen "Evaluados X de Y" · ✅ verificado (2026-09-24)
 - **Esperado:** se actualiza tras cada resultado **sin reiniciar** la app
 
 ---

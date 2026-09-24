@@ -263,8 +263,8 @@
 - [x] Mesas de examen — dueño visible + jerarquía (`TC-MES-08` nuevo escenario, `TC-MES-12`) — ✅ 2026-09-24
 - [x] Mesas de examen — sin límite de inscripción (`TC-MES-09`) — ✅ 2026-09-24
 - [x] Postulación — mesas/candidatos/postular/duplicado/grado máximo (`TC-POS-01…05`) — ✅ 2026-09-24
-- [ ] Postulación — recaudación como Maestro (`TC-POS-08`)
-- [ ] Planilla/evaluación (`TC-EVA-01/03/05/06/09`) — **rol Maestro** ⚠️ **usa “Alumno Prueba 1”** (cambia el grado)
+- [x] Postulación — mesa cerrada, alumno ajeno, editar cobro/quitar, recaudación y aislamiento (`TC-POS-06…10`) — ✅ 2026-09-24
+- [x] Planilla/evaluación (`TC-EVA-01`…`TC-EVA-12`) — **rol Maestro** — ✅ 2026-09-24
 - [ ] Dashboard de métricas (`TC-DASH-01`) — **rol Maestro**
 - [ ] Datos poblados para la demo: mesa **abierta con postulados**; locación **vencida** (ya hay: Seed Dojang Jhona A); comprobante de un pago (opcional).
 - [ ] Plan B si falla la red: capturas / video.
@@ -312,10 +312,24 @@
 
 ---
 
+### 27. MEJORA FUTURA — el profesor ve el detalle de una mesa cerrada y el resultado de sus alumnos
+- **Fecha de registro:** 2026-09-24
+- **Idea:** hoy, al cerrar la mesa, el profesor la pierde de vista (el listado de Postulación solo
+  muestra mesas **abiertas**) y no puede consultar cómo les fue a sus alumnos postulados.
+- **Propuesta:** incluir las mesas **cerradas/finalizadas** del superior directo en el listado en modo
+  lectura (o un apartado "Mesas cerradas") y reutilizar el detalle para mostrar el desenlace de sus
+  propias postulaciones (`etiquetaResultadoExamen`: Aprobado/Desaprobado/Ausente + mención/doble).
+- **Técnico:** es casi solo UI; la RLS `postulaciones_examen_select_profesor` ya permite al profesor
+  leer sus propias postulaciones aunque la mesa esté cerrada. Decidir si se listan **todas** las
+  cerradas o solo aquellas donde el profesor tiene postulaciones.
+- **Acción:** crear plan aparte cuando se priorice.
+
+---
+
 ## Por dónde vamos (resumen de sesión)
-- **Catálogo:** 160 casos en 18 módulos; **66 verificados** (auth, onboarding, linaje, navegación, inicio, alumnos, grupos, locaciones, clases, asistencia, objetivos, auditoría, mesas, postulación y panel Maestro).
-- **Bloques cerrados:** Auth/login, Onboarding, Linaje (Realtime), Alumnos, Grupos, Locaciones, Clases+Objetivos, Asistencia, Auditoría+Inicio Maestro, Mesas de examen.
-- **Siguiente sesión:** continuar el **guion de demo** (Postulación → Planilla → Dashboard) y, cuando haya tiempo, los `TC` de **RLS/aislamiento** con la cuenta `sensei@`.
+- **Catálogo:** 160 casos en 18 módulos; **82 verificados** (auth, onboarding, linaje, navegación, inicio, alumnos, grupos, locaciones, clases, asistencia, objetivos, auditoría, mesas, postulación, planilla/evaluación y panel Maestro).
+- **Bloques cerrados:** Auth/login, Onboarding, Linaje (Realtime), Alumnos, Grupos, Locaciones, Clases+Objetivos, Asistencia, Auditoría+Inicio Maestro, Mesas de examen, Postulación y Planilla/evaluación.
+- **Siguiente sesión:** continuar el **guion de demo** (Dashboard de métricas) y, cuando haya tiempo, los `TC` de **RLS/aislamiento** con la cuenta `sensei@`.
 - **Pendiente técnico:** `db lint` sigue reportando 1 issue **preexistente** de **torneos** (`llave_id` ambiguo en `sincronizar_resultado_en_vivo`) — congelado, no se toca.
 
 ---

@@ -1,9 +1,9 @@
 # Plan: Fix flicker de onboarding al iniciar sesión — `mobile-fix-flicker-onboarding-login.md`
 
 ## Metadatos
-- **Versión:** 1.1
+- **Versión:** 1.3
 - **Estado:** Aprobado
-- **Fecha:** 2026-09-23
+- **Fecha:** 2026-09-24
 - **Fecha de aprobación:** 2026-09-23
 - **Origen:** hallazgo de prueba manual (Prueba 1 — arranque + Inicio).
 
@@ -13,6 +13,7 @@
 | 1.0 | 2026-09-23 | Borrador inicial: elimina el parpadeo del formulario de onboarding entre el login y el Inicio, gateando la navegación hasta que el perfil esté resuelto. |
 | 1.1 | 2026-09-23 | **Aprobado e implementado.** `perfilResuelto` + `resolviendoPerfil` en `AuthGlobal`; gate `cargando || resolviendoPerfil` en `_layout`. `typecheck`/`lint` en verde. |
 | 1.2 | 2026-09-23 | La pantalla de carga deja de ser el texto "Cargando…" y pasa a un **`ActivityIndicator`** (spinner) centrado con el rojo institucional `#C62828`. |
+| 1.3 | 2026-09-24 | **Refuerzo (reaparición del parpadeo):** el gate pasa a resolverse **por usuario** (`perfilResueltoPara: string \| null`) en lugar de un boolean, se resetea **al iniciar sesión/registrar** y `refrescarPerfil` hace un **reintento único** si el perfil vuelve vacío (carrera con el token). Corrige la reaparición del onboarding por 1–2 frames. |
 
 ## Restricciones y Correcciones Previas (No repetir)
 1. **No romper los guards existentes:** `Stack.Protected` de `_layout.tsx` sigue siendo la única
@@ -93,6 +94,25 @@
 - `plan-de-pruebas.md`: `TC-AUTH-12` (transición de login sin parpadeo) + historial (v1.5).
 - `pendientes-pruebas.md`: seguimiento de la verificación en dispositivo del fix.
 - `README.md`: fila del plan.
+
+## Refuerzo v1.3 (2026-09-24) — reaparición del parpadeo
+
+**Diagnóstico:** `perfilResuelto` era un **boolean plano** con dos agujeros:
+1. Solo se reseteaba en `SIGNED_OUT`/`cerrarSesion`, **no al empezar un login**: si quedaba en `true`
+   (SIGNED_OUT no disparado / Fast Refresh), el gate no se activaba.
+2. Se liberaba aunque la lectura de `profiles` viniera **vacía o con error** (el `finally` marcaba
+   resuelto mientras `perfil` seguía `null`) ⇒ onboarding por 1–2 frames.
+
+**Cambios (`AuthGlobal.tsx`):**
+- Estado por usuario: `const [perfilResueltoPara, setPerfilResueltoPara] = useState<string | null>(null)`.
+- Gate: `const resolviendoPerfil = sesion != null && perfilResueltoPara !== sesion.user.id`
+  → se reactiva solo en cada login/cambio de cuenta.
+- `refrescarPerfil`: **reintento único** (350 ms) si el perfil vuelve `null` antes de marcar resuelto;
+  el `finally` marca `setPerfilResueltoPara(usuarioId)` (fail-gracefully preservado).
+- Reset en `iniciarSesion` y `registrarCuenta` (`setPerfil(null)` + `setPerfilResueltoPara(null)`).
+- Reset en `SIGNED_OUT` y `cerrarSesion`.
+
+**Verificación:** `typecheck`/`lint` en verde; prueba manual en dispositivo **pendiente**.
 
 ## Riesgos
 - Un `refrescarPerfil` que nunca resuelva (red colgada) mantendría el spinner: el `ejecutarConsulta`

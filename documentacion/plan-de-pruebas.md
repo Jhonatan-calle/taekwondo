@@ -10,7 +10,7 @@
 > Los **pendientes puntuales** (bloqueos, fechas, follow-ups) viven en `pendientes-pruebas.md`.
 
 ## Metadatos
-- **Versión:** 1.34
+- **Versión:** 1.36
 - **Estado:** Vigente
 - **Fecha:** 2026-09-24
 - **Cobertura:** 160 casos en 18 módulos (44 marcados Smoke)
@@ -53,6 +53,8 @@
 | 1.32 | 2026-09-24 | **Dueño de la mesa a la vista:** `TC-MES-08` actualizado (mensaje con nombre del dueño en el detalle y `Mesa de {nombre}` en los listados de Maestro e Instructor); RPC `listar_mesas_examen()` con `maestro_nombre`. Referencia: `planes/mobile-mesas-dueno-nombre.md`. |
 | 1.33 | 2026-09-24 | Prueba manual: `TC-MES-08` (mesa ajena con nombre del dueño), `TC-MES-09` (sin límite de inscripción) y `TC-EVA-02` ("Abrir planilla" con mesa abierta ofrece cerrarla) marcados ✅ verificados. |
 | 1.34 | 2026-09-24 | **Visibilidad de mesas por jerarquía:** `TC-MES-08` cambia de escenario (requiere re-verificación); `TC-POS-01` ajustado; nuevos `TC-MES-12` (nieto/superior no ve) y `TC-POS-10` (postular fuera de jerarquía → rechazo). Referencia: `planes/mobile-mesas-visibilidad-jerarquia.md`. |
+| 1.35 | 2026-09-24 | Prueba manual: `TC-MES-08` (nuevo escenario) y `TC-MES-12` (visibilidad solo directos) marcados ✅ verificados; **módulo Mesas de examen completo**. |
+| 1.36 | 2026-09-24 | **Refuerzo del fix de parpadeo de onboarding:** `TC-AUTH-12` ampliado (gate por usuario + reintento único; no reaparece al re-loguear/cambiar de cuenta). Referencia: `planes/mobile-fix-flicker-onboarding-login.md` (v1.3). |
 
 ---
 
@@ -177,6 +179,8 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 - **Esperado:** se ve un **spinner de carga** y de ahí directo al **Inicio**; **nunca** aparece el formulario de onboarding, ni por un instante
 - **Cuenta nueva:** spinner de carga → `/onboarding` (no parpadea a tabs)
 - **Fail gracefully:** si la lectura del perfil falla, la app no queda colgada en el spinner
+- **Reintentos:** tras la v1.3 del plan, el gate se resuelve **por usuario** y reintenta una vez si el
+  perfil vuelve vacío; el parpadeo **no** debe reaparecer ni al re-loguear ni al cambiar de cuenta
 - **Referencia:** `planes/mobile-fix-flicker-onboarding-login.md`
 
 ---
@@ -632,12 +636,11 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 #### TC-MES-07 — Gate de Maestro · **Smoke**
 - **Esperado:** un usuario sin `es_maestro` **no** ve la pestaña ni puede crear mesas
 
-#### TC-MES-08 — Mesa ajena (visibilidad por jerarquía)
+#### TC-MES-08 — Mesa ajena (visibilidad por jerarquía) · ✅ verificado (2026-09-24)
 - **Precondición:** el visor **no** es el dueño, pero es **subordinado directo** del dueño
 - **Esperado:** el detalle muestra **"Esta mesa pertenece a {nombre del maestro dueño}: solo podés
   consultarla."** (sin editar/cerrar). El **listado** muestra `Mesa de {nombre}` en las mesas ajenas
   (y "Tu mesa" en las propias). El **profesor** ve `Mesa de {nombre}` en el listado y en el detalle
-- **Requiere re-verificación (2026-09-24):** el escenario cambió con la visibilidad por jerarquía
 - **Referencia:** `planes/mobile-mesas-visibilidad-jerarquia.md`, `planes/mobile-mesas-dueno-nombre.md`
 
 #### TC-MES-09 — Sin límite de inscripción · ✅ verificado (2026-09-24)
@@ -649,7 +652,7 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
   fecha** (sin límite de rango), pasada o futura
 - **Referencia:** `planes/mobile-date-picker-campos-fecha.md`
 
-#### TC-MES-12 — Visibilidad solo para directos
+#### TC-MES-12 — Visibilidad solo para directos · ✅ verificado (2026-09-24)
 - **Pasos:** iniciar sesión con un **descendiente indirecto** (ej. `sensei@taekwondo.test`, hijo de
   Jhona) y listar mesas; y con un **superior** ver las mesas de sus subordinados
 - **Esperado:** el nieto ve **0 mesas** (no ve las del abuelo); el superior **no** ve las mesas de sus

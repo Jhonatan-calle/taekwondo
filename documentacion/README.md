@@ -58,7 +58,7 @@
 | `planes/mobile-mesas-visibilidad-jerarquia.md` | Plan vigente (implementado): **visibilidad de mesas por jerarquía** — una mesa la ve su dueño + sus **subordinados directos** (dirección superior→subordinado); postular solo en mesas propias o del superior directo; sin recursividad hacia abajo por ahora. |
 | `plan-de-pruebas.md` | **Catálogo de casos de prueba** (permanente): **160 casos** por módulo con IDs `TC-*` (auth, onboarding, linaje, navegación, inicio, alumnos, grupos, locaciones, clases, asistencia, objetivos, cuotas, alquileres, auditoría, mesas, postulación, evaluación), **matriz de roles/RLS**, resiliencia y **smoke test** de 25 casos. Se extiende con cada implementación. |
 | `pendientes-pruebas.md` | Checklist de validaciones E2E/en dispositivo pendientes (deep link de recuperación, email duplicado, guards, onboarding). |
-| `prueba-manual.md` | **Documento auxiliar** de prueba manual: pasos a paso de ejecución (botón por botón) por bloque, para la demo/regresión; hoy cubre **Mesas de examen** (`TC-MES-01/02/03/04/05/06/08/09`). |
+| `prueba-manual.md` | **Documento auxiliar** de prueba manual: pasos a paso de ejecución (botón por botón) por bloque, para la demo/regresión; hoy cubre **Postulación a examen** (`TC-POS-01…10`). |
 | `workflow-implementacion-mobile.md` | Guía de pasos secuenciales y workflow de desarrollo de la app móvil. |
 | `README.md` (este archivo) | Índice de documentación. |
 

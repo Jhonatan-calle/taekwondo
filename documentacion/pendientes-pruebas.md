@@ -230,8 +230,11 @@
   !onboardingCompleto` renderizaba `onboarding` por 1–2 frames.
 - **Fix (implementado):** `perfilResuelto` / `resolviendoPerfil` en `AuthGlobal` y gate
   `cargando || resolviendoPerfil` en `_layout`; `typecheck`/`lint` en verde.
+- **Refuerzo (2026-09-24):** reaparecía el parpadeo. Se pasó a resolver **por usuario**
+  (`perfilResueltoPara`), reset en login/registro y **reintento único** si el perfil vuelve vacío.
+  `typecheck`/`lint` en verde. Referencia: `planes/mobile-fix-flicker-onboarding-login.md` (v1.3).
 - **Verificación pendiente en dispositivo:** login con cuenta completa → **spinner de carga** → **Inicio**
-  (sin onboarding); cuenta nueva → spinner → onboarding.
+  (sin onboarding); cuenta nueva → spinner → onboarding; **re-loguear / cambiar de cuenta** sin parpadeo.
 - **Referencia:** `planes/mobile-fix-flicker-onboarding-login.md`.
 
 ---
@@ -257,7 +260,7 @@
 - [x] Inicio Maestro “Tu rama” (`TC-INI-05`) — ✅ 2026-09-24
 - [x] Auditoría agrupada por rama (`TC-AUD-01…05`, `TC-AUD-08`) — ✅ 2026-09-24
 - [x] Mesas de examen — crear/listar/editar/cerrar (`TC-MES-01/02/03/04/05/06`, incluye date-picker) — ✅ 2026-09-24
-- [ ] Mesas de examen — dueño visible + jerarquía (`TC-MES-08` cambió de escenario, `TC-MES-12`): **re-verificar en dispositivo** tras la visibilidad por jerarquía
+- [x] Mesas de examen — dueño visible + jerarquía (`TC-MES-08` nuevo escenario, `TC-MES-12`) — ✅ 2026-09-24
 - [x] Mesas de examen — sin límite de inscripción (`TC-MES-09`) — ✅ 2026-09-24
 - [ ] Postulación (`TC-POS-01…04`, `TC-POS-08`) — **rol Profesor `jhona@`**; recaudación como Maestro
 - [ ] Planilla/evaluación (`TC-EVA-01/03/05/06/09`) — **rol Maestro** ⚠️ **usa “Alumno Prueba 1”** (cambia el grado)
@@ -302,14 +305,14 @@
   superior→subordinado); postular solo en mesas propias o del superior directo. Toca RLS de
   `mesas_examen` y `postulaciones_examen` (insert) + RPCs `listar_mesas_examen` y `postular_alumno`.
   Migración `mesas_visibilidad_jerarquia` **aplicada** (`db push`).
-- **Verificado por API:** `jhona@` ve las mesas de Jhonatan; `sensei@` **0** mesas; `maestro2@` ve la
-  suya + las de Jhonatan; postular fuera de jerarquía → **rechazo**.
-- **Pendiente en dispositivo:** `TC-MES-08` (nuevo escenario), `TC-MES-12`, `TC-POS-10`.
+- **Verificado:** API (`jhona@` ve las de Jhonatan; `sensei@` 0; `maestro2@` ve las del superior) y
+  **dispositivo** (`TC-MES-08` nuevo escenario y `TC-MES-12`) — ✅ 2026-09-24.
+- **Pendiente:** `TC-POS-10` (postular fuera de jerarquía) — se prueba con el módulo Postulación.
 
 ---
 
 ## Por dónde vamos (resumen de sesión)
-- **Catálogo:** 160 casos en 18 módulos; **59 verificados** (auth, onboarding, linaje, navegación, inicio, alumnos, grupos, locaciones, clases, asistencia, objetivos, auditoría, mesas y panel Maestro).
+- **Catálogo:** 160 casos en 18 módulos; **61 verificados** (auth, onboarding, linaje, navegación, inicio, alumnos, grupos, locaciones, clases, asistencia, objetivos, auditoría, mesas y panel Maestro).
 - **Bloques cerrados:** Auth/login, Onboarding, Linaje (Realtime), Alumnos, Grupos, Locaciones, Clases+Objetivos, Asistencia, Auditoría+Inicio Maestro, Mesas de examen.
 - **Siguiente sesión:** continuar el **guion de demo** (Postulación → Planilla → Dashboard) y, cuando haya tiempo, los `TC` de **RLS/aislamiento** con la cuenta `sensei@`.
 - **Pendiente técnico:** `db lint` sigue reportando 1 issue **preexistente** de **torneos** (`llave_id` ambiguo en `sincronizar_resultado_en_vivo`) — congelado, no se toca.

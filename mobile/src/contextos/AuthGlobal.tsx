@@ -862,32 +862,33 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       type FilaMesa = {
         id: string
         maestro_id: string
+        maestro_nombre: string | null
         fecha: string
         lugar: string | null
         estado: string
-        postulaciones_examen: { id: string }[]
+        cantidad_postulados: number
       }
 
-      const promesa = supabase
-        .from('mesas_examen')
-        .select('id, maestro_id, fecha, lugar, estado, postulaciones_examen(id)')
-        .order('fecha', { ascending: false })
-        .returns<FilaMesa[]>()
-
+      // RPC SECURITY DEFINER: incluye el nombre del maestro dueño de la mesa
+      // (las RLS de `profiles` no permiten leer el perfil de otro maestro).
       return ejecutarConsulta<MesaExamen[] | null>(
         Promise.resolve(
-          promesa.then(({ data, error }) => ({
-            data:
-              data?.map((fila) => ({
-                id: fila.id,
-                maestro_id: fila.maestro_id,
-                fecha: fila.fecha,
-                lugar: fila.lugar,
-                estado: fila.estado as EstadoMesa,
-                cantidad_postulados: fila.postulaciones_examen?.length ?? 0,
-              })) ?? null,
-            error,
-          })),
+          supabase
+            .rpc('listar_mesas_examen')
+            .returns<FilaMesa[]>()
+            .then(({ data, error }) => ({
+              data:
+                data?.map((fila) => ({
+                  id: fila.id,
+                  maestro_id: fila.maestro_id,
+                  maestro_nombre: fila.maestro_nombre,
+                  fecha: fila.fecha,
+                  lugar: fila.lugar,
+                  estado: fila.estado as EstadoMesa,
+                  cantidad_postulados: fila.cantidad_postulados,
+                })) ?? null,
+              error,
+            })),
         ),
         { modulo: 'mesas_examen', contexto: 'listarMesasExamen' },
       )

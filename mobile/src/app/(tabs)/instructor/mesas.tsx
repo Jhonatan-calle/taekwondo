@@ -23,6 +23,7 @@ function FilaMesaAbierta({ mesa, onPresionar }: { mesa: MesaExamen; onPresionar:
       <View style={styles.filaContenido}>
         <Text style={styles.fecha}>{formatearFecha(mesa.fecha)}</Text>
         <Text style={styles.lugar}>{mesa.lugar ?? 'Sin lugar definido'}</Text>
+        <Text style={styles.dueno}>Mesa de {mesa.maestro_nombre ?? 'otro maestro'}</Text>
         <Text style={styles.postulados}>{mesa.cantidad_postulados} postulado(s)</Text>
       </View>
       <Text style={styles.chevron}>›</Text>
@@ -140,6 +141,11 @@ const styles = StyleSheet.create({
   lugar: {
     fontSize: 14,
     color: '#333',
+    marginTop: 2,
+  },
+  dueno: {
+    fontSize: 12,
+    color: '#666',
     marginTop: 2,
   },
   postulados: {

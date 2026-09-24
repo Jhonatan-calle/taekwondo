@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { CampoFecha } from '@/components/CampoFecha';
+import { CampoPeriodo } from '@/components/CampoPeriodo';
 import { CampoTexto } from '@/components/CampoTexto';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 import { useErrorGlobal } from '@/contextos/ErrorGlobal';
@@ -17,7 +19,7 @@ export default function RegistrarCuotaScreen() {
 
   const [periodo, setPeriodo] = useState(mesActual());
   const [monto, setMonto] = useState('');
-  const [fecha, setFecha] = useState(aIsoLocal(new Date()));
+  const [fechaSeleccionada, setFechaSeleccionada] = useState(new Date());
   const [errores, setErrores] = useState<ErroresFormulario>({});
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
@@ -27,7 +29,7 @@ export default function RegistrarCuotaScreen() {
     const e: ErroresFormulario = {};
     if (!esPeriodoValido(periodo)) e.periodo = 'Ingresá el periodo con formato AAAA-MM (ej. 2026-09).';
     if (!esMontoValido(monto)) e.monto = 'Ingresá el monto percibido (mayor a 0).';
-    if (!esFechaValida(fecha)) e.fecha = 'Ingresá una fecha de pago válida (no futura).';
+    if (!esFechaValida(aIsoLocal(fechaSeleccionada))) e.fecha = 'Ingresá una fecha de pago válida (no futura).';
     setErrores(e);
     setError(null);
     if (Object.keys(e).length > 0) return;
@@ -38,7 +40,7 @@ export default function RegistrarCuotaScreen() {
         alumno_id: id,
         periodo: periodo.trim(),
         monto: Number(monto.trim().replace(',', '.')),
-        fecha,
+        fecha: aIsoLocal(fechaSeleccionada),
       });
       if (resultado.error) {
         setError(resultado.error);
@@ -65,11 +67,10 @@ export default function RegistrarCuotaScreen() {
           Registrá el pago mensual del alumno. Un alumno no puede tener dos pagos del mismo periodo.
         </Text>
 
-        <CampoTexto
+        <CampoPeriodo
           label="Periodo *"
-          placeholder="2026-09"
           value={periodo}
-          onChangeText={setPeriodo}
+          onChange={setPeriodo}
           error={errores.periodo}
         />
         <CampoTexto
@@ -80,11 +81,11 @@ export default function RegistrarCuotaScreen() {
           onChangeText={setMonto}
           error={errores.monto}
         />
-        <CampoTexto
+        <CampoFecha
           label="Fecha de pago *"
-          placeholder="AAAA-MM-DD"
-          value={fecha}
-          onChangeText={setFecha}
+          value={fechaSeleccionada}
+          onChange={setFechaSeleccionada}
+          maximo={new Date()}
           error={errores.fecha}
         />
 

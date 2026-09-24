@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { CampoFecha } from '@/components/CampoFecha';
 import { CampoTexto } from '@/components/CampoTexto';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 import { useErrorGlobal } from '@/contextos/ErrorGlobal';
 import { MENSAJE_ERROR_GENERICO } from '@/lib/errores';
-import { aIsoLocal, esFechaValida, type Locacion } from '@/lib/perfil';
+import { aIsoLocal, esFechaBienFormada, fechaLocalDesdeISO, type Locacion } from '@/lib/perfil';
 
 type ErroresFormulario = Partial<Record<'fecha' | 'lugar', string>>;
 
@@ -20,7 +21,7 @@ export default function NuevaMesaScreen() {
   const { reportarError } = useErrorGlobal();
   const router = useRouter();
 
-  const [fecha, setFecha] = useState(aIsoLocal(new Date()));
+  const [fechaSeleccionada, setFechaSeleccionada] = useState(new Date());
   const [locaciones, setLocaciones] = useState<Locacion[]>([]);
   const [locacionElegida, setLocacionElegida] = useState<string>(OTRO_LUGAR);
   const [otroLugar, setOtroLugar] = useState('');
@@ -40,7 +41,7 @@ export default function NuevaMesaScreen() {
       if (mesa == null) {
         setError(MENSAJE_ERROR_GENERICO);
       } else {
-        setFecha(mesa.fecha);
+        setFechaSeleccionada(fechaLocalDesdeISO(mesa.fecha) ?? new Date());
         const locacionCoincidente = resultado.data?.find((l) => l.nombre === mesa.lugar);
         if (locacionCoincidente != null) {
           setLocacionElegida(locacionCoincidente.id);
@@ -69,7 +70,8 @@ export default function NuevaMesaScreen() {
     if (enviando) return;
     const lugar = resolverLugar();
     const e: ErroresFormulario = {};
-    if (!esFechaValida(fecha)) e.fecha = 'Ingresá una fecha válida (no anterior a hoy).';
+    const fechaISO = aIsoLocal(fechaSeleccionada);
+    if (!esFechaBienFormada(fechaISO)) e.fecha = 'Elegí una fecha válida.';
     if (lugar === '') e.lugar = 'Elegí una locación o escribí el lugar.';
     setErrores(e);
     setError(null);
@@ -77,7 +79,7 @@ export default function NuevaMesaScreen() {
 
     setEnviando(true);
     try {
-      const datos = { fecha, lugar };
+      const datos = { fecha: fechaISO, lugar };
       const resultado =
         esEdicion && mesaId != null
           ? await editarMesaExamen(mesaId, datos)
@@ -126,11 +128,10 @@ export default function NuevaMesaScreen() {
             : 'Definí la fecha y el lugar de la mesa. Se abre con estado "abierta" para que los profesores postulen.'}
         </Text>
 
-        <CampoTexto
+        <CampoFecha
           label="Fecha *"
-          placeholder="AAAA-MM-DD"
-          value={fecha}
-          onChangeText={setFecha}
+          value={fechaSeleccionada}
+          onChange={setFechaSeleccionada}
           error={errores.fecha}
         />
 

@@ -173,6 +173,8 @@ export type MesaExamen = Pick<
 > & {
   estado: EstadoMesa
   cantidad_postulados: number
+  /** Nombre del maestro que abrió la mesa (lo resuelve la RPC `listar_mesas_examen`). */
+  maestro_nombre: string | null
 }
 
 export type DatosNuevaMesa = {
@@ -472,6 +474,28 @@ export function esFechaValida(fechaISO: string): boolean {
   const fecha = new Date(anio, mes - 1, dia)
   if (fecha.getFullYear() !== anio || fecha.getMonth() !== mes - 1 || fecha.getDate() !== dia) return false
   return fecha <= new Date()
+}
+
+// 'AAAA-MM-DD' -> Date local (inverso de aIsoLocal). null si no es una fecha de calendario válida.
+export function fechaLocalDesdeISO(fechaISO: string): Date | null {
+  if (fechaISO == null) return null
+  const partes = fechaISO.split('-').map((parte) => Number(parte))
+  if (partes.length !== 3 || partes.some((parte) => !Number.isInteger(parte))) return null
+  const [anio, mes, dia] = partes
+  const fecha = new Date(anio, mes - 1, dia)
+  if (fecha.getFullYear() !== anio || fecha.getMonth() !== mes - 1 || fecha.getDate() !== dia) return null
+  return fecha
+}
+
+// Fecha de calendario válida (sin restricción de rango).
+export function esFechaBienFormada(fechaISO: string): boolean {
+  return fechaLocalDesdeISO(fechaISO) != null
+}
+
+// 'DD/MM/AAAA' a partir de un Date local.
+export function formatearFechaLegible(fecha: Date): string {
+  const [anio, mes, dia] = aIsoLocal(fecha).split('-')
+  return `${dia}/${mes}/${anio}`
 }
 
 // Diferencia en meses entre dos periodos 'AAAA-MM' (b - a).

@@ -12,6 +12,9 @@
 --              └── Sensei Seed (nivel 2, es_profesor)
 --                                     sensei@taekwondo.test   / Seed123456!
 --                     └── 6 alumnos sin cuenta
+--       ├── Maestro Prueba (nivel 1, es_maestro)
+--       │   maestro2@taekwondo.test  [opcional; abre su propia mesa para TC-MES-08]
+--       └── (más datos de prueba)
 --
 --   CORRECCIÓN v2: los perfiles se resuelven por EMAIL de auth
 --   (no por `nombre_completo`), que era la causa del drift anterior.
@@ -37,6 +40,7 @@ declare
   v_maestro uuid;        -- Jhonatan (cuenta real)
   v_jhona uuid;          -- jhona@taekwondo.test (nivel 1)
   v_sensei uuid;         -- sensei@taekwondo.test (nivel 2)
+  v_maestro2 uuid;       -- maestro2@taekwondo.test (Maestro de prueba, nivel 1)
   v_loc_banda uuid;
   v_loc_jhona_a uuid;
   v_loc_jhona_b uuid;
@@ -49,6 +53,7 @@ begin
   select id into v_maestro from auth.users where email = 'jhonatancallegaleano@gmail.com';
   select id into v_jhona   from auth.users where email = 'jhona@taekwondo.test';
   select id into v_sensei  from auth.users where email = 'sensei@taekwondo.test';
+  select id into v_maestro2 from auth.users where email = 'maestro2@taekwondo.test';
 
   if v_maestro is null then
     raise exception 'Falta la cuenta real jhonatancallegaleano@gmail.com';
@@ -114,6 +119,32 @@ begin
          contacto_emergencia_nombre = coalesce(nullif(contacto_emergencia_nombre, ''), 'Contacto Jhonatan'),
          contacto_emergencia_telefono = coalesce(nullif(contacto_emergencia_telefono, ''), '1155500000')
    where id = v_maestro;
+
+  -- ----------------------------------------------------------
+  -- 3.c Maestro de prueba (OPCIONAL): maestro2@taekwondo.test
+  --     Sirve para TC-MES-08 (mesa ajena): abre SU propia mesa y
+  --     otro maestro la ve en solo lectura, con el nombre del dueño.
+  --     Si la cuenta no existe, se omite sin romper el seed.
+  -- ----------------------------------------------------------
+  if v_maestro2 is not null then
+    insert into public.profiles (id, nombre_completo) values (v_maestro2, 'Maestro Prueba')
+      on conflict (id) do nothing;
+
+    update public.profiles
+       set nombre_completo = 'Maestro Prueba',
+           es_maestro = true,
+           es_profesor = true,
+           grado_actual = coalesce(grado_actual, 'dan_1'),
+           grados_verificados = true,
+           maestro_id = v_maestro,
+           dni = coalesce(dni, '90000013'),
+           fecha_nacimiento = coalesce(fecha_nacimiento, '1988-03-15'),
+           peso_kg = coalesce(peso_kg, 78),
+           genero = coalesce(genero, 'masculino'::public.genero),
+           contacto_emergencia_nombre = coalesce(nullif(contacto_emergencia_nombre, ''), 'Contacto Maestro Prueba'),
+           contacto_emergencia_telefono = coalesce(nullif(contacto_emergencia_telefono, ''), '1155500003')
+     where id = v_maestro2;
+  end if;
 
   -- ----------------------------------------------------------
   -- 4. Alumnos sin cuenta del nivel 2 (alumnos de Sensei Seed)
@@ -201,6 +232,16 @@ begin
   end if;
 
   -- ----------------------------------------------------------
+  -- 6.b Mesa del Maestro de prueba (para TC-MES-08)
+  --     Una sola mesa por dueño (idempotente). Sin postulados.
+  -- ----------------------------------------------------------
+  if v_maestro2 is not null
+     and not exists (select 1 from public.mesas_examen where maestro_id = v_maestro2) then
+    insert into public.mesas_examen (maestro_id, fecha, lugar, estado)
+    values (v_maestro2, current_date + 7, 'Seed Dojang Maestro Prueba', 'abierta');
+  end if;
+
+  -- ----------------------------------------------------------
   -- 7. Pagos de alquiler: los 3 ESTADOS del auditor
   -- ----------------------------------------------------------
   -- Al día: último pago = mes actual (2026-09).
@@ -220,7 +261,7 @@ begin
   values (v_loc_sensei, 9900, '2026-08', '2026-08-06', null, v_sensei)
   on conflict do nothing;
 
-  raise notice 'Seed v2 aplicado. Maestro=% Jhona=% Sensei=%', v_maestro, v_jhona, v_sensei;
+  raise notice 'Seed v2 aplicado. Maestro=% Jhona=% Sensei=% MaestroPrueba=%', v_maestro, v_jhona, v_sensei, v_maestro2;
 end;
 $$;
 
@@ -231,4 +272,5 @@ select
   (select count(*) from public.profiles)        as perfiles,
   (select count(*) from public.locaciones)      as locaciones,
   (select count(*) from public.grupos)          as grupos,
-  (select count(*) from public.pagos_alquiler)  as pagos;
+  (select count(*) from public.pagos_alquiler)  as pagos,
+  (select count(*) from public.mesas_examen)    as mesas;

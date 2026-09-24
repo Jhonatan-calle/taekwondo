@@ -10,10 +10,10 @@
 > Los **pendientes puntuales** (bloqueos, fechas, follow-ups) viven en `pendientes-pruebas.md`.
 
 ## Metadatos
-- **Versión:** 1.4
+- **Versión:** 1.33
 - **Estado:** Vigente
-- **Fecha:** 2026-09-23
-- **Cobertura:** 151 casos en 20 módulos (44 marcados Smoke)
+- **Fecha:** 2026-09-24
+- **Cobertura:** 158 casos en 18 módulos (44 marcados Smoke)
 
 ## Historial de revisiones
 | Versión | Fecha | Cambios |
@@ -43,6 +43,15 @@
 | 1.22 | 2026-09-24 | Prueba manual: `TC-ASI-01`…`TC-ASI-04` marcados ✅ verificados. |
 | 1.23 | 2026-09-24 | **Auditoría agrupada por rama:** `TC-AUD-04` pasa a "filtro por rama", `TC-AUD-05` ajustado y nuevo `TC-AUD-08` (agrupamiento). Referencia: `planes/mobile-auditoria-rama-agrupada.md`. |
 | 1.24 | 2026-09-24 | Prueba manual: `TC-INI-05`, `TC-AUD-01`…`TC-AUD-05` y `TC-AUD-08` marcados ✅ verificados. |
+| 1.25 | 2026-09-24 | **Date-picker en todos los campos de fecha:** `TC-MES-01` actualizado y nuevo `TC-MES-10` (fecha con selector / límites); `TC-CUO-01`, `TC-CUO-07` y `TC-ALQ-01` actualizados (periodo con selector de mes y fecha de pago con date-picker). Referencia: `planes/mobile-date-picker-campos-fecha.md`. |
+| 1.26 | 2026-09-24 | Prueba manual: `TC-MES-01`, `TC-MES-02` y `TC-MES-03` (crear mesa con date-picker + lugar) y la parte de **crear** de `TC-MES-10` marcados ✅ verificados. |
+| 1.27 | 2026-09-24 | Prueba manual: `TC-MES-04` (listado de mesas: fecha, lugar, estado y postulados; propias primero) marcado ✅ verificado. |
+| 1.28 | 2026-09-24 | **Validación de fecha de mesa en la BD:** nuevo `TC-MES-11` (fecha pasada rechazada por el trigger `validar_fecha_mesa`, no salteable por API). Referencia: `planes/bd-validar-fecha-mesa.md`. |
+| 1.29 | 2026-09-24 | **Revertido:** se elimina todo límite de fecha en mesas (a pedido). Se retira `TC-MES-11` y se ajusta `TC-MES-10` (el date-picker admite cualquier fecha). Referencia: `planes/bd-validar-fecha-mesa.md` (Revertido). |
+| 1.30 | 2026-09-24 | Prueba manual: `TC-MES-05` (editar mesa: fecha/lugar y reflejo al volver) marcado ✅ verificado. |
+| 1.31 | 2026-09-24 | Prueba manual: `TC-MES-06` (cerrar y finalizar mesa) marcado ✅ verificado. **Módulo Mesas completo** (`TC-MES-01…06`, `TC-MES-10`). |
+| 1.32 | 2026-09-24 | **Dueño de la mesa a la vista:** `TC-MES-08` actualizado (mensaje con nombre del dueño en el detalle y `Mesa de {nombre}` en los listados de Maestro e Instructor); RPC `listar_mesas_examen()` con `maestro_nombre`. Referencia: `planes/mobile-mesas-dueno-nombre.md`. |
+| 1.33 | 2026-09-24 | Prueba manual: `TC-MES-08` (mesa ajena con nombre del dueño), `TC-MES-09` (sin límite de inscripción) y `TC-EVA-02` ("Abrir planilla" con mesa abierta ofrece cerrarla) marcados ✅ verificados. |
 
 ---
 
@@ -503,7 +512,7 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 ### TC-CUO — Cuotas de alumnos
 
 #### TC-CUO-01 — Registrar cuota · **Smoke**
-- **Pasos:** alumno → sección "Cuotas" → "+ Registrar cuota" → periodo, monto, fecha
+- **Pasos:** alumno → sección "Cuotas" → "+ Registrar cuota" → **periodo (selector de mes)**, monto, **fecha de pago (date-picker, no futura)**
 - **Esperado:** aparece en el historial y el mes pasa a **"Pagado"**
 
 #### TC-CUO-02 — Bloqueo de duplicado · **Smoke**
@@ -525,14 +534,15 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 - **Esperado:** desaparece del historial y el mes vuelve a "Pendiente"
 
 #### TC-CUO-07 — Periodo ≠ fecha
-- **Esperado:** permite cargar un periodo anterior con fecha de pago distinta
+- **Esperado:** con el **selector de mes** se puede elegir un periodo anterior y con el **date-picker**
+  una fecha de pago distinta (el periodo y la fecha pueden diferir)
 
 ---
 
 ### TC-ALQ — Pagos de alquiler y comprobantes
 
 #### TC-ALQ-01 — Registrar pago · **Smoke**
-- **Pasos:** detalle de locación → "+ Registrar pago" → periodo, monto, fecha
+- **Pasos:** detalle de locación → "+ Registrar pago" → **periodo (selector de mes)**, monto, **fecha de pago (date-picker, no futura)**
 - **Esperado:** aparece en el historial con periodo formateado y monto
 
 #### TC-ALQ-02 — Comprobante desde cámara/galería
@@ -599,33 +609,45 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 
 ### TC-MES — Mesas de examen (Maestro)
 
-#### TC-MES-01 — Crear mesa · **Smoke**
-- **Pasos:** Maestro → "Mesas de examen" → "+ Nueva mesa" → fecha + lugar
+#### TC-MES-01 — Crear mesa · **Smoke** · ✅ verificado (2026-09-24)
+- **Pasos:** Maestro → "Mesas de examen" → "+ Nueva mesa" → **fecha (date-picker)** + lugar
 - **Esperado:** queda en estado **"Abierta"**
 
-#### TC-MES-02 — Lugar desde locaciones
+#### TC-MES-02 — Lugar desde locaciones · ✅ verificado (2026-09-24)
 - **Esperado:** chips con las locaciones propias
 
-#### TC-MES-03 — "+ Otro lugar"
+#### TC-MES-03 — "+ Otro lugar" · ✅ verificado (2026-09-24)
 - **Esperado:** permite escribir un lugar libre y se guarda en `lugar`
 
-#### TC-MES-04 — Listado
+#### TC-MES-04 — Listado · ✅ verificado (2026-09-24)
 - **Esperado:** fecha, lugar, badge de estado y cantidad de postulados; las propias primero
 
-#### TC-MES-05 — Editar mesa
+#### TC-MES-05 — Editar mesa · ✅ verificado (2026-09-24)
 - **Esperado:** cambia fecha/lugar y se refleja al volver
 
-#### TC-MES-06 — Cerrar y finalizar
+#### TC-MES-06 — Cerrar y finalizar · ✅ verificado (2026-09-24)
 - **Esperado:** Abierta → "Cerrar mesa" → Cerrada → "Finalizar mesa"
 
 #### TC-MES-07 — Gate de Maestro · **Smoke**
 - **Esperado:** un usuario sin `es_maestro` **no** ve la pestaña ni puede crear mesas
 
-#### TC-MES-08 — Mesa ajena
-- **Esperado:** se muestra en **solo lectura** (sin editar/cerrar)
+#### TC-MES-08 — Mesa ajena · ✅ verificado (2026-09-24)
+- **Esperado:** el detalle muestra **"Esta mesa pertenece a {nombre del maestro dueño}: solo podés
+  consultarla."** (sin editar/cerrar). El **listado** de Maestro muestra `Mesa de {nombre}` en las
+  mesas ajenas (y "Tu mesa" en las propias). El **profesor** ve `Mesa de {nombre}` en el listado y
+  en el detalle de postulación
+- **Precondición:** existe una cuenta con `es_maestro` distinta de la del visor (seed:
+  `maestro2@taekwondo.test`)
+- **Referencia:** `planes/mobile-mesas-dueno-nombre.md`
 
-#### TC-MES-09 — Sin límite de inscripción
+#### TC-MES-09 — Sin límite de inscripción · ✅ verificado (2026-09-24)
 - **Esperado:** el formulario **no** pide límite y la tabla ya no tiene la columna
+
+#### TC-MES-10 — Fecha con selector de fecha · ✅ verificado (2026-09-24)
+- **Pasos:** en "+ Nueva mesa", tocar el campo "Fecha"
+- **Esperado:** abre el **date-picker** (no se escribe texto libre); se puede elegir **cualquier
+  fecha** (sin límite de rango), pasada o futura
+- **Referencia:** `planes/mobile-date-picker-campos-fecha.md`
 
 ---
 
@@ -669,7 +691,7 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 - **Rol:** Maestro dueño de la mesa
 - **Esperado:** ve cada postulado con **nombre, edad, peso** y `grado actual → aspirado`
 
-#### TC-EVA-02 — Mesa abierta
+#### TC-EVA-02 — Mesa abierta · ✅ verificado (2026-09-24)
 - **Esperado:** el botón está deshabilitado con la nota "Cerrá la mesa para poder evaluar"; al presionarlo ofrece cerrarla
 
 #### TC-EVA-03 — Aprobar · **Smoke**

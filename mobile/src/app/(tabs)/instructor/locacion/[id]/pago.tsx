@@ -13,6 +13,8 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
+import { CampoFecha } from '@/components/CampoFecha';
+import { CampoPeriodo } from '@/components/CampoPeriodo';
 import { CampoTexto } from '@/components/CampoTexto';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 import { useErrorGlobal } from '@/contextos/ErrorGlobal';
@@ -38,7 +40,7 @@ export default function RegistrarPagoAlquilerScreen() {
 
   const [periodo, setPeriodo] = useState(mesActual());
   const [monto, setMonto] = useState(valor_alquiler ?? '');
-  const [fechaPago, setFechaPago] = useState(aIsoLocal(new Date()));
+  const [fechaSeleccionada, setFechaSeleccionada] = useState(new Date());
   const [archivo, setArchivo] = useState<ArchivoAdjunto | null>(null);
   const [errores, setErrores] = useState<ErroresFormulario>({});
   const [error, setError] = useState<string | null>(null);
@@ -95,7 +97,7 @@ export default function RegistrarPagoAlquilerScreen() {
     const e: ErroresFormulario = {};
     if (!esPeriodoValido(periodo)) e.periodo = 'Ingresá el periodo con formato AAAA-MM (ej. 2026-09).';
     if (!esMontoValido(monto)) e.monto = 'Ingresá el monto pagado (mayor a 0).';
-    if (!esFechaValida(fechaPago)) e.fecha = 'Ingresá una fecha de pago válida (no futura).';
+    if (!esFechaValida(aIsoLocal(fechaSeleccionada))) e.fecha = 'Ingresá una fecha de pago válida (no futura).';
     setErrores(e);
     setError(null);
     if (Object.keys(e).length > 0) return;
@@ -106,7 +108,7 @@ export default function RegistrarPagoAlquilerScreen() {
         locacion_id: id,
         monto: Number(monto.trim().replace(',', '.')),
         periodo: periodo.trim(),
-        fecha_pago: fechaPago,
+        fecha_pago: aIsoLocal(fechaSeleccionada),
         archivo,
       });
       if (resultado.error) {
@@ -135,11 +137,10 @@ export default function RegistrarPagoAlquilerScreen() {
           tu superior jerárquico (auditoría) pueden verlo.
         </Text>
 
-        <CampoTexto
+        <CampoPeriodo
           label="Periodo *"
-          placeholder="2026-09"
           value={periodo}
-          onChangeText={setPeriodo}
+          onChange={setPeriodo}
           error={errores.periodo}
         />
         <CampoTexto
@@ -150,11 +151,11 @@ export default function RegistrarPagoAlquilerScreen() {
           onChangeText={setMonto}
           error={errores.monto}
         />
-        <CampoTexto
+        <CampoFecha
           label="Fecha de pago *"
-          placeholder="AAAA-MM-DD"
-          value={fechaPago}
-          onChangeText={setFechaPago}
+          value={fechaSeleccionada}
+          onChange={setFechaSeleccionada}
+          maximo={new Date()}
           error={errores.fecha}
         />
 

@@ -256,7 +256,9 @@ export default function MesaDetalleScreen() {
         </View>
       ) : (
         <Text style={styles.soloLectura}>
-          Esta mesa pertenece a otro maestro: solo podés consultarla.
+          {mesa.maestro_nombre != null
+            ? `Esta mesa pertenece a ${mesa.maestro_nombre}: solo podés consultarla.`
+            : 'Esta mesa pertenece a otro maestro: solo podés consultarla.'}
         </Text>
       )}
     </ScrollView>

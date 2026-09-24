@@ -106,6 +106,7 @@ export default function MesaInstructorDetalleScreen() {
       <View style={styles.cabecera}>
         <Text style={styles.fecha}>{formatearFecha(mesa.fecha)}</Text>
         <Text style={styles.lugar}>{mesa.lugar ?? 'Sin lugar definido'}</Text>
+        <Text style={styles.dueno}>Mesa de {mesa.maestro_nombre ?? 'otro maestro'}</Text>
       </View>
 
       {mesaAbierta ? (
@@ -200,6 +201,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#666',
     marginTop: 6,
+  },
+  dueno: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 4,
+    fontStyle: 'italic',
   },
   botonPrimario: {
     paddingVertical: 14,

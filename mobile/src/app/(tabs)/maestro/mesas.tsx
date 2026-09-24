@@ -45,8 +45,9 @@ function FilaMesa({
         </View>
         <Text style={styles.lugar}>{mesa.lugar ?? 'Sin lugar definido'}</Text>
         <Text style={styles.postulados}>
-          {esPropia ? 'Tu mesa · ' : ''}
-          {mesa.cantidad_postulados} postulado(s)
+          {esPropia
+            ? `Tu mesa · ${mesa.cantidad_postulados} postulado(s)`
+            : `${mesa.maestro_nombre != null ? `Mesa de ${mesa.maestro_nombre} · ` : ''}${mesa.cantidad_postulados} postulado(s)`}
         </Text>
       </View>
       <Text style={styles.chevron}>›</Text>

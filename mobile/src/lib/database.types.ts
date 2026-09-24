@@ -122,7 +122,9 @@ export type Database = {
       clases: {
         Row: {
           creado_en: string
-          elementos_objetivo: Database["public"]["Enums"]["elemento_clase"][] | null
+          elementos_objetivo:
+            | Database["public"]["Enums"]["elemento_clase"][]
+            | null
           fecha: string
           grupo_id: string
           hora_fin: string
@@ -132,7 +134,9 @@ export type Database = {
         }
         Insert: {
           creado_en?: string
-          elementos_objetivo?: Database["public"]["Enums"]["elemento_clase"][] | null
+          elementos_objetivo?:
+            | Database["public"]["Enums"]["elemento_clase"][]
+            | null
           fecha: string
           grupo_id: string
           hora_fin: string
@@ -142,7 +146,9 @@ export type Database = {
         }
         Update: {
           creado_en?: string
-          elementos_objetivo?: Database["public"]["Enums"]["elemento_clase"][] | null
+          elementos_objetivo?:
+            | Database["public"]["Enums"]["elemento_clase"][]
+            | null
           fecha?: string
           grupo_id?: string
           hora_fin?: string
@@ -1102,10 +1108,6 @@ export type Database = {
         Returns: undefined
       }
       descendientes: { Args: { p_ancestro: string }; Returns: string[] }
-      rama_descendientes: {
-        Args: { p_ancestro: string }
-        Returns: { descendiente_id: string; raiz_id: string }[]
-      }
       editar_grupo: {
         Args: {
           p_grupo_id: string
@@ -1165,6 +1167,18 @@ export type Database = {
           nombre_completo: string
         }[]
       }
+      listar_mesas_examen: {
+        Args: never
+        Returns: {
+          cantidad_postulados: number
+          estado: string
+          fecha: string
+          id: string
+          lugar: string
+          maestro_id: string
+          maestro_nombre: string
+        }[]
+      }
       marcar_en_curso: {
         Args: { p_enfrentamiento: string }
         Returns: undefined
@@ -1197,6 +1211,13 @@ export type Database = {
       quitar_postulacion: {
         Args: { p_postulacion_id: string }
         Returns: boolean
+      }
+      rama_descendientes: {
+        Args: { p_ancestro: string }
+        Returns: {
+          descendiente_id: string
+          raiz_id: string
+        }[]
       }
       registrar_grado_verificado: {
         Args: {

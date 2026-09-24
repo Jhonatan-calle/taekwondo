@@ -11,6 +11,7 @@
 |---|---|---|
 | 1.0 | 2026-09-21 | Borrador inicial y aprobación: seed **aditivo e idempotente** para probar manualmente la auditoría en cascada (Fase 5, ítem 3) y los pagos de alquiler (ítem 2). Crea un **árbol de 3 niveles** con cuentas de login reales, locaciones por dueño y los 3 estados de pago. Corrige además un `comprobante_url` roto de una prueba previa. |
 | 1.1 | 2026-09-22 | **Corrección de raíz (v2 del seed):** los perfiles se resuelven por **email de auth** en lugar de `nombre_completo` (causa del drift: el login `seed-jhona@` quedaba huérfano y `seed-sensei@` mapeaba a otro perfil). Emails de prueba simplificados a **`jhona@taekwondo.test`** (nivel 1) y **`sensei@taekwondo.test`** (nivel 2). Se agrega una **limpieza determinista** (conserva la cuenta real y `errores_runtime`) descrita en `planes/db-fix-mapeo-cuentas-seed.md`. |
+| 1.2 | 2026-09-24 | **Maestro de prueba (opcional):** `maestro2@taekwondo.test` (`es_maestro = true`, hijo de Jhonatan, `dan_1`) con **su propia mesa** ("Seed Dojang Maestro Prueba", abierta) para ejercitar `TC-MES-08` (mesa ajena con nombre del dueño). El bloque es opcional: si la cuenta no existe, el seed la omite. |
 
 ## Restricciones y Correcciones Previas (No repetir)
 1. **No borrar la cuenta real** `jhonatancallegaleano@gmail.com` ni los datos ya cargados.
@@ -39,8 +40,9 @@ Creadas con contraseña conocida (`email_confirm: true`). El trigger `on_auth_us
 
 | Email | Contraseña | Rol |
 |---|---|---|
-| `jhona@taekwondo.test` | `Seed123456!` | Profesor (nivel 1) |
-| `sensei@taekwondo.test` | `Seed123456!` | Profesor (nivel 2) |
+| `jhona@taekwondo.test` | *(la de test del seed)* | Profesor (nivel 1) |
+| `sensei@taekwondo.test` | *(la de test del seed)* | Profesor (nivel 2) |
+| `maestro2@taekwondo.test` | *(la de test del seed)* | Profesor + **Maestro** (nivel 1) — opcional, para `TC-MES-08` |
 
 ### 2. Archivo `supabase/seed-auditoria.sql`
 Bloque `do $$ … $$` idempotente que siembra:
@@ -48,9 +50,10 @@ Bloque `do $$ … $$` idempotente que siembra:
 - **Árbol de 3 niveles** (para probar la recursividad):
   ```
   Jhonatan (Maestro)
-    └── Profesor Jhona (nivel 1)
-           └── Sensei Seed (nivel 2, es_profesor)
-                  └── 6 alumnos sin cuenta (blanco → dan_1)
+    ├── Profesor Jhona (nivel 1)
+    │      └── Sensei Seed (nivel 2, es_profesor)
+    │             └── 6 alumnos sin cuenta (blanco → dan_1)
+    └── Maestro Prueba (nivel 1, es_maestro)  ← opcional; abre su propia mesa
   ```
   Total del árbol: **niveles 0, 1, 2 y 3** (los alumnos).
 - **Locaciones por dueño** (para que el Maestro audite ajenas, no propias):
@@ -84,6 +87,10 @@ Elimina referencias a archivos inexistentes sin tocar los comprobantes válidos.
 ### 4. Ejecución
 ```bash
 npx supabase db query --linked -f supabase/seed-auditoria.sql
+```
+Para el **Maestro de prueba** (crea la cuenta + corre el seed en un paso):
+```bash
+SEED_PASSWORD='<contraseña de test>' bash supabase/aplicar-maestro-prueba.sh
 ```
 
 ## Verificación realizada

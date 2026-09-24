@@ -256,7 +256,8 @@
 **Bloques a probar (checklist):**
 - [x] Inicio Maestro “Tu rama” (`TC-INI-05`) — ✅ 2026-09-24
 - [x] Auditoría agrupada por rama (`TC-AUD-01…05`, `TC-AUD-08`) — ✅ 2026-09-24
-- [ ] Mesas de examen (`TC-MES-01/02/04/05/06`) — **rol Maestro**
+- [x] Mesas de examen — crear/listar/editar/cerrar (`TC-MES-01/02/03/04/05/06`, incluye date-picker) — ✅ 2026-09-24
+- [x] Mesas de examen — dueño visible en mesas ajenas (`TC-MES-08`), sin límite de inscripción (`TC-MES-09`) — ✅ 2026-09-24
 - [ ] Postulación (`TC-POS-01…04`, `TC-POS-08`) — **rol Profesor `jhona@`**; recaudación como Maestro
 - [ ] Planilla/evaluación (`TC-EVA-01/03/05/06/09`) — **rol Maestro** ⚠️ **usa “Alumno Prueba 1”** (cambia el grado)
 - [ ] Dashboard de métricas (`TC-DASH-01`) — **rol Maestro**
@@ -267,10 +268,36 @@
 
 ---
 
+### 24. Date-picker en campos de fecha (verificar en dispositivo)
+- **Fecha de registro:** 2026-09-24
+- **Referencia:** `planes/mobile-date-picker-campos-fecha.md`, `prueba-manual.md`.
+- **Qué cambió:** la fecha de mesa, el periodo de cuota/alquiler y la fecha de pago pasan de texto
+  libre a selectores (`CampoFecha` con el picker nativo; `CampoPeriodo` con selector de mes propio).
+- **Verificar:**
+  - Mesa → "Fecha": abre el date-picker y admite **cualquier** fecha (sin límite) —
+    ✅ verificado 2026-09-24.
+  - Cuota y Pago → "Periodo": selector de mes (formato `AAAA-MM`, permite meses futuros);
+    "Fecha de pago": date-picker que **no** permite fechas futuras.
+  - `typecheck`/`lint` ya en verde; falta la corrida manual en Android/Expo Go.
+
+---
+
+### 25. Validación de fecha de mesa en la BD — REVERTIDO
+- **Fecha de registro:** 2026-09-24
+- **Referencia:** `planes/bd-validar-fecha-mesa.md` (Revertido).
+- **Qué pasó:** se creó la migración `20260924163301_validar_fecha_mesa.sql` (trigger que rechazaba
+  fechas pasadas) y el usuario la aplicó; luego pidió **revertir todo límite de fecha** en mesas.
+- **Rollback:** `supabase/migrations/20260924163945_quitar_validar_fecha_mesa.sql` (drop trigger y
+  función). La UI también se revirtió (`mesas/nueva.tsx` acepta cualquier fecha).
+- **Pendiente:** aplicar el rollback en la BD (`npx supabase db push --linked`; requiere
+  `supabase login`/`SUPABASE_ACCESS_TOKEN`).
+
+---
+
 ## Por dónde vamos (resumen de sesión)
-- **Catálogo:** 156 casos en 18 módulos; **49 verificados** (auth, onboarding, linaje, navegación, inicio, alumnos, grupos, locaciones, clases, asistencia, objetivos, auditoría y panel Maestro).
-- **Bloques cerrados:** Auth/login, Onboarding, Linaje (Realtime), Alumnos, Grupos, Locaciones, Clases+Objetivos, Asistencia, Auditoría+Inicio Maestro.
-- **Siguiente sesión:** continuar el **guion de demo** (Mesas → Postulación → Planilla → Dashboard) y, cuando haya tiempo, los `TC` de **RLS/aislamiento** con la cuenta `sensei@`.
+- **Catálogo:** 158 casos en 18 módulos; **60 verificados** (auth, onboarding, linaje, navegación, inicio, alumnos, grupos, locaciones, clases, asistencia, objetivos, auditoría, mesas y panel Maestro).
+- **Bloques cerrados:** Auth/login, Onboarding, Linaje (Realtime), Alumnos, Grupos, Locaciones, Clases+Objetivos, Asistencia, Auditoría+Inicio Maestro, Mesas de examen.
+- **Siguiente sesión:** continuar el **guion de demo** (Postulación → Planilla → Dashboard) y, cuando haya tiempo, los `TC` de **RLS/aislamiento** con la cuenta `sensei@`.
 - **Pendiente técnico:** `db lint` sigue reportando 1 issue **preexistente** de **torneos** (`llave_id` ambiguo en `sincronizar_resultado_en_vivo`) — congelado, no se toca.
 
 ---

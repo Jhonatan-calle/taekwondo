@@ -262,7 +262,8 @@
 - [x] Mesas de examen — crear/listar/editar/cerrar (`TC-MES-01/02/03/04/05/06`, incluye date-picker) — ✅ 2026-09-24
 - [x] Mesas de examen — dueño visible + jerarquía (`TC-MES-08` nuevo escenario, `TC-MES-12`) — ✅ 2026-09-24
 - [x] Mesas de examen — sin límite de inscripción (`TC-MES-09`) — ✅ 2026-09-24
-- [ ] Postulación (`TC-POS-01…04`, `TC-POS-08`) — **rol Profesor `jhona@`**; recaudación como Maestro
+- [x] Postulación — mesas/candidatos/postular/duplicado/grado máximo (`TC-POS-01…05`) — ✅ 2026-09-24
+- [ ] Postulación — recaudación como Maestro (`TC-POS-08`)
 - [ ] Planilla/evaluación (`TC-EVA-01/03/05/06/09`) — **rol Maestro** ⚠️ **usa “Alumno Prueba 1”** (cambia el grado)
 - [ ] Dashboard de métricas (`TC-DASH-01`) — **rol Maestro**
 - [ ] Datos poblados para la demo: mesa **abierta con postulados**; locación **vencida** (ya hay: Seed Dojang Jhona A); comprobante de un pago (opcional).
@@ -312,7 +313,7 @@
 ---
 
 ## Por dónde vamos (resumen de sesión)
-- **Catálogo:** 160 casos en 18 módulos; **61 verificados** (auth, onboarding, linaje, navegación, inicio, alumnos, grupos, locaciones, clases, asistencia, objetivos, auditoría, mesas y panel Maestro).
+- **Catálogo:** 160 casos en 18 módulos; **66 verificados** (auth, onboarding, linaje, navegación, inicio, alumnos, grupos, locaciones, clases, asistencia, objetivos, auditoría, mesas, postulación y panel Maestro).
 - **Bloques cerrados:** Auth/login, Onboarding, Linaje (Realtime), Alumnos, Grupos, Locaciones, Clases+Objetivos, Asistencia, Auditoría+Inicio Maestro, Mesas de examen.
 - **Siguiente sesión:** continuar el **guion de demo** (Postulación → Planilla → Dashboard) y, cuando haya tiempo, los `TC` de **RLS/aislamiento** con la cuenta `sensei@`.
 - **Pendiente técnico:** `db lint` sigue reportando 1 issue **preexistente** de **torneos** (`llave_id` ambiguo en `sincronizar_resultado_en_vivo`) — congelado, no se toca.

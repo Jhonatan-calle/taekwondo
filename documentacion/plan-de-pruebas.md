@@ -10,7 +10,7 @@
 > Los **pendientes puntuales** (bloqueos, fechas, follow-ups) viven en `pendientes-pruebas.md`.
 
 ## Metadatos
-- **Versión:** 1.36
+- **Versión:** 1.37
 - **Estado:** Vigente
 - **Fecha:** 2026-09-24
 - **Cobertura:** 160 casos en 18 módulos (44 marcados Smoke)
@@ -55,6 +55,7 @@
 | 1.34 | 2026-09-24 | **Visibilidad de mesas por jerarquía:** `TC-MES-08` cambia de escenario (requiere re-verificación); `TC-POS-01` ajustado; nuevos `TC-MES-12` (nieto/superior no ve) y `TC-POS-10` (postular fuera de jerarquía → rechazo). Referencia: `planes/mobile-mesas-visibilidad-jerarquia.md`. |
 | 1.35 | 2026-09-24 | Prueba manual: `TC-MES-08` (nuevo escenario) y `TC-MES-12` (visibilidad solo directos) marcados ✅ verificados; **módulo Mesas de examen completo**. |
 | 1.36 | 2026-09-24 | **Refuerzo del fix de parpadeo de onboarding:** `TC-AUTH-12` ampliado (gate por usuario + reintento único; no reaparece al re-loguear/cambiar de cuenta). Referencia: `planes/mobile-fix-flicker-onboarding-login.md` (v1.3). |
+| 1.37 | 2026-09-24 | Prueba manual: `TC-POS-01`…`TC-POS-05` (lista de mesas del superior, candidatos con grado aspirado, postular con derecho, duplicado y grado máximo) marcados ✅ verificados. |
 
 ---
 
@@ -664,21 +665,21 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 
 ### TC-POS — Postulación a examen (Profesor)
 
-#### TC-POS-01 — Mesas abiertas · **Smoke**
+#### TC-POS-01 — Mesas abiertas · **Smoke** · ✅ verificado (2026-09-24)
 - **Rol:** profesor
 - **Esperado:** el listado muestra **solo** mesas abiertas **de su superior directo** (o propias); no
   aparecen mesas de otras ramas ni de descendientes indirectos
 
-#### TC-POS-02 — Grado aspirado · **Smoke**
+#### TC-POS-02 — Grado aspirado · **Smoke** · ✅ verificado (2026-09-24)
 - **Esperado:** cada alumno muestra `grado actual → grado aspirado` (el inmediato superior)
 
-#### TC-POS-03 — Postular con derecho de examen
+#### TC-POS-03 — Postular con derecho de examen · ✅ verificado (2026-09-24)
 - **Esperado:** aparece en "Tus postulaciones" con el monto y estado "Postulado"
 
-#### TC-POS-04 — Duplicado · **Smoke**
+#### TC-POS-04 — Duplicado · **Smoke** · ✅ verificado (2026-09-24)
 - **Esperado:** postular al mismo alumno otra vez en la misma mesa → mensaje claro y **sin** fila duplicada
 
-#### TC-POS-05 — Grado máximo
+#### TC-POS-05 — Grado máximo · ✅ verificado (2026-09-24)
 - **Precondición:** alumno en `dan_9`
 - **Esperado:** deshabilitado con "Ya alcanzó el grado máximo"
 

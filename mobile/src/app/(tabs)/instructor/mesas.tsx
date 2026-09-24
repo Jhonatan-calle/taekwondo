@@ -69,7 +69,8 @@ export default function MesasInstructorScreen() {
     <View style={styles.pantalla}>
       <View style={styles.cabecera}>
         <Text style={styles.subtitulo}>
-          Postulá a tus alumnos directos a las mesas abiertas. El sistema calcula el grado inmediato superior.
+          Postulá a tus alumnos directos en las mesas abiertas de tu superior directo. El sistema
+          calcula el grado inmediato superior.
         </Text>
       </View>
 

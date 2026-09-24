@@ -4,8 +4,8 @@
 
 | Campo | Valor |
 |---|---|
-| **Versión** | 1.1 |
-| **Estado** | Revisión |
+| **Versión** | 1.2 |
+| **Estado** | Aprobado (implementado) |
 | **Fecha** | 2026-09-24 |
 | **Autor** | Agente IA (sesión demo) |
 | **Alcance** | RLS + RPCs de mesas/postulación; sin cambios de esquema (columnas/tablas) |
@@ -16,6 +16,7 @@
 |---|---|---|
 | 1.0 | 2026-09-24 | Borrador inicial: reemplazar la visibilidad global de `mesas_examen` por visibilidad por jerarquía (dueño + subordinados directos del dueño) y restringir la postulación en consecuencia. |
 | 1.1 | 2026-09-24 | **Decisiones confirmadas por el usuario:** (1) la dirección es *el subordinado ve las mesas de su superior directo* (el superior **no** ve las de sus subordinados); (2) el **dueño también puede postular** a sus propios alumnos directos; (3) **nietos/indirectos: no** ven ni postulan *por ahora* (puede cambiar a futuro). Se pasa a estado **Revisión**. |
+| 1.2 | 2026-09-24 | **Aprobado e implementado.** Migración `20260924173308_mesas_visibilidad_jerarquia.sql` (RLS select de `mesas_examen`, RPC `listar_mesas_examen`, RPC `postular_alumno`, RLS insert de `postulaciones_examen`), aplicada con `db push`. Verificado en vivo (jhona ve las de Jhonatan; sensei 0; maestro2 ve las del superior; postular fuera de jerarquía → rechazo). Documentación sincronizada. |
 
 ## Restricciones y Correcciones Previas (No repetir)
 
@@ -186,6 +187,18 @@ create policy "postulaciones_examen_insert_profesor"
 - `documentacion/planes/mobile-mesas-dueno-nombre.md`: nota de que la RPC ahora filtra por jerarquía.
 - `documentacion/prueba-manual.md`: ajustar el apartado Mesas.
 - `documentacion/README.md`: registrar este plan.
+
+## Estado de implementación (2026-09-24)
+
+- [x] Migración `20260924173308_mesas_visibilidad_jerarquia.sql` creada y **aplicada** (`db push --linked`).
+- [x] RLS select de `mesas_examen` → dueño o subordinado directo del dueño.
+- [x] RPC `listar_mesas_examen()` con el filtro de jerarquía.
+- [x] RPC `postular_alumno()` con el check "superior directo".
+- [x] RLS insert de `postulaciones_examen` (backstop).
+- [x] App: texto de `instructor/mesas.tsx` ajustado ("mesas abiertas de tu superior directo").
+- [x] Verificación en vivo (API con JWT de `jhona@`, `sensei@`, `maestro2@`): visibilidad y rechazo OK.
+- [x] Docs: SRS §3.7, Reglas §4, `plan-de-pruebas.md` (v1.34), `prueba-manual.md`, `README.md`.
+- [ ] Re-verificación en dispositivo de `TC-MES-08`/`TC-MES-12`/`TC-POS-10` con la UI.
 
 ## Fuera de alcance
 

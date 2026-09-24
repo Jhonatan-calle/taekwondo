@@ -17,7 +17,12 @@
 - **Cuenta:** `jhonatancallegaleano@gmail.com`
 - **Plan de referencia:** [`planes/mobile-mesas-examen.md`](./planes/mobile-mesas-examen.md)
 - **Casos cubiertos:** `TC-MES-01`, `TC-MES-02`, `TC-MES-03`, `TC-MES-04`, `TC-MES-05`,
-  `TC-MES-06`, `TC-MES-08`, `TC-MES-09`
+  `TC-MES-06`, `TC-MES-08`, `TC-MES-09`, `TC-MES-12`
+
+> **Visibilidad (jerarquía):** una mesa la ve su **dueño** y sus **subordinados directos** (dirección
+> superior→subordinado). El resto (hermanos, superiores, nietos, ajenos) **no** la ve; un superior
+> **no** ve las mesas de sus subordinados. Postular solo en mesas propias o del superior directo.
+> Referencia: [`planes/mobile-mesas-visibilidad-jerarquia.md`](./planes/mobile-mesas-visibilidad-jerarquia.md).
 
 > **Fecha:** se elige con el **selector de fecha** (date-picker), no se escribe texto; viene
 > precargada con la fecha de hoy y admite **cualquier** fecha (pasada o futura). Referencia:

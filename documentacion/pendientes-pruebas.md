@@ -257,7 +257,8 @@
 - [x] Inicio Maestro “Tu rama” (`TC-INI-05`) — ✅ 2026-09-24
 - [x] Auditoría agrupada por rama (`TC-AUD-01…05`, `TC-AUD-08`) — ✅ 2026-09-24
 - [x] Mesas de examen — crear/listar/editar/cerrar (`TC-MES-01/02/03/04/05/06`, incluye date-picker) — ✅ 2026-09-24
-- [x] Mesas de examen — dueño visible en mesas ajenas (`TC-MES-08`), sin límite de inscripción (`TC-MES-09`) — ✅ 2026-09-24
+- [ ] Mesas de examen — dueño visible + jerarquía (`TC-MES-08` cambió de escenario, `TC-MES-12`): **re-verificar en dispositivo** tras la visibilidad por jerarquía
+- [x] Mesas de examen — sin límite de inscripción (`TC-MES-09`) — ✅ 2026-09-24
 - [ ] Postulación (`TC-POS-01…04`, `TC-POS-08`) — **rol Profesor `jhona@`**; recaudación como Maestro
 - [ ] Planilla/evaluación (`TC-EVA-01/03/05/06/09`) — **rol Maestro** ⚠️ **usa “Alumno Prueba 1”** (cambia el grado)
 - [ ] Dashboard de métricas (`TC-DASH-01`) — **rol Maestro**
@@ -294,8 +295,21 @@
 
 ---
 
+### 26. Visibilidad de mesas por jerarquía (implementado — verificar en dispositivo)
+- **Fecha de registro:** 2026-09-24
+- **Referencia:** `planes/mobile-mesas-visibilidad-jerarquia.md`.
+- **Qué cambió:** una mesa la ve su **dueño** y sus **subordinados directos** (dirección
+  superior→subordinado); postular solo en mesas propias o del superior directo. Toca RLS de
+  `mesas_examen` y `postulaciones_examen` (insert) + RPCs `listar_mesas_examen` y `postular_alumno`.
+  Migración `mesas_visibilidad_jerarquia` **aplicada** (`db push`).
+- **Verificado por API:** `jhona@` ve las mesas de Jhonatan; `sensei@` **0** mesas; `maestro2@` ve la
+  suya + las de Jhonatan; postular fuera de jerarquía → **rechazo**.
+- **Pendiente en dispositivo:** `TC-MES-08` (nuevo escenario), `TC-MES-12`, `TC-POS-10`.
+
+---
+
 ## Por dónde vamos (resumen de sesión)
-- **Catálogo:** 158 casos en 18 módulos; **60 verificados** (auth, onboarding, linaje, navegación, inicio, alumnos, grupos, locaciones, clases, asistencia, objetivos, auditoría, mesas y panel Maestro).
+- **Catálogo:** 160 casos en 18 módulos; **59 verificados** (auth, onboarding, linaje, navegación, inicio, alumnos, grupos, locaciones, clases, asistencia, objetivos, auditoría, mesas y panel Maestro).
 - **Bloques cerrados:** Auth/login, Onboarding, Linaje (Realtime), Alumnos, Grupos, Locaciones, Clases+Objetivos, Asistencia, Auditoría+Inicio Maestro, Mesas de examen.
 - **Siguiente sesión:** continuar el **guion de demo** (Postulación → Planilla → Dashboard) y, cuando haya tiempo, los `TC` de **RLS/aislamiento** con la cuenta `sensei@`.
 - **Pendiente técnico:** `db lint` sigue reportando 1 issue **preexistente** de **torneos** (`llave_id` ambiguo en `sincronizar_resultado_en_vivo`) — congelado, no se toca.

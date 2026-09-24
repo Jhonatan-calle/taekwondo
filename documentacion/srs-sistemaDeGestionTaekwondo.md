@@ -70,6 +70,7 @@ Panel de control interactivo destinado a usuarios con personal subordinado:
 
 * **Planificación:** Los Maestros pueden aperturar mesas de examen definiendo fecha y lugar.  
 * **Inscripción:** Los profesores postulan a sus alumnos aptos; el sistema debe calcular automáticamente el grado inmediato superior al que aspiran.  
+* **Visibilidad (jerarquía):** una mesa la ve su **dueño** (quien la apertura) y los **subordinados directos del dueño** (dirección superior → subordinado). La postulación se limita a esos mismos: dueño o subordinado directo del dueño, siempre con **alumnos directos** del postulante. Sin recursividad hacia descendientes indirectos (por ahora).  
 * **Gestión Financiera:** Registro del "derecho de examen". El maestro examinador podrá visualizar la recaudación total de la mesa.  
 * **Evaluación:** Carga de resultados finales directamente en la planilla digital: **Aprobado** o **Desaprobado**, o **Ausente**. Sobre un aprobado el maestro examinador puede marcar además **Mención especial** y/o **Doble graduación** (el alumno se salta un cinturón).  
 * **Doble graduación:** solo aplica cuando el grado actual del alumno está entre **Blanco** y **Azul punta roja** (inclusive); el nuevo grado es dos niveles superior (caso tope: Azul punta roja → Rojo punta negra). De ahí en adelante el máximo premio es la **mención especial**.  

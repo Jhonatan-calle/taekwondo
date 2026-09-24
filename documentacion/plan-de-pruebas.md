@@ -10,10 +10,10 @@
 > Los **pendientes puntuales** (bloqueos, fechas, follow-ups) viven en `pendientes-pruebas.md`.
 
 ## Metadatos
-- **Versión:** 1.33
+- **Versión:** 1.34
 - **Estado:** Vigente
 - **Fecha:** 2026-09-24
-- **Cobertura:** 158 casos en 18 módulos (44 marcados Smoke)
+- **Cobertura:** 160 casos en 18 módulos (44 marcados Smoke)
 
 ## Historial de revisiones
 | Versión | Fecha | Cambios |
@@ -52,6 +52,7 @@
 | 1.31 | 2026-09-24 | Prueba manual: `TC-MES-06` (cerrar y finalizar mesa) marcado ✅ verificado. **Módulo Mesas completo** (`TC-MES-01…06`, `TC-MES-10`). |
 | 1.32 | 2026-09-24 | **Dueño de la mesa a la vista:** `TC-MES-08` actualizado (mensaje con nombre del dueño en el detalle y `Mesa de {nombre}` en los listados de Maestro e Instructor); RPC `listar_mesas_examen()` con `maestro_nombre`. Referencia: `planes/mobile-mesas-dueno-nombre.md`. |
 | 1.33 | 2026-09-24 | Prueba manual: `TC-MES-08` (mesa ajena con nombre del dueño), `TC-MES-09` (sin límite de inscripción) y `TC-EVA-02` ("Abrir planilla" con mesa abierta ofrece cerrarla) marcados ✅ verificados. |
+| 1.34 | 2026-09-24 | **Visibilidad de mesas por jerarquía:** `TC-MES-08` cambia de escenario (requiere re-verificación); `TC-POS-01` ajustado; nuevos `TC-MES-12` (nieto/superior no ve) y `TC-POS-10` (postular fuera de jerarquía → rechazo). Referencia: `planes/mobile-mesas-visibilidad-jerarquia.md`. |
 
 ---
 
@@ -631,14 +632,13 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 #### TC-MES-07 — Gate de Maestro · **Smoke**
 - **Esperado:** un usuario sin `es_maestro` **no** ve la pestaña ni puede crear mesas
 
-#### TC-MES-08 — Mesa ajena · ✅ verificado (2026-09-24)
+#### TC-MES-08 — Mesa ajena (visibilidad por jerarquía)
+- **Precondición:** el visor **no** es el dueño, pero es **subordinado directo** del dueño
 - **Esperado:** el detalle muestra **"Esta mesa pertenece a {nombre del maestro dueño}: solo podés
-  consultarla."** (sin editar/cerrar). El **listado** de Maestro muestra `Mesa de {nombre}` en las
-  mesas ajenas (y "Tu mesa" en las propias). El **profesor** ve `Mesa de {nombre}` en el listado y
-  en el detalle de postulación
-- **Precondición:** existe una cuenta con `es_maestro` distinta de la del visor (seed:
-  `maestro2@taekwondo.test`)
-- **Referencia:** `planes/mobile-mesas-dueno-nombre.md`
+  consultarla."** (sin editar/cerrar). El **listado** muestra `Mesa de {nombre}` en las mesas ajenas
+  (y "Tu mesa" en las propias). El **profesor** ve `Mesa de {nombre}` en el listado y en el detalle
+- **Requiere re-verificación (2026-09-24):** el escenario cambió con la visibilidad por jerarquía
+- **Referencia:** `planes/mobile-mesas-visibilidad-jerarquia.md`, `planes/mobile-mesas-dueno-nombre.md`
 
 #### TC-MES-09 — Sin límite de inscripción · ✅ verificado (2026-09-24)
 - **Esperado:** el formulario **no** pide límite y la tabla ya no tiene la columna
@@ -649,13 +649,22 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
   fecha** (sin límite de rango), pasada o futura
 - **Referencia:** `planes/mobile-date-picker-campos-fecha.md`
 
+#### TC-MES-12 — Visibilidad solo para directos
+- **Pasos:** iniciar sesión con un **descendiente indirecto** (ej. `sensei@taekwondo.test`, hijo de
+  Jhona) y listar mesas; y con un **superior** ver las mesas de sus subordinados
+- **Esperado:** el nieto ve **0 mesas** (no ve las del abuelo); el superior **no** ve las mesas de sus
+  subordinados (Jhonatan no ve la de `maestro2@`). El dueño ve las suyas y sus **subordinados directos**
+  ven las del dueño
+- **Referencia:** `planes/mobile-mesas-visibilidad-jerarquia.md`
+
 ---
 
 ### TC-POS — Postulación a examen (Profesor)
 
 #### TC-POS-01 — Mesas abiertas · **Smoke**
 - **Rol:** profesor
-- **Esperado:** el listado muestra **solo** mesas abiertas
+- **Esperado:** el listado muestra **solo** mesas abiertas **de su superior directo** (o propias); no
+  aparecen mesas de otras ramas ni de descendientes indirectos
 
 #### TC-POS-02 — Grado aspirado · **Smoke**
 - **Esperado:** cada alumno muestra `grado actual → grado aspirado` (el inmediato superior)
@@ -682,6 +691,14 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 
 #### TC-POS-09 — Editar cobro y quitar
 - **Esperado:** "Editar cobro" actualiza el monto (y la recaudación); "Quitar" saca la postulación
+
+#### TC-POS-10 — Postular fuera de jerarquía
+- **Rol:** profesor
+- **Pasos:** un profesor que **no** es dueño ni subordinado directo del dueño de la mesa intenta
+  postular (por RPC/API, salteando la UI)
+- **Esperado:** excepción **"Solo podés postular en las mesas de tu superior directo."**; **sin** fila
+  en `postulaciones_examen`
+- **Referencia:** `planes/mobile-mesas-visibilidad-jerarquia.md`
 
 ---
 

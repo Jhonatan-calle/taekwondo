@@ -52,6 +52,10 @@ jerarquía y disciplina del Taekwondo ITF. Fuente funcional: `srs-sistemaDeGesti
 > - **Inscripción:** los profesores postulan a sus **alumnos directos**; el sistema calcula
 >   automáticamente el **grado inmediato superior** al que aspiran (RPC `postular_alumno`, no
 >   falsificable desde el cliente).
+> - **Visibilidad (jerarquía):** una mesa la ve su **dueño** y los **subordinados directos del dueño**
+>   (dirección superior → subordinado). Se postula solo en mesas **propias o del superior directo**,
+>   siempre con **alumnos directos** del postulante. Sin recursividad a descendientes indirectos
+>   (por ahora).
 > - **Gestión financiera:** el profesor registra manualmente el **derecho de examen** (solo registro:
 >   el sistema no procesa dinero). El **maestro examinador visualiza la recaudación total de la mesa**
 >   (SRS §3.7), con el desglose de derechos cobrados y pendientes.

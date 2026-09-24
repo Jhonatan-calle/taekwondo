@@ -1,16 +1,16 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import { ErrorGlobalProvider } from '@/contextos/ErrorGlobal';
 import { AuthGlobalProvider, useAuthGlobal } from '@/contextos/AuthGlobal';
 
 function RootNavigator() {
-  const { sesion, cargando, onboardingCompleto } = useAuthGlobal();
+  const { sesion, cargando, onboardingCompleto, resolviendoPerfil } = useAuthGlobal();
 
-  if (cargando) {
+  if (cargando || resolviendoPerfil) {
     return (
       <View style={styles.cargando}>
-        <Text style={styles.cargandoTexto}>Cargando…</Text>
+        <ActivityIndicator size="large" color="#C62828" accessibilityLabel="Cargando" />
       </View>
     );
   }
@@ -48,9 +48,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  cargandoTexto: {
-    fontSize: 16,
-    color: '#666',
   },
 });

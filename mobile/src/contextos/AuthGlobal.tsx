@@ -72,6 +72,7 @@ type AuthGlobalValue = {
   linajeEstablecido: boolean
   linajeEnCurso: boolean
   onboardingCompleto: boolean
+  resolviendoPerfil: boolean
   iniciarSesion(email: string, password: string): Promise<ResultadoAuth>
   registrarCuenta(email: string, password: string): Promise<ResultadoAuth>
   recuperarContrasena(email: string): Promise<ResultadoAuth>
@@ -184,6 +185,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
   const [perfil, setPerfil] = useState<PerfilOnboarding | null>(null)
   const [linajeEnCurso, setLinajeEnCurso] = useState(false)
   const [cargando, setCargando] = useState(true)
+  const [perfilResuelto, setPerfilResuelto] = useState(false)
 
   const refrescarLinajeEnCurso = useCallback(async (usuarioId: string): Promise<void> => {
     const { data, error } = await ejecutarConsulta<{ id: string } | null>(
@@ -201,18 +203,24 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
   }, [])
 
   const refrescarPerfil = useCallback(async (usuarioId: string): Promise<void> => {
-    const { data, error } = await ejecutarConsulta<PerfilOnboarding | null>(
-      Promise.resolve(
-        supabase
-          .from('profiles')
-          .select(CAMPOS_PERFIL_SELECT)
-          .eq('id', usuarioId)
-          .maybeSingle(),
-      ),
-      { modulo: 'perfil', contexto: 'cargarPerfil' },
-    )
-    if (error == null) setPerfil(data)
-    await refrescarLinajeEnCurso(usuarioId)
+    try {
+      const { data, error } = await ejecutarConsulta<PerfilOnboarding | null>(
+        Promise.resolve(
+          supabase
+            .from('profiles')
+            .select(CAMPOS_PERFIL_SELECT)
+            .eq('id', usuarioId)
+            .maybeSingle(),
+        ),
+        { modulo: 'perfil', contexto: 'cargarPerfil' },
+      )
+      if (error == null) setPerfil(data)
+      await refrescarLinajeEnCurso(usuarioId)
+    } finally {
+      // Marca el fin del fetch (perfil + linaje en curso). Se usa para no mostrar
+      // onboarding mientras la sesión existe pero el perfil todavía no se resolvió.
+      setPerfilResuelto(true)
+    }
   }, [refrescarLinajeEnCurso])
 
   // Refresco manual del propio perfil (fallback del Realtime, al recuperar foco).
@@ -253,6 +261,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       } else if (evento === 'SIGNED_OUT') {
         setPerfil(null)
         setLinajeEnCurso(false)
+        setPerfilResuelto(false)
       }
     })
 
@@ -1739,6 +1748,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
     setSesion(null)
     setPerfil(null)
     setLinajeEnCurso(false)
+    setPerfilResuelto(false)
   }, [])
 
   const perfilCompleto = useMemo(() => esPerfilCompleto(perfil), [perfil])
@@ -1749,6 +1759,9 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
   const esInstructor = useMemo(() => esInstructorDePerfil(perfil), [perfil])
   const linajeEstablecido = perfil?.maestro_id != null
   const onboardingCompleto = perfilCompleto && (esMaestro || linajeEstablecido || linajeEnCurso)
+  // Hay sesión pero el perfil todavía no se resolvió: evita mostrar onboarding por error
+  // (y el parpadeo) mientras el fetch de perfil + linaje está en curso.
+  const resolviendoPerfil = sesion != null && !perfilResuelto
 
   const valor = useMemo<AuthGlobalValue>(
     () => ({
@@ -1764,6 +1777,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       linajeEstablecido,
       linajeEnCurso,
       onboardingCompleto,
+      resolviendoPerfil,
       iniciarSesion,
       registrarCuenta,
       recuperarContrasena,
@@ -1830,6 +1844,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       linajeEstablecido,
       linajeEnCurso,
       onboardingCompleto,
+      resolviendoPerfil,
       iniciarSesion,
       registrarCuenta,
       recuperarContrasena,

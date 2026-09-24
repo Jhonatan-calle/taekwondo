@@ -13,7 +13,7 @@
 - **Versión:** 1.4
 - **Estado:** Vigente
 - **Fecha:** 2026-09-23
-- **Cobertura:** 143 casos en 19 módulos (42 marcados Smoke)
+- **Cobertura:** 144 casos en 19 módulos (43 marcados Smoke)
 
 ## Historial de revisiones
 | Versión | Fecha | Cambios |
@@ -23,6 +23,7 @@
 | 1.2 | 2026-09-23 | **Confirmación del cinturón en el linaje:** se actualizan `TC-LIN-01`/`TC-LIN-02` (declaración obligatoria `dan_1+` y confirmación/ajuste del grado con activación de `es_profesor`) y se agregan `TC-LIN-07` (Gup rechazado) y `TC-LIN-08` (ajuste al aceptar). Referencia: `planes/mobile-linaje-confirmar-grado.md`. |
 | 1.3 | 2026-09-23 | **Contacto de emergencia obligatorio** (nombre + teléfono con formato), para staff y alumnos: `TC-ONB-04` y `TC-ALU-04` dejan de ser "opcionales"; se agregan `TC-ONB-06` y `TC-ALU-09`. Referencia: `planes/mobile-contacto-emergencia-obligatorio.md`. |
 | 1.4 | 2026-09-23 | **Refresco del linaje en tiempo real:** se agregan `TC-LIN-09` (el solicitante ve el cambio en vivo sin re-loguear) y `TC-LIN-10` (el superior ve las solicitudes nuevas/resueltas en vivo). Referencia: `planes/mobile-refresco-linaje-tiempo-real.md`. |
+| 1.5 | 2026-09-23 | **Transición de login sin parpadeo:** se agrega `TC-AUTH-12` (no se muestra el onboarding al iniciar sesión mientras el perfil se resuelve). Referencia: `planes/mobile-fix-flicker-onboarding-login.md`. |
 
 ---
 
@@ -130,6 +131,14 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 - **Rol:** usuario en recuperación de contraseña
 - **Pasos:** en `/nueva-contrasena`, alternar los dos campos
 - **Esperado:** mismo comportamiento que `TC-AUTH-10`; los valores se conservan al alternar
+
+#### TC-AUTH-12 — Transición de login sin parpadeo de onboarding · **Smoke**
+- **Rol:** usuario con onboarding completo
+- **Pasos:** iniciar sesión y observar la transición login → Inicio
+- **Esperado:** se ve un **spinner de carga** y de ahí directo al **Inicio**; **nunca** aparece el formulario de onboarding, ni por un instante
+- **Cuenta nueva:** spinner de carga → `/onboarding` (no parpadea a tabs)
+- **Fail gracefully:** si la lectura del perfil falla, la app no queda colgada en el spinner
+- **Referencia:** `planes/mobile-fix-flicker-onboarding-login.md`
 
 ---
 

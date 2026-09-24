@@ -222,6 +222,20 @@
 
 ---
 
+### 21. Transición de login sin parpadeo de onboarding (FIX — verificar en dispositivo)
+- **Fecha de registro:** 2026-09-23
+- **Hallazgo (Prueba 1 manual):** al iniciar sesión aparecía por un instante el formulario de
+  onboarding antes de caer al Inicio.
+- **Causa:** `setSesion` ocurría antes del fetch del perfil; el guard `sesion != null &&
+  !onboardingCompleto` renderizaba `onboarding` por 1–2 frames.
+- **Fix (implementado):** `perfilResuelto` / `resolviendoPerfil` en `AuthGlobal` y gate
+  `cargando || resolviendoPerfil` en `_layout`; `typecheck`/`lint` en verde.
+- **Verificación pendiente en dispositivo:** login con cuenta completa → **spinner de carga** → **Inicio**
+  (sin onboarding); cuenta nueva → spinner → onboarding.
+- **Referencia:** `planes/mobile-fix-flicker-onboarding-login.md`.
+
+---
+
 🗒️ Actualizar este archivo (tachar items, agregar folow-ups de fecha) cada vez que se haga una
 prueba manual o se descubra un nuevo pendiente.
 

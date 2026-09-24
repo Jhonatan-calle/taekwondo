@@ -329,6 +329,9 @@ export type FilaGrupoConRelaciones = {
 }
 
 export const MENSAJE_DNI_DUPLICADO = 'El DNI ya está registrado.'
+export const MENSAJE_CONTACTO_NOMBRE_REQUERIDO = 'Ingresá el nombre del contacto de emergencia.'
+export const MENSAJE_CONTACTO_NOMBRE_INVALIDO =
+  'El nombre del contacto solo puede tener letras, espacios, puntos y guiones.'
 export const EDAD_MINIMA_ANIOS = 4
 
 export function perfilCompleto(perfil: PerfilOnboarding | null): boolean {

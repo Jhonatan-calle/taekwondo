@@ -1,4 +1,4 @@
-import { Tabs } from 'expo-router';
+import { Tabs, router } from 'expo-router';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 
 export default function TabsLayout() {
@@ -17,8 +17,22 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="instructor"
         options={{ title: 'Instructor', href: esProfesorBandera ? undefined : null }}
+        listeners={{
+          // Tocar la pestaña siempre lleva al menú del tab (no a la última pantalla del stack).
+          tabPress: () => {
+            router.navigate('/instructor');
+          },
+        }}
       />
-      <Tabs.Screen name="maestro" options={{ title: 'Maestro', href: esMaestro ? undefined : null }} />
+      <Tabs.Screen
+        name="maestro"
+        options={{ title: 'Maestro', href: esMaestro ? undefined : null }}
+        listeners={{
+          tabPress: () => {
+            router.navigate('/maestro');
+          },
+        }}
+      />
     </Tabs>
   );
 }

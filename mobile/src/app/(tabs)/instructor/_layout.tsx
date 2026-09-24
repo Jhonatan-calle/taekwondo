@@ -1,6 +1,10 @@
 import { Redirect, Stack } from 'expo-router';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 
+// Ancla del stack: garantiza que `instructor/index` quede debajo al navegar
+// desde otro tab (p. ej. desde las tarjetas del Inicio) y el back vuelva al menú.
+export const unstable_settings = { initialRouteName: 'index' };
+
 export default function InstructorLayout() {
   const { esProfesorBandera } = useAuthGlobal();
 

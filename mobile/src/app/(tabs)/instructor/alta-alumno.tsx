@@ -17,6 +17,8 @@ import {
   esTelefonoContactoValido,
   esTelefonoValido,
   fechaValidaNacimiento,
+  MENSAJE_CONTACTO_NOMBRE_INVALIDO,
+  MENSAJE_CONTACTO_NOMBRE_REQUERIDO,
   MENSAJE_DNI_DUPLICADO,
   parsearNumero,
   type DatosAltaAlumno,
@@ -81,7 +83,10 @@ export default function AltaAlumnoScreen() {
     if (!esAlturaValida(altura)) e.altura = 'Altura inválida (de 50 a 230 cm).';
     if (!esTelefonoValido(telefono)) e.telefono = 'Teléfono inválido.';
     if (!esNombreContactoValido(contactoEmergenciaNombre)) {
-      e.contactoNombre = 'Ingresá el nombre del contacto de emergencia.';
+      e.contactoNombre =
+        contactoEmergenciaNombre.trim() === ''
+          ? MENSAJE_CONTACTO_NOMBRE_REQUERIDO
+          : MENSAJE_CONTACTO_NOMBRE_INVALIDO;
     }
     if (!esTelefonoContactoValido(contactoEmergenciaTelefono)) {
       e.contactoTelefono = 'Ingresá un teléfono de contacto válido (ej. 1155551234).';

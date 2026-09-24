@@ -236,6 +236,17 @@
 
 ---
 
+### 22. Onboarding sin forma de cerrar sesión (UX — ANOTADO)
+- **Fecha de registro:** 2026-09-23
+- **Hallazgo (prueba manual):** un usuario con sesión y onboarding incompleto **no puede cerrar
+  sesión**: el único botón "Cerrar sesión" está en el Inicio, y los guards lo devuelven siempre a
+  `/onboarding` (recargar también). No hay escape si se equivocó de cuenta.
+- **Impacto:** bloqueo de UX en pruebas y para usuarios reales; no es un error de seguridad.
+- **Posible mejora:** enlace discreto **"Cerrar sesión"** al pie del onboarding (llama a `cerrarSesion`).
+- **Acción:** evaluar como plan aparte cuando se priorice.
+
+---
+
 🗒️ Actualizar este archivo (tachar items, agregar folow-ups de fecha) cada vez que se haga una
 prueba manual o se descubra un nuevo pendiente.
 

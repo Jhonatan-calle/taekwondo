@@ -10,6 +10,7 @@
 | Versión | Fecha | Cambios |
 |---|---|---|
 | 1.0 | 2026-09-21 | Borrador inicial y aprobación. Resuelve dos huecos del vínculo grupo–locación: (A) **bloquear** el borrado de una locación que todavía tiene grupos asociados (evita grupos huérfanos silenciosos) y (C) permitir **editar el grupo** (nombre, locación y horarios) vía RPC `editar_grupo` con el formulario en modo dual. Elegido por el usuario: enfoque **C + A**. |
+| 1.1 | 2026-09-24 | **Ajuste de UX (prueba manual):** con grupos asociados, el botón "Eliminar locación" se ve deshabilitado pero ahora **es tocable** y muestra una **alerta explicativa** (`confirmarEliminar`) con la cantidad de grupos y la instrucción de reasignarlos. Antes estaba `disabled` y no daba ninguna respuesta al toque. |
 
 ## Restricciones y Correcciones Previas (No repetir)
 1. **Torneos y web congelados:** no tocar tablas de torneos ni `web/`.
@@ -59,7 +60,7 @@ Verificado en remoto: ambas funciones `SECURITY DEFINER` con `EXECUTE` solo para
 - **`grupo/[id]/editar.tsx` (nueva):** reexporta el formulario en la ruta anidada `/instructor/grupo/[id]/editar` (no colisiona con `grupo/[id].tsx`).
 - **`grupo/[id]/index.tsx`:** botón **"Editar"** en la cabecera, junto a "+ Clase".
 - **`_layout.tsx`:** registrada la ruta `grupo/[id]/editar` ("Editar grupo").
-- **`locacion/[id].tsx`:** el botón "Eliminar locación" queda **deshabilitado** si hay grupos asociados; la tarjeta "Grupos asociados" indica que hay que reasignarlos y cada grupo es navegable; el diálogo de confirmación se reemplaza por un bloqueo explicativo.
+- **`locacion/[id].tsx`:** el botón "Eliminar locación" se ve como deshabilitado si hay grupos asociados, pero sigue **siendo tocable**: al presionarlo muestra una **alerta explicativa** (cuántos grupos hay y que hay que reasignarlos); la tarjeta "Grupos asociados" también lo indica y cada grupo es navegable. El botón se ejecuta solo cuando no hay grupos.
 
 ### 5. Documentación `[x]`
 - Nuevo plan `mobile-editar-grupo-locacion.md` (este archivo).

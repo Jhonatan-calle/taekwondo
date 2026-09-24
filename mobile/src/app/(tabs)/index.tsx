@@ -254,6 +254,17 @@ export default function HomeScreen() {
   const nombre = perfil?.nombre_completo ?? sesion?.user?.email ?? 'usuario';
   const mostrarPerfilAlerta = resumen.cuotasPendientes != null && resumen.cuotasPendientes > 0;
 
+  // Tarjeta de asistencia: el aviso rojo solo cuando hay clases recientes sin cargar
+  // asistencia; si no hay pendientes, se muestra en positivo ("Asistencia al día").
+  const sinCargar = resumen.clasesSinAsistencia;
+  const asistenciaValor = sinCargar == null ? '—' : sinCargar > 0 ? String(sinCargar) : '✓';
+  const asistenciaEtiqueta =
+    sinCargar == null ? 'Asistencia' : sinCargar > 0 ? 'Clases sin asistencia cargada' : 'Asistencia al día';
+  const asistenciaDetalle =
+    sinCargar === 0 ? `Sin clases pendientes (${DIAS_ASISTENCIA} días)` : `Últimos ${DIAS_ASISTENCIA} días`;
+  const asistenciaTono: 'neutro' | 'alerta' | 'ok' =
+    sinCargar != null && sinCargar > 0 ? 'alerta' : sinCargar === 0 ? 'ok' : 'neutro';
+
   return (
     <ScrollView style={styles.pantalla} contentContainerStyle={styles.contenido}>
       <Text style={styles.saludo}>Hola, {nombre}</Text>
@@ -286,12 +297,12 @@ export default function HomeScreen() {
               <TarjetaMetrica
                 valor={resumen.alumnos != null ? String(resumen.alumnos) : '—'}
                 etiqueta="Alumnos directos"
-                onPresionar={() => router.push('/instructor/alumnos')}
+                onPresionar={() => router.push('/instructor/alumnos', { withAnchor: true })}
               />
               <TarjetaMetrica
                 valor={resumen.grupos != null ? String(resumen.grupos) : '—'}
-                etiqueta="Grupos activos"
-                onPresionar={() => router.push('/instructor/grupos')}
+                etiqueta="Grupos"
+                onPresionar={() => router.push('/instructor/grupos', { withAnchor: true })}
               />
               <TarjetaMetrica
                 valor={
@@ -302,14 +313,14 @@ export default function HomeScreen() {
                 etiqueta="Cuotas pendientes"
                 detalle={formatearPeriodo(mesActual())}
                 tono={mostrarPerfilAlerta ? 'alerta' : 'neutro'}
-                onPresionar={() => router.push('/instructor/cuotas')}
+                onPresionar={() => router.push('/instructor/cuotas', { withAnchor: true })}
               />
               <TarjetaMetrica
-                valor={resumen.clasesSinAsistencia != null ? String(resumen.clasesSinAsistencia) : '—'}
-                etiqueta="Clases sin asistencia"
-                detalle={`Últimos ${DIAS_ASISTENCIA} días`}
-                tono={resumen.clasesSinAsistencia != null && resumen.clasesSinAsistencia > 0 ? 'alerta' : 'neutro'}
-                onPresionar={() => router.push('/instructor/clases')}
+                valor={asistenciaValor}
+                etiqueta={asistenciaEtiqueta}
+                detalle={asistenciaDetalle}
+                tono={asistenciaTono}
+                onPresionar={() => router.push('/instructor/clases', { withAnchor: true })}
               />
             </View>
           )}
@@ -327,12 +338,12 @@ export default function HomeScreen() {
                 valor={resumen.locacionesVencidas != null ? String(resumen.locacionesVencidas) : '—'}
                 etiqueta="Alquileres vencidos"
                 tono={resumen.locacionesVencidas != null && resumen.locacionesVencidas > 0 ? 'alerta' : 'neutro'}
-                onPresionar={() => router.push('/maestro/auditoria')}
+                onPresionar={() => router.push('/maestro/auditoria', { withAnchor: true })}
               />
               <TarjetaMetrica
                 valor={resumen.mesasAbiertas != null ? String(resumen.mesasAbiertas) : '—'}
                 etiqueta="Mesas abiertas"
-                onPresionar={() => router.push('/maestro/mesas')}
+                onPresionar={() => router.push('/maestro/mesas', { withAnchor: true })}
               />
               <TarjetaMetrica
                 valor={
@@ -340,7 +351,7 @@ export default function HomeScreen() {
                 }
                 etiqueta="Recaudación de mesas"
                 detalle="Solo mesas abiertas"
-                onPresionar={() => router.push('/maestro/mesas')}
+                onPresionar={() => router.push('/maestro/mesas', { withAnchor: true })}
               />
             </View>
           )}
@@ -350,9 +361,9 @@ export default function HomeScreen() {
       {esProfesor ? (
         <View style={styles.seccion}>
           <Text style={styles.tituloSeccion}>Acciones rápidas</Text>
-          <BotonAccion titulo="Tomar asistencia" onPresionar={() => router.push('/instructor/clases')} />
-          <BotonAccion titulo="Registrar cuota" onPresionar={() => router.push('/instructor/cuotas')} />
-          <BotonAccion titulo="Alta de alumno" onPresionar={() => router.push('/instructor/alta-alumno')} />
+          <BotonAccion titulo="Tomar asistencia" onPresionar={() => router.push('/instructor/clases', { withAnchor: true })} />
+          <BotonAccion titulo="Registrar cuota" onPresionar={() => router.push('/instructor/cuotas', { withAnchor: true })} />
+          <BotonAccion titulo="Alta de alumno" onPresionar={() => router.push('/instructor/alta-alumno', { withAnchor: true })} />
         </View>
       ) : null}
 
@@ -465,8 +476,8 @@ export default function HomeScreen() {
       {esMaestro ? (
         <View style={styles.seccion}>
           <Text style={styles.tituloSeccion}>Acciones rápidas</Text>
-          <BotonAccion titulo="Nueva mesa de examen" onPresionar={() => router.push('/maestro/mesas/nueva')} />
-          <BotonAccion titulo="Auditoría de locaciones" onPresionar={() => router.push('/maestro/auditoria')} />
+          <BotonAccion titulo="Nueva mesa de examen" onPresionar={() => router.push('/maestro/mesas/nueva', { withAnchor: true })} />
+          <BotonAccion titulo="Auditoría de locaciones" onPresionar={() => router.push('/maestro/auditoria', { withAnchor: true })} />
         </View>
       ) : null}
 

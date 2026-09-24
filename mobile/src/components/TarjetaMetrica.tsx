@@ -12,8 +12,8 @@ type Props = {
 // navegable (lleva al listado correspondiente).
 export function TarjetaMetrica({ valor, etiqueta, detalle, tono = 'neutro', onPresionar }: Props) {
   const contenido = (
-    <View style={[styles.tarjeta, tono === 'alerta' ? styles.tarjetaAlerta : null]}>
-      <Text style={[styles.valor, tono === 'alerta' ? styles.valorAlerta : null]}>{valor}</Text>
+    <View style={[styles.tarjeta, tono === 'alerta' ? styles.tarjetaAlerta : tono === 'ok' ? styles.tarjetaOk : null]}>
+      <Text style={[styles.valor, tono === 'alerta' ? styles.valorAlerta : tono === 'ok' ? styles.valorOk : null]}>{valor}</Text>
       <Text style={styles.etiqueta}>{etiqueta}</Text>
       {detalle != null ? <Text style={styles.detalle}>{detalle}</Text> : null}
     </View>
@@ -55,6 +55,10 @@ const styles = StyleSheet.create({
     borderColor: '#f5c6cb',
     backgroundColor: '#fdf0f0',
   },
+  tarjetaOk: {
+    borderColor: '#c8e6c9',
+    backgroundColor: '#f2f9f3',
+  },
   valor: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -62,6 +66,9 @@ const styles = StyleSheet.create({
   },
   valorAlerta: {
     color: '#C62828',
+  },
+  valorOk: {
+    color: '#2E7D32',
   },
   etiqueta: {
     fontSize: 13,

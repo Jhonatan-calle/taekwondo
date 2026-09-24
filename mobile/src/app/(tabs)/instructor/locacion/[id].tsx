@@ -233,12 +233,17 @@ export default function LocacionDetalleScreen() {
         </Pressable>
         <Pressable
           onPress={confirmarEliminar}
-          disabled={eliminando || locacion.grupos.length > 0}
+          disabled={eliminando}
           style={[
             styles.botonPeligro,
             eliminando || locacion.grupos.length > 0 ? styles.botonDeshabilitado : null,
           ]}
           accessibilityRole="button"
+          accessibilityHint={
+            locacion.grupos.length > 0
+              ? 'La locación tiene grupos asociados; te explicamos cómo reasignarlos'
+              : undefined
+          }
         >
           <Text style={styles.botonPeligroTexto}>
             {eliminando ? 'Eliminando…' : 'Eliminar locación'}

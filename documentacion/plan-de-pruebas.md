@@ -24,6 +24,18 @@
 | 1.3 | 2026-09-23 | **Contacto de emergencia obligatorio** (nombre + teléfono con formato), para staff y alumnos: `TC-ONB-04` y `TC-ALU-04` dejan de ser "opcionales"; se agregan `TC-ONB-06` y `TC-ALU-09`. Referencia: `planes/mobile-contacto-emergencia-obligatorio.md`. |
 | 1.4 | 2026-09-23 | **Refresco del linaje en tiempo real:** se agregan `TC-LIN-09` (el solicitante ve el cambio en vivo sin re-loguear) y `TC-LIN-10` (el superior ve las solicitudes nuevas/resueltas en vivo). Referencia: `planes/mobile-refresco-linaje-tiempo-real.md`. |
 | 1.5 | 2026-09-23 | **Transición de login sin parpadeo:** se agrega `TC-AUTH-12` (no se muestra el onboarding al iniciar sesión mientras el perfil se resuelve). Referencia: `planes/mobile-fix-flicker-onboarding-login.md`. |
+| 1.6 | 2026-09-23 | Prueba manual: se agrega la cuenta `realtime1@taekwondo.test` y se marca `TC-LIN-10` (solicitudes del superior en vivo) como ✅ verificado. |
+| 1.7 | 2026-09-23 | Prueba manual: `TC-LIN-09` (refresco en vivo del solicitante — caso **aceptar**) marcado ✅ verificado. |
+| 1.8 | 2026-09-23 | Prueba manual: se agrega la cuenta `realtime2@taekwondo.test`; `TC-LIN-03` (rechazar) y el caso **rechazar** de `TC-LIN-09` marcados ✅ verificados. |
+| 1.9 | 2026-09-23 | Prueba manual: `TC-ONB-02`, `TC-ONB-04`, `TC-ONB-05` y `TC-ONB-06` (validaciones del onboarding) marcados ✅ verificados. |
+| 1.10 | 2026-09-23 | Prueba manual: `TC-ONB-03` (DNI duplicado) marcado ✅ verificado. |
+| 1.11 | 2026-09-23 | Prueba manual: `TC-AUTH-02` (registro con email duplicado) marcado ✅ verificado. Se registra el hallazgo del onboarding sin forma de cerrar sesión. |
+| 1.12 | 2026-09-23 | Prueba manual + ajustes de UI: `TC-INI-01`/`TC-INI-02` verificados; se actualiza el esperado del panel (tarjeta **Grupos** y **Asistencia** con estado al día en verde). Referencia: `planes/mobile-rediseno-inicio.md` (v1.2). |
+| 1.13 | 2026-09-23 | Fix de navegación a stacks anidados (ancla de tab + `withAnchor` + tabPress al menú): se agrega `TC-NAV-05`. Referencia: `planes/mobile-fix-navegacion-tab-stacks.md`. |
+| 1.14 | 2026-09-23 | Prueba manual: `TC-NAV-05`, `TC-ALU-01`, `TC-ALU-02`, `TC-ALU-05` y `TC-ALU-06` marcados ✅ verificados. |
+| 1.15 | 2026-09-23 | Prueba manual: `TC-ALU-03`, `TC-ALU-04` y `TC-ALU-09` verificados; mensaje del nombre de contacto inválido diferenciado del vacío. Referencia: `planes/mobile-contacto-emergencia-obligatorio.md` (v1.1). |
+| 1.16 | 2026-09-24 | Prueba manual: `TC-GRU-01`, `TC-GRU-02`, `TC-GRU-03`, `TC-GRU-05`, `TC-GRU-06`, `TC-GRU-07` y `TC-GRU-08` marcados ✅ verificados. |
+| 1.17 | 2026-09-24 | Ajuste de UX en Locaciones: el botón "Eliminar locación" con grupos asociados ahora responde con una alerta explicativa (`TC-LOC-05` actualizado). Referencia: `planes/mobile-editar-grupo-locacion.md` (v1.1). |
 
 ---
 
@@ -47,8 +59,18 @@ Escenario creado por el seed (`planes/db-seed-auditoria.md`).
 | `jhona@taekwondo.test`           | `Seed123456!`                    | **Profesor** (nivel 1)        | Gestión diaria, cuotas, postulación     |
 | `sensei@taekwondo.test`          | `Seed123456!`                    | **Profesor** (nivel 2, nieto) | Probar **recursividad** de la auditoría |
 | `ajeno@taekwondo.test`           | `Seed123456!`                    | **Profesor ajeno** (P3)       | Casos de aislamiento horizontal         |
+| `realtime1@taekwondo.test`       | `Seed123456!`                    | **Solicitante de linaje**     | Realtime del linaje (creada a mano en la app) |
+| `realtime2@taekwondo.test`       | `Seed123456!`                    | **Solicitante rechazado**     | Rechazo de linaje + onboarding (creada a mano) |
 
 > **Credenciales del seed:** `jhona@` y `sensei@` comparten la contraseña `Seed123456!` y se crean por **Admin API**. La cuenta del Maestro es personal del dueño (no está en el repositorio).
+>
+> **`realtime1@taekwondo.test`** se creó **manualmente en la app** (2026-09-23) para probar el Realtime del
+> linaje: quedó como solicitante pendiente de `jhona@` (declaró Dan I y eligió a Profesor Jhona). No la
+> crea el seed; si se limpia la base, hay que registrarla de nuevo.
+>
+> **`realtime2@taekwondo.test`** se creó **manualmente en la app** (2026-09-23) para probar el **rechazo**
+> del linaje: su solicitud fue rechazada por `jhona@` y quedó volviendo al onboarding. Se conserva para
+> reutilizarla en pruebas de onboarding/validaciones.
 
 **Datos del seed:**
 
@@ -79,7 +101,7 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 - **Esperado:** se crea la cuenta; queda pendiente de confirmación o entra según la config de Supabase; **no** se accede a la app principal sin completar el onboarding
 - **Referencia:** `planes/mobile-flujo-acceso-auth.md`
 
-#### TC-AUTH-02 — Registro con email ya existente · **Smoke**
+#### TC-AUTH-02 — Registro con email ya existente · **Smoke** · ✅ verificado (2026-09-23)
 - **Rol:** anónimo
 - **Precondición:** un email ya registrado
 - **Pasos:** "Crear cuenta" con ese email → Continuar
@@ -148,22 +170,22 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 - **Rol:** cuenta nueva con perfil incompleto
 - **Esperado:** cae en `/onboarding` y **no** puede entrar a la app principal hasta completarlo
 
-#### TC-ONB-02 — Validaciones del formulario
+#### TC-ONB-02 — Validaciones del formulario · ✅ verificado (2026-09-23)
 - **Pasos:** intentar guardar con campos vacíos / fecha futura / edad < 4
 - **Esperado:** errores **inline por campo**; no deja guardar
 
-#### TC-ONB-03 — DNI duplicado · **Smoke**
+#### TC-ONB-03 — DNI duplicado · **Smoke** · ✅ verificado (2026-09-23)
 - **Precondición:** un DNI ya registrado
 - **Esperado:** "El DNI ya está registrado." (pre-chequeo del RPC y/o `23505`)
 
-#### TC-ONB-04 — Campos complementarios
+#### TC-ONB-04 — Campos complementarios · ✅ verificado (2026-09-23)
 - **Pasos:** completar los obligatorios (nombre, DNI, nacimiento, peso, género, **contacto de emergencia**) y dejar vacíos altura/teléfono/datos de salud
 - **Esperado:** deja finalizar; altura, teléfono y datos de salud quedan `null`; el **contacto de emergencia es obligatorio**
 
-#### TC-ONB-05 — Edad calculada
+#### TC-ONB-05 — Edad calculada · ✅ verificado (2026-09-23)
 - **Esperado:** al elegir la fecha de nacimiento se muestra la edad cronológica correcta
 
-#### TC-ONB-06 — Contacto de emergencia obligatorio
+#### TC-ONB-06 — Contacto de emergencia obligatorio · ✅ verificado (2026-09-23)
 - **Pasos:** intentar guardar sin nombre de contacto, o con un teléfono inválido (ej. `abc`)
 - **Esperado:** error inline y **no** deja guardar. El contacto exige **nombre + teléfono con formato** (`^[+0-9 ()-]{6,20}$`)
 - **Referencia:** `planes/mobile-contacto-emergencia-obligatorio.md`
@@ -184,7 +206,7 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 - **Esperado:** `maestro_id` se persiste (única vez); `grado_actual` = grado confirmado con **`grados_verificados = true`**; se activa **`es_profesor`**; el aviso del alumno desaparece al refrescar
 - **Referencia:** `planes/mobile-linaje-confirmar-grado.md`
 
-#### TC-LIN-03 — Rechazar solicitud
+#### TC-LIN-03 — Rechazar solicitud · ✅ verificado (2026-09-23)
 - **Esperado:** el alumno vuelve al onboarding (datos prellenados) a elegir de nuevo; la solicitud queda `rechazada`
 
 #### TC-LIN-04 — Linaje inamovible
@@ -207,13 +229,14 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 - **Esperado:** el perfil queda con `grado_actual = dan_2` y `es_profesor = true`. Al **rechazar**, el grado y `es_profesor` **no** cambian
 - **Referencia:** `planes/mobile-linaje-confirmar-grado.md`
 
-#### TC-LIN-09 — Refresco en vivo del solicitante
+#### TC-LIN-09 — Refresco en vivo del solicitante · ✅ verificado (aceptar, 2026-09-23)
 - **Rol:** solicitante pendiente, con la app abierta en el Inicio
 - **Pasos:** en otro dispositivo, el superior **Aceptar** (o **Rechazar**) la solicitud
 - **Esperado:** **sin tocar la app**, desaparece el aviso "Tu instructor todavía no confirmó tu registro" y se habilita la pestaña **Instructor** (al aceptar) o vuelve al **onboarding** (al rechazar). No hace falta salir ni re-loguear
+- **Pendiente:** caso **rechazar** (volver al onboarding en vivo). · ✅ verificado (rechazar, 2026-09-23)
 - **Referencia:** `planes/mobile-refresco-linaje-tiempo-real.md`
 
-#### TC-LIN-10 — Solicitudes del superior en vivo
+#### TC-LIN-10 — Solicitudes del superior en vivo · ✅ verificado (2026-09-23)
 - **Rol:** instructor/maestro con "Solicitudes de alumnos" en pantalla
 - **Pasos:** que otra cuenta envíe una solicitud de linaje, y luego resolverla desde otro dispositivo
 - **Esperado:** la solicitud **aparece sola** en la lista y **desaparece** al resolverse, sin recuperar foco
@@ -240,15 +263,21 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 #### TC-NAV-04 — Barra de tabs
 - **Esperado:** solo etiquetas (sin glifos `MissingIcon`) y solo las tabs habilitadas
 
+#### TC-NAV-05 — Navegación a stacks anidados (ancla de tab) · **Smoke** · ✅ verificado (2026-09-23)
+- **Pasos:** desde el **Inicio**, tocar una tarjeta de otro tab (p. ej. "Cuotas pendientes" → Instructor/Cuotas) → volver (flecha/atrás); luego tocar la pestaña **Instructor** desde el Inicio
+- **Esperado:** la pantalla profunda muestra **flecha de atrás** y el back vuelve al **menú del tab** (no al Inicio); tocar la **pestaña** lleva siempre al **menú del tab** (`instructor/index` / `maestro/index`)
+- **Referencia:** `planes/mobile-fix-navegacion-tab-stacks.md`
+
 ---
 
 ### TC-INI — Inicio (panel operativo)
 
-#### TC-INI-01 — Panel con datos · **Smoke**
+#### TC-INI-01 — Panel con datos · **Smoke** · ✅ verificado (2026-09-23)
 - **Rol:** profesor con linaje confirmado y alumnos
-- **Esperado:** saludo con el **nombre**, tarjetas de resumen (alumnos, grupos, cuotas pendientes, clases sin asistencia) y acciones rápidas. **No** se ve vacío
+- **Esperado:** saludo con el **nombre**, tarjetas de resumen (alumnos, **Grupos**, cuotas pendientes, **Asistencia**) y acciones rápidas. **No** se ve vacío. La tarjeta de asistencia muestra **"Clases sin asistencia cargada"** en rojo si hay pendientes, o **"Asistencia al día"** en verde si no hay
+- **Referencia:** `planes/mobile-rediseno-inicio.md`
 
-#### TC-INI-02 — Cuotas pendientes
+#### TC-INI-02 — Cuotas pendientes · ✅ verificado (2026-09-23)
 - **Esperado:** la tarjeta muestra `pendientes/total` del mes; en rojo si hay pendientes; al tocarla abre "Cuotas de alumnos"
 
 #### TC-INI-03 — Clases sin asistencia (7 días)
@@ -277,24 +306,24 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 
 ### TC-ALU — Alumnos (directorio, alta, detalle)
 
-#### TC-ALU-01 — Directorio por RLS · **Smoke**
+#### TC-ALU-01 — Directorio por RLS · **Smoke** · ✅ verificado (2026-09-23)
 - **Rol:** profesor
 - **Esperado:** "Mis alumnos" lista **solo** sus alumnos directos (`maestro_id = auth.uid()`); sin alumnos → CTA de alta
 
-#### TC-ALU-02 — Alta de alumno · **Smoke**
+#### TC-ALU-02 — Alta de alumno · **Smoke** · ✅ verificado (2026-09-23)
 - **Pasos:** Instructor → "Alta de alumno" → completar obligatorios (nombre, DNI, nacimiento, peso, género, grado)
 - **Esperado:** se crea la ficha con `maestro_id` = profesor; aparece en el directorio
 
-#### TC-ALU-03 — DNI duplicado en alta
+#### TC-ALU-03 — DNI duplicado en alta · ✅ verificado (2026-09-23)
 - **Esperado:** bloqueado con "El DNI ya está registrado."
 
-#### TC-ALU-04 — Opcionales del alta
+#### TC-ALU-04 — Opcionales del alta · ✅ verificado (2026-09-23)
 - **Esperado:** altura, teléfono y datos de salud son opcionales; vacíos quedan `null`. El **contacto de emergencia (nombre + teléfono) es obligatorio**
 
-#### TC-ALU-05 — Etiquetas de grado por color · **Smoke**
+#### TC-ALU-05 — Etiquetas de grado por color · **Smoke** · ✅ verificado (2026-09-23)
 - **Esperado:** "Blanco", "Amarillo punta verde", …, "Dan I"…"Dan IX" (sin "Gup") en listado, detalle y chips
 
-#### TC-ALU-06 — Detalle solo lectura
+#### TC-ALU-06 — Detalle solo lectura · ✅ verificado (2026-09-23)
 - **Esperado:** muestra la ficha completa; no permite editar desde ahí
 
 #### TC-ALU-07 — Alumno sin cuenta
@@ -303,9 +332,9 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 #### TC-ALU-08 — Deep link sin faceta
 - **Esperado:** `/instructor/alumnos` o `/instructor/alta-alumno` → redirect a Inicio
 
-#### TC-ALU-09 — Contacto de emergencia obligatorio en el alta
+#### TC-ALU-09 — Contacto de emergencia obligatorio en el alta · ✅ verificado (2026-09-23)
 - **Pasos:** intentar guardar el alumno sin contacto de emergencia o con un teléfono inválido; y llamar directo al RPC `alta_alumno` sin los campos
-- **Esperado:** error inline en la app y **rechazo del RPC** (`Contacto de emergencia: nombre/teléfono inválido.`)
+- **Esperado:** error inline en la app y **rechazo del RPC** (`Contacto de emergencia: nombre/teléfono inválido.`). Si el **nombre** tiene caracteres no permitidos (p. ej. dígitos), el mensaje inline es **“El nombre del contacto solo puede tener letras, espacios, puntos y guiones.”** (distinto del de campo vacío)
 - **Referencia:** `planes/mobile-contacto-emergencia-obligatorio.md`
 
 ---
@@ -325,16 +354,16 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 #### TC-GRU-04 — Alta rápida de locación desde el grupo
 - **Esperado:** si no hay locaciones, ofrece registrarla sin salir del flujo
 
-#### TC-GRU-05 — Asignar alumnos
+#### TC-GRU-05 — Asignar alumnos · ✅ verificado (2026-09-23)
 - **Pasos:** detalle del grupo → marcar alumnos → "Guardar miembros"
 - **Esperado:** quedan miembros `activo`
 
-#### TC-GRU-06 — Un alumno = un grupo · **Smoke**
+#### TC-GRU-06 — Un alumno = un grupo · **Smoke** · ✅ verificado (2026-09-23)
 - **Pasos:** intentar asignar a un alumno que ya está en otro grupo
 - **Esperado:** **no aparece** en la lista de asignables (la UI lo oculta) y el RPC **rechaza** la llamada directa
 - **Referencia:** `planes/mobile-asignacion-alumno-un-grupo.md`
 
-#### TC-GRU-07 — Baja de un alumno del grupo
+#### TC-GRU-07 — Baja de un alumno del grupo · ✅ verificado (2026-09-23)
 - **Esperado:** desmarcarlo + guardar lo saca del grupo; vuelve a estar disponible como libre
 
 #### TC-GRU-08 — Editar grupo · **Smoke**
@@ -366,7 +395,8 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 
 #### TC-LOC-05 — Bloqueo de borrado · **Smoke**
 - **Precondición:** locación con grupos asociados
-- **Esperado:** botón "Eliminar locación" **deshabilitado**, con aviso para reasignar; el RPC `eliminar_locacion_segura` también rechaza
+- **Esperado:** el botón "Eliminar locación" se ve deshabilitado pero **responde al toque** con una **alerta explicativa** (cuántos grupos hay y que hay que reasignarlos); el RPC `eliminar_locacion_segura` también rechaza
+- **Referencia:** `planes/mobile-editar-grupo-locacion.md`
 
 #### TC-LOC-06 — Borrado permitido
 - **Precondición:** locación **sin** grupos

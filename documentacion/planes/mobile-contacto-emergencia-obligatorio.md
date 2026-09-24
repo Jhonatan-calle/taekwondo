@@ -10,6 +10,7 @@
 | Versión | Fecha | Cambios |
 |---|---|---|
 | 1.0 | 2026-09-23 | Borrador y aprobación: el contacto de emergencia pasa a ser **obligatorio** (separado en nombre + teléfono con formato) para el staff (onboarding) y el alta de alumnos; se elimina `contacto_emergencia` y se enforza en BD y RPC. Implementado. |
+| 1.1 | 2026-09-23 | **Mejora de mensaje (prueba manual):** antes, un nombre de contacto con caracteres no permitidos (p. ej. dígitos) mostraba el mismo mensaje que un campo vacío. Ahora se distinguen: vacío → *"Ingresá el nombre del contacto de emergencia."*; inválido → *"El nombre del contacto solo puede tener letras, espacios, puntos y guiones."* (constantes `MENSAJE_CONTACTO_NOMBRE_REQUERIDO` / `MENSAJE_CONTACTO_NOMBRE_INVALIDO` en `lib/perfil.ts`, aplicadas en onboarding y alta de alumno). El regex **no** cambia (sigue sin admitir dígitos). |
 
 ## Restricciones y Correcciones Previas (No repetir)
 1. **Aplica a staff y alumnos** (onboarding y alta de alumno).

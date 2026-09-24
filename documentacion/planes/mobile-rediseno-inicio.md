@@ -11,6 +11,7 @@
 |---|---|---|
 | 1.0 | 2026-09-22 | Borrador inicial: convertir el Inicio (hoy identidad + solicitudes + cerrar sesión) en un panel operativo con resumen, acciones rápidas y pendientes; resumen de rama para el Maestro; cerrar sesión discreto. |
 | 1.1 | 2026-09-22 | Se acota **"Clases sin asistencia"** a los últimos **7 días** con **conteo numérico** y sin consultas anidadas (justificado: `listarClases()` no filtra por fecha). Se valida la obtención de la **recaudación del Maestro** vía `listarPostulacionesMesa(id)` por mesa abierta (SRS §3.7) y se deja asentada la **deuda técnica**: migrar a un RPC agregado si crecen las mesas simultáneas. |
+| 1.2 | 2026-09-23 | **Ajustes de UI por prueba manual:** (a) la tarjeta de asistencia ahora avisa **solo cuando hay clases sin cargar asistencia** (rojo con el número); si no hay pendientes muestra **"Asistencia al día"** en tono `ok` (verde), con copy explícito *"Clases sin asistencia cargada"*; (b) el rótulo **"Grupos activos"** pasa a **"Grupos"** (la métrica no filtra por estado: `grupos` no tiene columna `activo`). `TarjetaMetrica` incorpora el tono `ok`. |
 
 ## Restricciones y Correcciones Previas (No repetir)
 1. **Torneos y web congelados:** no tocar tablas de torneos ni `web/`.
@@ -28,7 +29,7 @@ El Inicio era **identidad + avisos condicionales + solicitudes + cerrar sesión*
 ### 1. Estructura del nuevo Inicio `[x]`
 - **A. Encabezado compacto:** saludo con el **nombre del perfil** y subtítulo "Panel de gestión". Los avisos (linaje sin confirmar / sin facetas) se conservan y solo aparecen si aplican.
 - **B. Resumen operativo** (`TarjetaMetrica`, navegables):
-  - **Instructor:** Alumnos directos · Grupos activos · **Cuotas pendientes** (`pendientes/total` del mes) · **Clases sin asistencia** (últimos 7 días).
+  - **Instructor:** Alumnos directos · Grupos · **Cuotas pendientes** (`pendientes/total` del mes) · **Asistencia** ("Clases sin asistencia cargada" en rojo si hay pendientes; "Asistencia al día" en verde si no).
   - **Maestro:** Alquileres vencidos de su rama · Mesas abiertas · **Recaudación de mesas** abiertas.
 - **C. Acciones rápidas** (`BotonAccion`): Instructor → Tomar asistencia, Registrar cuota, Alta de alumno. Maestro → Nueva mesa, Auditoría.
 - **D. Solicitudes de linaje:** se conserva la sección tal cual (con aceptar/rechazar); al aceptar se recarga el resumen.
@@ -36,7 +37,7 @@ El Inicio era **identidad + avisos condicionales + solicitudes + cerrar sesión*
 
 ### 2. Cálculos (todos sobre datos existentes) `[x]`
 - **Cuotas:** `listarCuotasPorPeriodo(mesActual())` → conteo `pagado` vs `pendiente`. Tarjeta en tono **alerta** si hay pendientes.
-- **Clases sin asistencia (acotado):** se consulta `listarClases()` y se filtra **en el cliente** a los **últimos 7 días** (la acción **no filtra por fecha**). Sobre ese subconjunto se leen las asistencias **en paralelo** (`Promise.all`), **sin consultas anidadas**, y se muestra **solo el conteo numérico**. Si es 0, queda neutro.
+- **Clases sin asistencia (acotado):** se consulta `listarClases()` y se filtra **en el cliente** a los **últimos 7 días** (la acción **no filtra por fecha**). Sobre ese subconjunto se leen las asistencias **en paralelo** (`Promise.all`), **sin consultas anidadas**. Si hay ≥ 1 sin cargar, la tarjeta va en **alerta** (rojo) con el número y el copy *"Clases sin asistencia cargada"*; si es 0, muestra **"Asistencia al día"** con el check `✓` en tono **ok** (verde).
 - **Grupos / alumnos:** `listarGrupos()` y `listarAlumnosDirectos()` → conteo.
 - **Locaciones vencidas (Maestro):** `listarLocacionesAuditadas()` → cuenta `estado_pago === 'vencida'` (la RLS ya limita a su rama).
 - **Mesas abiertas y recaudación (Maestro):** `listarMesasExamen()` filtra las abiertas y luego **`listarPostulacionesMesa(id)` por cada mesa abierta** para sumar los derechos de examen. La RLS `postulaciones_examen_select_maestro` ya permite al maestro examinador leer todas las postulaciones de su mesa, conforme al **SRS §3.7**.
@@ -55,7 +56,7 @@ El Inicio era **identidad + avisos condicionales + solicitudes + cerrar sesión*
 - [x] El Inicio muestra **resumen**, **acciones rápidas** y **solicitudes**; ya no queda vacío con linaje confirmado.
 - [x] Las tarjetas reflejan **datos reales** y navegan al listado correspondiente.
 - [x] Las métricas se **actualizan al volver** a la pantalla (`useFocusEffect`).
-- [x] "Clases sin asistencia" muestra **solo el conteo** de los **últimos 7 días**, sin listar ni hacer consultas anidadas.
+- [x] La **Asistencia** avisa **solo** cuando hay clases recientes sin cargar (rojo); si está al día muestra **"Asistencia al día"** en verde. El rótulo de grupos es **"Grupos"** (sin "activos").
 - [x] La **recaudación** del Maestro se calcula con `listarPostulacionesMesa(id)` por mesa abierta, conforme al **SRS §3.7**.
 - [x] Queda documentada la **deuda técnica** del RPC agregado si crecen las mesas simultáneas.
 - [x] Si una métrica falla, **el resto del panel sigue funcionando** (carga por bloques independientes).
@@ -66,7 +67,7 @@ El Inicio era **identidad + avisos condicionales + solicitudes + cerrar sesión*
 - [x] Lint: el Inicio dejó de reportar el error `set-state-in-effect` (errores del proyecto: 3 → 2).
 
 ### Componentes nuevos
-- `mobile/src/components/TarjetaMetrica.tsx` — tarjeta de métrica navegable (tono neutro/alerta).
+- `mobile/src/components/TarjetaMetrica.tsx` — tarjeta de métrica navegable (tono neutro/alerta/ok).
 - `mobile/src/components/BotonAccion.tsx` — botón de acción rápida.
 
 ---

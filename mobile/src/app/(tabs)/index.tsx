@@ -6,6 +6,7 @@ import { aIsoLocal, formatearMonto, formatearPeriodo, mesActual, type SolicitudL
 import { GRADOS_DAN, etiquetaGrado, type Grado } from '@/constants/grados';
 import { supabase } from '@/lib/supabase';
 import { BotonAccion } from '@/components/BotonAccion';
+import { PantallaSegura } from '@/components/PantallaSegura';
 import { TarjetaMetrica } from '@/components/TarjetaMetrica';
 
 // Días hacia atrás que se consideran para "clases sin asistencia tomada".
@@ -266,7 +267,8 @@ export default function HomeScreen() {
     sinCargar != null && sinCargar > 0 ? 'alerta' : sinCargar === 0 ? 'ok' : 'neutro';
 
   return (
-    <ScrollView style={styles.pantalla} contentContainerStyle={styles.contenido}>
+    <PantallaSegura>
+      <ScrollView style={styles.pantalla} contentContainerStyle={styles.contenido}>
       <Text style={styles.saludo}>Hola, {nombre}</Text>
       <Text style={styles.subtitulo}>Panel de gestión</Text>
 
@@ -484,7 +486,8 @@ export default function HomeScreen() {
       <Pressable onPress={cerrarSesion} style={styles.cerrarSesion} accessibilityRole="button">
         <Text style={styles.cerrarSesionTexto}>Cerrar sesión</Text>
       </Pressable>
-    </ScrollView>
+      </ScrollView>
+    </PantallaSegura>
   );
 }
 

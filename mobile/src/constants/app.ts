@@ -1,4 +1,4 @@
 export const appConfig = {
-  nombre: 'Taekwondo ITF',
+  nombre: 'CHS ALFA',
   esquema: 'taekwondo',
 } as const;

@@ -1,17 +1,22 @@
 {
   "expo": {
-    "name": "Taekwondo ITF",
+    "name": "CHS ALFA",
     "slug": "taekwondo-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "ar.taekwondoitf.app"
     },
     "android": {
+      "package": "ar.taekwondoitf.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0d0d0d",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -29,18 +34,37 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "backgroundColor": "#1a1a1a",
+          "imageWidth": 220
+        }
+      ],
       "expo-status-bar",
+      "expo-system-ui",
       "expo-secure-store",
       [
         "expo-image-picker",
         {
-          "photosPermission": "Taekwondo ITF necesita acceso a tus fotos para adjuntar comprobantes de pago.",
-          "cameraPermission": "Taekwondo ITF necesita acceso a tu cámara para fotografiar comprobantes de pago.",
+          "photosPermission": "CHS ALFA necesita acceso a tus fotos para adjuntar comprobantes de pago.",
+          "cameraPermission": "CHS ALFA necesita acceso a tu cámara para fotografiar comprobantes de pago.",
           "microphonePermission": false
         }
       ],
       "expo-document-picker",
       "@react-native-community/datetimepicker"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "a8f37a04-4091-46fe-a29a-20f719216598"
+      }
+    },
+    "owner": "jhonatancalle",
+    "updates": {
+      "url": "https://u.expo.dev/a8f37a04-4091-46fe-a29a-20f719216598"
+    }
   }
 }

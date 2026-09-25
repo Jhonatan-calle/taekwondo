@@ -3,6 +3,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { CampoTexto } from '@/components/CampoTexto';
+import { PantallaSegura } from '@/components/PantallaSegura';
 import { useAuthGlobal } from '@/contextos/AuthGlobal';
 import { useErrorGlobal } from '@/contextos/ErrorGlobal';
 import { GRADOS_DAN, etiquetaGrado, type Grado } from '@/constants/grados';
@@ -223,7 +224,8 @@ export default function OnboardingScreen() {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <PantallaSegura>
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
         style={styles.pantalla}
         contentContainerStyle={styles.contenido}
@@ -445,8 +447,9 @@ export default function OnboardingScreen() {
         >
           <Text style={styles.botonTexto}>{enviando ? 'Guardando…' : 'Guardar perfil'}</Text>
         </Pressable>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </PantallaSegura>
   );
 }
 

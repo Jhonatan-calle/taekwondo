@@ -54,7 +54,7 @@ export default function IniciarSesionScreen() {
         contentContainerStyle={styles.contenido}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.titulo}>Taekwondo ITF</Text>
+        <Text style={styles.titulo}>CHS ALFA</Text>
         <Text style={styles.subtitulo}>Iniciá sesión para continuar.</Text>
 
         <CampoTexto

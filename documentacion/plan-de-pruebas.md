@@ -10,7 +10,7 @@
 > Los **pendientes puntuales** (bloqueos, fechas, follow-ups) viven en `pendientes-pruebas.md`.
 
 ## Metadatos
-- **Versión:** 1.43
+- **Versión:** 1.44
 - **Estado:** Vigente
 - **Fecha:** 2026-09-25
 - **Cobertura:** 166 casos en 19 módulos (46 marcados Smoke)
@@ -62,6 +62,7 @@
 | 1.41 | 2026-09-25 | **Marca de la app (ícono y splash):** nuevo módulo **`TC-APP`** (4 casos: splash de marca, transición sin parpadeo, ícono de launcher e ícono adaptativo/temático Android 13+). Nota: requieren **APK de `preview`** (Expo Go no muestra ícono/splash propios). Referencia: `planes/mobile-build-apk-eas.md` (v1.1). |
 | 1.42 | 2026-09-25 | **Nombre visible `CHS ALFA`:** `TC-APP-03` ahora también verifica el **label del launcher**. Referencia: `planes/mobile-build-apk-eas.md` (v1.2). |
 | 1.43 | 2026-09-25 | **OTA testeo → producción:** `runtimeVersion` `fingerprint`, canal `preview` (testeo) y `production` (usuarios reales), EAS Environment Variables y perfil `production-apk`; nuevos `TC-APP-05` (update en canal de testeo) y `TC-APP-06` (promoción a producción). Referencia: `planes/mobile-eas-fingerprint-canal-testeo.md`. |
+| 1.44 | 2026-09-25 | **Splash propio con el póster del cliente:** `TC-APP-01`/`TC-APP-02` actualizados — el arranque muestra el **póster a pantalla completa** (`PantallaArranque` + `assets/splash-poster.png`) en vez del splash nativo (que en Android 12+ encajona el ícono en un círculo). Es cambio **solo JS** → puede ir por OTA. |
 
 ---
 
@@ -125,15 +126,15 @@ Nico Saez                [MAESTRO] dan_7  (sin login)   ← raíz
 - **Rol:** cualquiera (no requiere sesión)
 - **Precondición:** APK de `preview` instalada (no Expo Go); app **cerrada por completo** (no en segundo plano)
 - **Pasos:** abrir la app desde el launcher
-- **Esperado:** aparece el splash **oscuro (`#1a1a1a`) con el emblema circular dorado** centrado; se mantiene mientras se resuelve la sesión/perfil y luego da paso a la app; **no** se ve el splash genérico de Expo
-- **Referencia:** `planes/mobile-build-apk-eas.md`; `app.json` (plugin `expo-splash-screen`)
+- **Esperado:** se ve el **póster del cliente a pantalla completa** (emblema + fondo texturado + “CHS ALFA”, `assets/splash-poster.png`) mientras se resuelve la sesión/perfil, y luego entra la app. El splash **nativo** (oscuro, ícono en círculo) sólo aparece un instante al inicio; el póster lo reemplaza al montar el JS. **No** se ve el splash de Expo
+- **Referencia:** `src/components/PantallaArranque.tsx`, `src/app/_layout.tsx`
 
 #### TC-APP-02 — Transición splash → app sin parpadeo · **Smoke**
 - **Rol:** usuario con y sin sesión
 - **Precondición:** APK de `preview`; probar con **sesión guardada** y **sin sesión** (además de con red lenta)
-- **Pasos:** abrir la app y observar el paso del splash a la primera pantalla (Inicio, Onboarding o Login)
-- **Esperado:** **no** aparece una franja/pantalla blanca intermedia; el splash permanece hasta que hay contenido para mostrar y recién ahí se oculta (fade en iOS)
-- **Referencia:** `src/app/_layout.tsx` (`SplashScreen.preventAutoHideAsync()` / `hideAsync()`)
+- **Pasos:** abrir la app y observar el paso del póster a la primera pantalla (Inicio, Onboarding o Login)
+- **Esperado:** el póster **cubre toda la pantalla sin franjas blancas** y sin recorte del arte; los íconos de la barra de estado van **claros** durante el splash y oscuros en la app; no hay salto brusco hacia la primera pantalla
+- **Referencia:** `src/components/PantallaArranque.tsx`, `src/app/_layout.tsx` (`SplashScreen.preventAutoHideAsync()` / `hideAsync()`)
 
 #### TC-APP-03 — Ícono y nombre de la app en el launcher
 - **Rol:** —

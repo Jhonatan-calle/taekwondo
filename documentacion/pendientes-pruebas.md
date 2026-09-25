@@ -362,10 +362,10 @@
 
 ### 31. Ícono, splash y nombre de marca (verificar en APK de `preview`)
 - **Fecha de registro:** 2026-09-25
-- **Referencia:** `planes/mobile-build-apk-eas.md` (v1.2); `plan-de-pruebas.md` → `TC-APP-01`…`TC-APP-04`.
-- **Qué cambió:** plugin **`expo-splash-screen`** (splash oscuro `#1a1a1a` + emblema circular), ícono adaptativo Android regenerado con la marca, `_layout.tsx` que mantiene el splash hasta resolver sesión/perfil (sin parpadeo blanco) y **nombre visible `CHS ALFA`** (launcher, login y permisos).
+- **Referencia:** `planes/mobile-build-apk-eas.md` (v1.3); `plan-de-pruebas.md` → `TC-APP-01`…`TC-APP-04`.
+- **Qué cambió:** ícono adaptativo Android regenerado con la marca, **nombre visible `CHS ALFA`** (launcher, login y permisos) y **splash propio**: al montar el JS se oculta el splash nativo (que en Android 12+ encajona el ícono en un círculo) y se muestra el **póster del cliente a pantalla completa** (`src/components/PantallaArranque.tsx` + `assets/splash-poster.png`). El splash nativo queda con el emblema para el instante previo.
 - **Bloqueo:** **Expo Go no muestra** el ícono/splash/nombre propios (muestra los de Expo Go). Requiere **compilar la APK** (`npx eas-cli build -p android --profile preview`) e instalar.
-- **Verificar:** splash de marca al abrir, transición sin franja blanca, ícono en el launcher, **label `CHS ALFA`** bajo el ícono e ícono adaptativo/temático (Android 13+).
+- **Verificar:** póster a pantalla completa al abrir, transición sin franja blanca, ícono en el launcher, **label `CHS ALFA`** bajo el ícono e ícono adaptativo/temático (Android 13+).
 
 ---
 

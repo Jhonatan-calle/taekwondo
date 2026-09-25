@@ -26,6 +26,22 @@
 - Realtime (Supabase) únicamente si un flujo lo requiere.
 - No se usa Next.js, Tailwind CSS ni Vercel (congelados con `web/`).
 
+## Build y actualizaciones (EAS)
+- **Canales:** `preview` = APK de **testeo (exclusiva del autor)**; `production` = apps de **usuarios reales**.
+- **Generar build** (solo cuando cambie algo **nativo**):
+  - Testeo: `cd mobile && npx eas-cli build -p android --profile preview`
+  - Usuarios reales (APK interna): `cd mobile && npx eas-cli build -p android --profile production-apk`
+  - Play Store (AAB, futuro): `cd mobile && npx eas-cli build -p android --profile production`
+- **Subir actualización** (OTA, solo JS/assets):
+  - Testeo: `cd mobile && npx eas-cli update --channel preview --environment preview -m "descripción"`
+  - Promover lo ya probado a usuarios reales: `cd mobile && npx eas-cli update:republish --channel preview --destination-channel production -p android -m "descripción"`
+- **Reglas:**
+  - El OTA **no** aplica a cambios nativos (dependencia nativa, permisos, ícono/splash/nombre, plugin, config de `app.json`): eso requiere **recompilar**.
+  - `runtimeVersion: fingerprint` → el runtime se calcula solo (hash de la capa nativa). Con `appVersionSource: remote` **no** hay que tocar `version` para las OTA.
+  - Las variables `EXPO_PUBLIC_*` viven en **EAS Environment Variables** (`preview`/`production`); `mobile/.env` está gitignored y **no** se sube al build.
+  - Los builds de `preview` y `production-apk` deben salir del **mismo commit** (mismo runtime) para que las OTA apliquen a ambos.
+- **Detalle operativo:** `documentacion/planes/mobile-build-apk-eas.md`.
+
 ## Estructura del repo
 - `supabase/` → **migraciones canónicas** (`supabase/migrations/`), `config.toml`, `.temp/` (gitignored).
 - `web/` → **CONGELADA**. No modificar ni mantener.

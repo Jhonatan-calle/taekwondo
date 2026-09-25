@@ -10,10 +10,10 @@
 > Los **pendientes puntuales** (bloqueos, fechas, follow-ups) viven en `pendientes-pruebas.md`.
 
 ## Metadatos
-- **Versión:** 1.39
+- **Versión:** 1.43
 - **Estado:** Vigente
-- **Fecha:** 2026-09-24
-- **Cobertura:** 160 casos en 18 módulos (44 marcados Smoke)
+- **Fecha:** 2026-09-25
+- **Cobertura:** 166 casos en 19 módulos (46 marcados Smoke)
 
 ## Historial de revisiones
 | Versión | Fecha | Cambios |
@@ -58,6 +58,10 @@
 | 1.37 | 2026-09-24 | Prueba manual: `TC-POS-01`…`TC-POS-05` (lista de mesas del superior, candidatos con grado aspirado, postular con derecho, duplicado y grado máximo) marcados ✅ verificados. |
 | 1.38 | 2026-09-24 | `TC-POS-06` (mesa cerrada) actualizado al comportamiento real (desaparece del listado; el aviso de "cerrada" queda solo accesible por deep link) y marcado ✅ verificado; se registra la mejora futura en `pendientes-pruebas.md`. |
 | 1.39 | 2026-09-24 | Prueba manual: **módulos Postulación y Planilla/evaluación completos.** `TC-POS-07`…`TC-POS-10` y `TC-EVA-01`, `TC-EVA-03`…`TC-EVA-12` marcados ✅ verificados. |
+| 1.40 | 2026-09-24 | **Reset total de la BD + escenario de demo "Ale Criado":** se reescribe la sección **§2 Usuarios y datos de prueba** (Nico → Ale → Andres/Teresita, 3 logins) y se quitan las referencias a cuentas viejas en `TC-AUD-03`, `TC-MES-12` y `TC-RLS-01`. Referencia: `planes/db-seed-demo-ale-criado.md`. |
+| 1.41 | 2026-09-25 | **Marca de la app (ícono y splash):** nuevo módulo **`TC-APP`** (4 casos: splash de marca, transición sin parpadeo, ícono de launcher e ícono adaptativo/temático Android 13+). Nota: requieren **APK de `preview`** (Expo Go no muestra ícono/splash propios). Referencia: `planes/mobile-build-apk-eas.md` (v1.1). |
+| 1.42 | 2026-09-25 | **Nombre visible `CHS ALFA`:** `TC-APP-03` ahora también verifica el **label del launcher**. Referencia: `planes/mobile-build-apk-eas.md` (v1.2). |
+| 1.43 | 2026-09-25 | **OTA testeo → producción:** `runtimeVersion` `fingerprint`, canal `preview` (testeo) y `production` (usuarios reales), EAS Environment Variables y perfil `production-apk`; nuevos `TC-APP-05` (update en canal de testeo) y `TC-APP-06` (promoción a producción). Referencia: `planes/mobile-eas-fingerprint-canal-testeo.md`. |
 
 ---
 
@@ -73,47 +77,91 @@
 
 ## 2. Usuarios y datos de prueba
 
-Escenario creado por el seed (`planes/db-seed-auditoria.md`).
+Escenario **reiniciado** para la demo de **Ale Criado** (`planes/db-seed-demo-ale-criado.md`).
 
-| Cuenta                           | Contraseña                       | Rol                           | Uso                                     |
-| -------------------------------- | -------------------------------- | ----------------------------- | --------------------------------------- |
-| `jhonatancallegaleano@gmail.com` | *(la del dueño; no se versiona)* | **Maestro** (raíz del árbol)  | Mesas, auditoría, evaluación            |
-| `jhona@taekwondo.test`           | `Seed123456!`                    | **Profesor** (nivel 1)        | Gestión diaria, cuotas, postulación     |
-| `sensei@taekwondo.test`          | `Seed123456!`                    | **Profesor** (nivel 2, nieto) | Probar **recursividad** de la auditoría |
-| `ajeno@taekwondo.test`           | `Seed123456!`                    | **Profesor ajeno** (P3)       | Casos de aislamiento horizontal         |
-| `realtime1@taekwondo.test`       | `Seed123456!`                    | **Solicitante de linaje**     | Realtime del linaje (creada a mano en la app) |
-| `realtime2@taekwondo.test`       | `Seed123456!`                    | **Solicitante rechazado**     | Rechazo de linaje + onboarding (creada a mano) |
+```
+Nico Saez                [MAESTRO] dan_7  (sin login)   ← raíz
+└── Ale criado           [MAESTRO] dan_5  alecriado@taekwondo.test
+    ├── Lucas Pérez      [alumno]  blanco
+    ├── Sofía Gómez      [alumno]  amarillo
+    ├── Mateo Fernández  [alumno]  verde
+    ├── Teresita         [MAESTRO] dan_5  (sin login)
+    └── Andres           [MAESTRO] dan_4  andres@taekwondo.test
+        ├── Ian          [PROFESOR] dan_2  (sin login)
+        ├── mechas       [PROFESOR] dan_2  (sin login)
+        ├── Martí        [PROFESOR] dan_1  marti@taekwondo.test
+        ├── Valentina Ruiz [alumno] azul
+        ├── Benjamín Sosa  [alumno] rojo
+        └── Camila Díaz    [alumno] dan_1
+```
 
-> **Credenciales del seed:** `jhona@` y `sensei@` comparten la contraseña `Seed123456!` y se crean por **Admin API**. La cuenta del Maestro es personal del dueño (no está en el repositorio).
->
-> **`realtime1@taekwondo.test`** se creó **manualmente en la app** (2026-09-23) para probar el Realtime del
-> linaje: quedó como solicitante pendiente de `jhona@` (declaró Dan I y eligió a Profesor Jhona). No la
-> crea el seed; si se limpia la base, hay que registrarla de nuevo.
->
-> **`realtime2@taekwondo.test`** se creó **manualmente en la app** (2026-09-23) para probar el **rechazo**
-> del linaje: su solicitud fue rechazada por `jhona@` y quedó volviendo al onboarding. Se conserva para
-> reutilizarla en pruebas de onboarding/validaciones.
+| Cuenta | Contraseña | Rol | Uso |
+| --------------------------- | ------------ | -------------------------- | ----------------------------------- |
+| `alecriado@taekwondo.test`  | `Seed123456!` | **Maestro** (nivel 1)      | Demo principal, auditoría, mesas    |
+| `andres@taekwondo.test`     | `Seed123456!` | **Maestro** (nivel 2)      | Subordinado directo de Ale          |
+| `marti@taekwondo.test`      | `Seed123456!` | **Profesor** (nivel 3)     | Gestión diaria / postulación        |
 
-**Datos del seed:**
+- **Sin login:** Nico Saez (raíz), Teresita (Maestro), Ian y mechas (Profesores) y los 6 alumnos.
+- Las 3 cuentas con login se crean por **Admin API**; el resto son perfiles por SQL.
 
-| Locación | Dueño | Estado de pago |
-|---|---|---|
-| Banda Norte | Jhonatan | Al día (2026-09) |
-| Seed Dojang Jhona A | Profesor Jhona | Vencida (2026-07) |
-| Seed Dojang Jhona B | Profesor Jhona | Sin pagos |
-| Seed Dojang Sensei | Sensei Seed | Vencida (2026-08) |
+> **Datos:** al ser un **reset total**, el árbol es **solo perfiles**: no hay locaciones, grupos,
+> clases, mesas, cuotas ni pagos. Si la demo necesita infra, se agrega aparte.
 
-Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Niños` y `Adultos Noche` del Maestro, `Seed Grupo Jhona`, `Seed Grupo Sensei`).
-
-> **Nota:** el seed es **aditivo e idempotente**; se puede re-ejecutar con
-> `npx supabase db query --linked -f supabase/seed-auditoria.sql`.
-> Las cuentas `jhona@` y `sensei@` se crean por **Admin API** (no por SQL).
-> Para dejar la base determinista se corre una **limpieza** que conserva
-> `jhonatancallegaleano@gmail.com` y `errores_runtime` (ver `planes/db-fix-mapeo-cuentas-seed.md`).
+> **Reset reproducible (2026-09-24):** `supabase/purga-total.sql` (borra todas las tablas `public` +
+> `auth.users`) y `supabase/seed-demo-ale-criado.sql` (arma el árbol). Los planes
+> `db-seed-auditoria.md` y `db-fix-mapeo-cuentas-seed.md` quedaron **obsoletos**.
 
 ---
 
 ## 3. Casos por módulo
+
+### TC-APP — Arranque, ícono y splash
+
+> **Solo aplica a builds nativas (APK de `preview` o producción).** En **Expo Go** el ícono y el
+> splash que se ven son los de Expo Go, así que no se pueden verificar ahí. Requiere recompilar la
+> APK (`npx eas-cli build -p android --profile preview`) e instalar.
+
+#### TC-APP-01 — Splash de marca al abrir la app · **Smoke**
+- **Rol:** cualquiera (no requiere sesión)
+- **Precondición:** APK de `preview` instalada (no Expo Go); app **cerrada por completo** (no en segundo plano)
+- **Pasos:** abrir la app desde el launcher
+- **Esperado:** aparece el splash **oscuro (`#1a1a1a`) con el emblema circular dorado** centrado; se mantiene mientras se resuelve la sesión/perfil y luego da paso a la app; **no** se ve el splash genérico de Expo
+- **Referencia:** `planes/mobile-build-apk-eas.md`; `app.json` (plugin `expo-splash-screen`)
+
+#### TC-APP-02 — Transición splash → app sin parpadeo · **Smoke**
+- **Rol:** usuario con y sin sesión
+- **Precondición:** APK de `preview`; probar con **sesión guardada** y **sin sesión** (además de con red lenta)
+- **Pasos:** abrir la app y observar el paso del splash a la primera pantalla (Inicio, Onboarding o Login)
+- **Esperado:** **no** aparece una franja/pantalla blanca intermedia; el splash permanece hasta que hay contenido para mostrar y recién ahí se oculta (fade en iOS)
+- **Referencia:** `src/app/_layout.tsx` (`SplashScreen.preventAutoHideAsync()` / `hideAsync()`)
+
+#### TC-APP-03 — Ícono y nombre de la app en el launcher
+- **Rol:** —
+- **Precondición:** APK de `preview` instalada
+- **Pasos:** mirar la pantalla de inicio / cajón de apps (Android e iOS)
+- **Esperado:** se ve el **emblema dorado "A CHS"** sobre fondo oscuro con el label **"CHS ALFA"**; **no** el ícono ni el nombre por defecto de Expo
+- **Referencia:** `assets/icon.png`, `assets/android-icon-foreground.png`, `assets/android-icon-background.png`; `app.json` (`expo.name`)
+
+#### TC-APP-04 — Ícono adaptativo y temático (Android 13+)
+- **Rol:** —
+- **Precondición:** APK de `preview`; Android 13 o superior
+- **Pasos:** aplicar una máscara/forma del launcher (círculo, squircle) y activar "íconos temáticos"
+- **Esperado:** el ícono se adapta a la máscara sin recortes raros (el emblema queda dentro de la zona segura); el ícono temático usa la **silueta** (`monochromeImage`)
+- **Referencia:** `assets/android-icon-monochrome.png`
+
+#### TC-APP-05 — Update OTA en el canal de testeo
+- **Rol:** —
+- **Precondición:** APK de `preview` instalada (canal `preview`); un cambio **no nativo** en el código
+- **Pasos:** publicar `eas update --channel preview --environment preview -m "prueba"` → abrir/cerrar y reabrir la app en el teléfono
+- **Esperado:** el cambio se aplica en la APK de **testeo** (al reiniciar), **sin recompilar**; las APK de `production` **no** lo reciben
+- **Referencia:** `planes/mobile-build-apk-eas.md` (v1.3)
+
+#### TC-APP-06 — Promoción de testeo a producción
+- **Rol:** —
+- **Precondición:** TC-APP-05 verificado; APK de `production-apk` instalada (canal `production`)
+- **Pasos:** `eas update:republish --channel preview --destination-channel production -p android -m "prueba"` → abrir/cerrar y reabrir la APK de usuarios reales
+- **Esperado:** el **mismo** update ya probado llega a la APK de usuarios reales (sin recompilar y sin republicar el bundle); la versión de testeo coincide con la de producción
+- **Referencia:** `planes/mobile-build-apk-eas.md` (v1.3)
 
 ### TC-AUTH — Acceso (registro, login, recuperación, guards)
 
@@ -593,7 +641,7 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 
 #### TC-AUD-03 — Recursividad · **Smoke** · ✅ verificado (2026-09-24)
 - **Rol:** Maestro (nivel 0)
-- **Esperado:** ve las locaciones de **Sensei Seed (nivel 2)**, no solo las de su subordinado directo
+- **Esperado:** ve las locaciones de un **descendiente indirecto (nivel 2)**, no solo las de su subordinado directo
 - **Referencia:** `planes/mobile-auditoria-cascada.md`
 
 #### TC-AUD-04 — Filtro por rama · ✅ verificado (2026-09-24)
@@ -656,10 +704,10 @@ Además: 6 alumnos de Sensei Seed (`Alumno Seed *`) y grupos con locación (`Ni�
 - **Referencia:** `planes/mobile-date-picker-campos-fecha.md`
 
 #### TC-MES-12 — Visibilidad solo para directos · ✅ verificado (2026-09-24)
-- **Pasos:** iniciar sesión con un **descendiente indirecto** (ej. `sensei@taekwondo.test`, hijo de
-  Jhona) y listar mesas; y con un **superior** ver las mesas de sus subordinados
+- **Pasos:** iniciar sesión con un **descendiente indirecto** (nieto) y listar mesas; y con un **superior**
+  ver las mesas de sus subordinados
 - **Esperado:** el nieto ve **0 mesas** (no ve las del abuelo); el superior **no** ve las mesas de sus
-  subordinados (Jhonatan no ve la de `maestro2@`). El dueño ve las suyas y sus **subordinados directos**
+  subordinados (p. ej. Ale no ve las de Andres). El dueño ve las suyas y sus **subordinados directos**
   ven las del dueño
 - **Referencia:** `planes/mobile-mesas-visibilidad-jerarquia.md`
 
@@ -812,7 +860,7 @@ Pruebas de seguridad que cruzan varios módulos. Se ejecutan con las **tres cuen
 | `metricas_dashboard` | ✅ (rama) | ❌ | ❌ |
 
 #### TC-RLS-01 — Recursividad de la auditoría · **Smoke**
-- **Pasos:** con Jhonatan (nivel 0), verificar que ve las locaciones de **Sensei Seed (nivel 2)**
+- **Pasos:** con el **Maestro raíz**, verificar que ve las locaciones de un **descendiente indirecto (nivel 2)**
 - **Esperado:** sí las ve (el helper `es_subordinado_de` es recursivo)
 
 #### TC-RLS-02 — Aislamiento horizontal
@@ -845,31 +893,35 @@ Pruebas de seguridad que cruzan varios módulos. Se ejecutan con las **tres cuen
 
 Subconjunto para correr antes de dar por cerrado cualquier cambio. Si alguno falla, **detener**.
 
-1. `TC-AUTH-03` Inicio de sesión correcto
-2. `TC-AUTH-02` Email duplicado
-3. `TC-AUTH-09` Mostrar/ocultar contraseña
-4. `TC-ONB-01` Onboarding obligatorio
-5. `TC-LIN-01` Solicitud de linaje
-6. `TC-NAV-01` Tabs por facetas
-7. `TC-INI-01` Panel de Inicio con datos
-8. `TC-INI-04` Refresco sin reiniciar
-9. `TC-ALU-01` Directorio por RLS
-10. `TC-ALU-02` Alta de alumno
-11. `TC-GRU-06` Un alumno = un grupo
-12. `TC-LOC-05` Bloqueo de borrado de locación
-13. `TC-CLA-01` Crear clase
-14. `TC-ASI-04` Guardado atómico de asistencia
-15. `TC-CUO-02` Bloqueo de cuota duplicada
-16. `TC-ALQ-04` Enlace firmado del comprobante
-17. `TC-AUD-01` Auditoría de la rama
-18. `TC-MES-01` Crear mesa (abierta)
-19. `TC-POS-02` Grado aspirado calculado
-20. `TC-POS-08` Recaudación del Maestro
-21. `TC-EVA-03` Aprobar y ascender
-22. `TC-RLS-01` Recursividad de la auditoría
-23. `TC-ERR-01` Fail gracefully
-24. `TC-DASH-01` Dashboard en vista consolidada
-25. `TC-DASH-08` Privacidad y fail gracefully del dashboard
+> `TC-APP-01`/`TC-APP-02` (ícono/splash) solo se verifican en una **APK de `preview`**, no en Expo Go.
+
+1. `TC-APP-01` Splash de marca al abrir la app
+2. `TC-APP-02` Transición splash → app sin parpadeo
+3. `TC-AUTH-03` Inicio de sesión correcto
+4. `TC-AUTH-02` Email duplicado
+5. `TC-AUTH-09` Mostrar/ocultar contraseña
+6. `TC-ONB-01` Onboarding obligatorio
+7. `TC-LIN-01` Solicitud de linaje
+8. `TC-NAV-01` Tabs por facetas
+9. `TC-INI-01` Panel de Inicio con datos
+10. `TC-INI-04` Refresco sin reiniciar
+11. `TC-ALU-01` Directorio por RLS
+12. `TC-ALU-02` Alta de alumno
+13. `TC-GRU-06` Un alumno = un grupo
+14. `TC-LOC-05` Bloqueo de borrado de locación
+15. `TC-CLA-01` Crear clase
+16. `TC-ASI-04` Guardado atómico de asistencia
+17. `TC-CUO-02` Bloqueo de cuota duplicada
+18. `TC-ALQ-04` Enlace firmado del comprobante
+19. `TC-AUD-01` Auditoría de la rama
+20. `TC-MES-01` Crear mesa (abierta)
+21. `TC-POS-02` Grado aspirado calculado
+22. `TC-POS-08` Recaudación del Maestro
+23. `TC-EVA-03` Aprobar y ascender
+24. `TC-RLS-01` Recursividad de la auditoría
+25. `TC-ERR-01` Fail gracefully
+26. `TC-DASH-01` Dashboard en vista consolidada
+27. `TC-DASH-08` Privacidad y fail gracefully del dashboard
 
 ---
 

@@ -1,5 +1,8 @@
 # Plan: Pruebas Integrales de RLS (Árbol de Poder) — Fase 9, ítem 2 — `mobile-pruebas-rls-fase9.md`
 
+> **⚠️ Cuentas de prueba (2026-09-24):** las cuentas P0/P1/P2/P3 del seed **ya no existen** tras el
+> reset total (`planes/db-seed-demo-ale-criado.md`). Remapear al escenario “Ale Criado” antes de correr.
+
 ## Metadatos
 - **Versión:** 1.4
 - **Estado:** Aprobado

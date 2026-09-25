@@ -1,5 +1,9 @@
 # Plan — Fase 8.1: Dashboard de métricas anonimizadas
 
+> **⚠️ Cuentas de prueba (2026-09-24):** el escenario cambió con el **reset total** a “Ale Criado”
+> (`planes/db-seed-demo-ale-criado.md`); usar `alecriado@taekwondo.test` (con rama) en lugar de la
+> cuenta vieja de Jhonatan.
+
 > **Metadatos**
 > - **Versión:** 1.1
 > - **Estado:** Aprobado

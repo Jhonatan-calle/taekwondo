@@ -1,5 +1,8 @@
 # Plan: Refresco del linaje en tiempo real — `mobile-refresco-linaje-tiempo-real.md`
 
+> **⚠️ Cuentas de prueba (2026-09-24):** las cuentas que nombra (`jhona@`, `realtime1/2@`, `ajeno@`) ya
+> no existen tras el reset total (`planes/db-seed-demo-ale-criado.md`). Readaptar las verificaciones.
+
 ## Metadatos
 - **Versión:** 1.1
 - **Estado:** Aprobado

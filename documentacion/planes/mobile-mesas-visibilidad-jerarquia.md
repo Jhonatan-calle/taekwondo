@@ -1,5 +1,9 @@
 # Plan: visibilidad de mesas de examen por jerarquía (subordinados directos)
 
+> **⚠️ Cuentas de prueba (2026-09-24):** con el **reset total** a “Ale Criado”
+> (`planes/db-seed-demo-ale-criado.md`), las cuentas viejas (`jhona@`, `sensei@`, `maestro2@`,
+> Jhonatan) ya no existen. Readaptar las verificaciones que las nombran (hoy: Nico → Ale → Andres).
+
 ## Metadatos
 
 | Campo | Valor |

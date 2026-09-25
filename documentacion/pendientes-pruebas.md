@@ -254,7 +254,8 @@
 - **Fecha de registro:** 2026-09-24
 - **Contexto:** primera muestra a un **Maestro de la escuela**. Se prioriza el **rol Maestro** y el
   guion de demo por sobre cubrir todo el catálogo. Guion completo: `guion-demo.md` (raíz, **gitignored**).
-- **Cuentas:** **Maestro** `jhonatancallegaleano@gmail.com` (dueño) y **Profesor** `jhona@taekwondo.test` / `Seed123456!`.
+- **Cuentas (escenario nuevo 2026-09-24):** **Maestro** `alecriado@taekwondo.test`, **Maestro** `andres@taekwondo.test`, **Profesor** `marti@taekwondo.test` (todas `Seed123456!`). Ver `planes/db-seed-demo-ale-criado.md`.
+- **⚠️ Guion obsoleto:** `guion-demo.md` (gitignored) todavía referencia las cuentas viejas (Jhonatan/`jhona@`).
 
 **Bloques a probar (checklist):**
 - [x] Inicio Maestro “Tu rama” (`TC-INI-05`) — ✅ 2026-09-24
@@ -266,7 +267,7 @@
 - [x] Postulación — mesa cerrada, alumno ajeno, editar cobro/quitar, recaudación y aislamiento (`TC-POS-06…10`) — ✅ 2026-09-24
 - [x] Planilla/evaluación (`TC-EVA-01`…`TC-EVA-12`) — **rol Maestro** — ✅ 2026-09-24
 - [ ] Dashboard de métricas (`TC-DASH-01`) — **rol Maestro**
-- [ ] Datos poblados para la demo: mesa **abierta con postulados**; locación **vencida** (ya hay: Seed Dojang Jhona A); comprobante de un pago (opcional).
+- [ ] Datos poblados para la demo (⚠️ la BD quedó **solo con perfiles**: no hay locaciones, grupos, mesas ni cuotas; agregar si hace falta)
 - [ ] Plan B si falla la red: capturas / video.
 
 **Migraciones:** `objetivo_clase_elementos`, `quitar_preparacion_fisica` y `rama_descendientes` **ya aplicadas** (`db push`).
@@ -306,8 +307,8 @@
   superior→subordinado); postular solo en mesas propias o del superior directo. Toca RLS de
   `mesas_examen` y `postulaciones_examen` (insert) + RPCs `listar_mesas_examen` y `postular_alumno`.
   Migración `mesas_visibilidad_jerarquia` **aplicada** (`db push`).
-- **Verificado:** API (`jhona@` ve las de Jhonatan; `sensei@` 0; `maestro2@` ve las del superior) y
-  **dispositivo** (`TC-MES-08` nuevo escenario y `TC-MES-12`) — ✅ 2026-09-24.
+- **Verificado (escenario anterior, 2026-09-24):** por API (`jhona@` veía las de Jhonatan; `sensei@` 0;
+  `maestro2@` las del superior) y en dispositivo (`TC-MES-08` nuevo escenario y `TC-MES-12`).
 - **Pendiente:** `TC-POS-10` (postular fuera de jerarquía) — se prueba con el módulo Postulación.
 
 ---
@@ -326,10 +327,64 @@
 
 ---
 
+### 28. RESET TOTAL de la BD para la demo (Ale Criado)
+- **Fecha de registro:** 2026-09-24
+- **Referencia:** `planes/db-seed-demo-ale-criado.md`.
+- **Qué se hizo:** purga total (todas las tablas `public` + `auth.users`, incluida la cuenta real
+  Jhonatan) y recreación del árbol de `no-añadir-a-git.txt`: **Nico Saez → Ale criado → Andres/Teresita**,
+  con 3 cuentas de login (`alecriado@`, `andres@`, `marti@` `@taekwondo.test`, contraseña de test) y 6
+  alumnos variados. Seeds: `supabase/purga-total.sql`, `supabase/seed-demo-ale-criado.sql`.
+- **⚠️ Ojo:** las cuentas viejas (`jhonatancallegaleano@`, `jhona@`, `sensei@`, `maestro2@`, etc.) **ya
+  no existen**. El `guion-demo.md`, `supabase/seed-auditoria.sql` y `supabase/aplicar-maestro-prueba.sh`
+  quedaron **obsoletos** (referencian esas cuentas).
+- **App:** cerrar sesión / re-loguear (los tokens viejos quedaron inválidos).
+
+---
+
+### 29. Barra de estado + safe area superior (verificar en dispositivo)
+- **Fecha de registro:** 2026-09-24
+- **Referencia:** `planes/mobile-status-bar-tema.md`.
+- **Qué cambió:** `expo-system-ui` + `SafeAreaProvider` en el root y `PantallaSegura` (inset superior)
+  en Inicio y onboarding; `<StatusBar style="auto" />` ahora sigue el tema de la app.
+- **Verificar en el celular:** con el equipo en **modo oscuro** los íconos de la barra se ven
+  (oscuros sobre el fondo claro); Inicio/onboarding **no** quedan debajo de la barra.
+
+---
+
+### 30. Build APK con EAS + OTA (próximo)
+- **Fecha de registro:** 2026-09-24 (actualizado 2026-09-25)
+- **Referencia:** `planes/mobile-build-apk-eas.md` (v1.3).
+- **Config lista:** `name: "CHS ALFA"`, `applicationId ar.taekwondoitf.app`, `expo-updates` + `runtimeVersion **fingerprint**`, `eas.json` con `preview` (APK, canal `preview`, testeo), `production-apk` (APK, canal `production`, usuarios reales) y EAS Environment Variables en `preview`/`production`.
+- **Pendiente (requiere login):** `eas build -p android --profile preview` y `eas build -p android --profile production-apk`.
+- **Después:** instalar la APK, verificar barra de estado, ícono/splash/nombre y probar `eas update --channel preview`.
+
+---
+
+### 31. Ícono, splash y nombre de marca (verificar en APK de `preview`)
+- **Fecha de registro:** 2026-09-25
+- **Referencia:** `planes/mobile-build-apk-eas.md` (v1.2); `plan-de-pruebas.md` → `TC-APP-01`…`TC-APP-04`.
+- **Qué cambió:** plugin **`expo-splash-screen`** (splash oscuro `#1a1a1a` + emblema circular), ícono adaptativo Android regenerado con la marca, `_layout.tsx` que mantiene el splash hasta resolver sesión/perfil (sin parpadeo blanco) y **nombre visible `CHS ALFA`** (launcher, login y permisos).
+- **Bloqueo:** **Expo Go no muestra** el ícono/splash/nombre propios (muestra los de Expo Go). Requiere **compilar la APK** (`npx eas-cli build -p android --profile preview`) e instalar.
+- **Verificar:** splash de marca al abrir, transición sin franja blanca, ícono en el launcher, **label `CHS ALFA`** bajo el ícono e ícono adaptativo/temático (Android 13+).
+
+---
+
+### 32. OTA testeo → producción (verificar en APK)
+- **Fecha de registro:** 2026-09-25
+- **Referencia:** `planes/mobile-build-apk-eas.md` (v1.3); `plan-de-pruebas.md` → `TC-APP-05`/`TC-APP-06`.
+- **Qué cambió:** `runtimeVersion` `fingerprint`; canal `preview` (testeo exclusivo) y canal `production` (usuarios reales); variables de EAS para `preview`/`production`; promoción con `eas update:republish`.
+- **Resuelto:** el `.env` no llegaba al build en la nube (estaba gitignored sin `.easignore`); ahora las `EXPO_PUBLIC_*` viven en **EAS Environment Variables**.
+- **Verificar:**
+  1. Con las APK de `preview` y `production-apk` instaladas, publicar `eas update --channel preview` → **solo** llega a la APK de testeo (al reiniciar).
+  2. `eas update:republish --channel preview --destination-channel production -p android` → llega a la APK de usuarios reales.
+  3. Un cambio **nativo** no aplica por OTA sobre el binario viejo (runtime distinto).
+
+---
+
 ## Por dónde vamos (resumen de sesión)
-- **Catálogo:** 160 casos en 18 módulos; **82 verificados** (auth, onboarding, linaje, navegación, inicio, alumnos, grupos, locaciones, clases, asistencia, objetivos, auditoría, mesas, postulación, planilla/evaluación y panel Maestro).
+- **Catálogo:** 164 casos en 19 módulos; **82 verificados** (auth, onboarding, linaje, navegación, inicio, alumnos, grupos, locaciones, clases, asistencia, objetivos, auditoría, mesas, postulación, planilla/evaluación y panel Maestro).
 - **Bloques cerrados:** Auth/login, Onboarding, Linaje (Realtime), Alumnos, Grupos, Locaciones, Clases+Objetivos, Asistencia, Auditoría+Inicio Maestro, Mesas de examen, Postulación y Planilla/evaluación.
-- **Siguiente sesión:** continuar el **guion de demo** (Dashboard de métricas) y, cuando haya tiempo, los `TC` de **RLS/aislamiento** con la cuenta `sensei@`.
+- **Siguiente sesión:** continuar el **guion de demo** (Dashboard de métricas) y, cuando haya tiempo, los `TC` de **RLS/aislamiento** (con una cuenta sin acceso, ej. `marti@` o un perfil sin facetas).
 - **Pendiente técnico:** `db lint` sigue reportando 1 issue **preexistente** de **torneos** (`llave_id` ambiguo en `sincronizar_resultado_en_vivo`) — congelado, no se toca.
 
 ---

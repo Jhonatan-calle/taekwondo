@@ -1,5 +1,8 @@
 # Plan: Confirmación del cinturón al aceptar el linaje (nuevo profesor) — `mobile-linaje-confirmar-grado.md`
 
+> **⚠️ Cuentas de prueba (2026-09-24):** las cuentas que nombra (`jhona@`, `sensei@`, `ajeno@`) ya no
+> existen tras el reset total (`planes/db-seed-demo-ale-criado.md`). Readaptar las verificaciones.
+
 ## Metadatos
 - **Versión:** 1.0
 - **Estado:** Aprobado

@@ -1,5 +1,9 @@
 # Plan: Seed de datos para prueba manual (auditoría en cascada) — `db-seed-auditoria.md`
 
+> **⚠️ OBSOLETO (2026-09-24):** las cuentas y datos de este seed (`jhona@`, `sensei@`, `Seed Dojang *`,
+> `Alumno Seed *`) **ya no existen** tras el reset total (`planes/db-seed-demo-ale-criado.md`).
+> Se conserva como historial y referencia del formato del seed.
+
 ## Metadatos
 - **Versión:** 1.1
 - **Estado:** Aprobado

@@ -10,109 +10,95 @@
 
 ---
 
-## Postulación a examen (rol Profesor)
+## Dashboard de métricas anonimizadas (rol Maestro)
 
 - **Fecha de registro:** 2026-09-24
-- **Rol:** Profesor (tab **Instructor**)
-- **Cuenta:** `jhona@taekwondo.test` / `Seed123456!`
-- **Planes de referencia:** [`planes/mobile-postulacion-examen.md`](./planes/mobile-postulacion-examen.md),
-  [`planes/mobile-postulaciones-acciones-claras.md`](./planes/mobile-postulaciones-acciones-claras.md),
-  [`planes/mobile-mesas-visibilidad-jerarquia.md`](./planes/mobile-mesas-visibilidad-jerarquia.md)
-- **Casos cubiertos:** `TC-POS-01`, `TC-POS-02`, `TC-POS-03`, `TC-POS-04`, `TC-POS-05`, `TC-POS-06`,
-  `TC-POS-07`, `TC-POS-08`, `TC-POS-09`, `TC-POS-10`
+- **Rol:** Maestro (tab **Maestro**)
+- **Cuenta:** `alecriado@taekwondo.test` / `Seed123456!` (Maestro; tiene rama con descendientes)
+- **Plan de referencia:** [`planes/mobile-dashboard-metricas.md`](./planes/mobile-dashboard-metricas.md)
+- **Casos cubiertos:** `TC-DASH-01`…`TC-DASH-08`
 
-> **Visibilidad (jerarquía):** el profesor solo ve las mesas abiertas **de su superior directo** (o
-> propias). `jhona@` es subordinado directo de **Jhonatan**, así que solo aparecen las mesas de
-> Jhonatan. Referencia: [`planes/mobile-mesas-visibilidad-jerarquia.md`](./planes/mobile-mesas-visibilidad-jerarquia.md).
+> **Privacidad:** la pantalla muestra **solo conteos** (género, rango de edad y grado) de la rama
+> descendente; **nunca** nombres ni datos personales. El filtro es por **rama** (consolidada o por
+> instructor directo).
 
 ### Precondiciones
 
 - Celular con **Expo Go** y Metro corriendo en la **misma red** (o túnel).
-- Sesión iniciada con **`jhona@taekwondo.test`**.
-- **Una mesa "Abierta" de Jhonatan** (⚠️ si no hay, abrir una desde la cuenta Maestro: tab Maestro →
-  "Mesas de examen" → "+ Nueva mesa"; `jhona@` **no** ve las mesas de otros dueños).
-- **"Alumno Prueba 1"** es alumno directo de `jhona@` (el de la demo).
+- Sesión con **Ale criado** (`alecriado@taekwondo.test`), que tiene rama con descendientes.
+- (Para `TC-DASH-03`) un **Maestro sin descendientes**: hoy **no hay** cuenta con login así (Teresita es
+  Maestro sin login). Alternativa: usar el **filtro por instructor** de alguien sin gente → muestra
+  *"Este instructor no tiene descendientes."*
 
-#### A. Entrar al módulo
+#### A. `TC-DASH-01` — Vista consolidada (**Smoke**)
 
-1. Iniciá sesión con **`jhona@taekwondo.test`**.
-2. Tocá la pestaña **Instructor**.
-3. Tocá la fila **"Postulación a examen"** (descripción: *"Postular a tus alumnos a las mesas
-   abiertas"*).
+1. Iniciá sesión con **Ale criado** (`alecriado@taekwondo.test`).
+2. Pestaña **Maestro** → tocá **"Estadísticas anonimizadas"**.
+3. Verificá que el chip **"Toda mi rama"** está activo.
+4. Observá las dos tarjetas de resumen: **"Integrantes en la vista"** y **"Grados representados"**.
 
-**✅ Esperado (`TC-POS-01`):** se listan **solo las mesas abiertas de tu superior directo**. Cada fila
-muestra fecha, lugar, **`Mesa de {nombre del dueño}`** y `N postulado(s)`.
+**✅ Esperado:** se ven el **total** de integrantes de la rama y los **3 gráficos** (Género, Rango de
+edad, Grado). El total coincide con `metricas_dashboard` en modo consolidada. **En ningún lado**
+aparecen nombres ni datos personales.
 
-#### B. `TC-POS-02` — Mesa y candidatos
+#### B. `TC-DASH-05` — Distribución por género
 
-1. Tocá la fila de la mesa de Jhonatan (NO de "Maestro Prueba": esa no te la muestra).
-2. En el detalle verificá el encabezado: fecha, lugar y **`Mesa de Jhonatan Calle Galeano`**.
-3. Tocá **"Postular alumnos"**.
+1. En la sección **"Género"** observá la **dona**.
 
-**✅ Esperado:** cada alumno directo muestra `grado actual → grado aspirado` (el inmediato superior).
-Los que ya están postulados aparecen con **"Ya postulado en esta mesa"** (deshabilitados).
+**✅ Esperado:** muestra **Masculino / Femenino / Otro** con conteo y porcentaje; el centro dice
+*"integrantes"*. La suma coincide con los perfiles con género cargado.
 
-#### C. `TC-POS-03` — Postular con derecho de examen
+#### C. `TC-DASH-06` — Distribución por rango de edad
 
-1. (Opcional) En **"Derecho de examen (opcional)"** escribí un monto, ej. `5000`.
-2. Marcá el checkbox de **"Alumno Prueba 1"** (queda resaltada en rojo).
-3. Tocá **"Postular seleccionados"**.
+1. En la sección **"Rango de edad"** observá las barras.
 
-**✅ Esperado:** vuelve al detalle y en **"Tus postulaciones"** aparece *Alumno Prueba 1* con
-`Aspira a {grado}` · `$ 5.000,00` y estado **"Postulado"**.
+**✅ Esperado:** **6 barras**: `0 a 7`, `8 a 11`, `12 a 14`, `15 a 17`, `18 a 30` y
+**Mayores de 30** (el bucket `30+` del RPC, o sea 31+).
 
-#### D. `TC-POS-04` — Duplicado
+#### D. `TC-DASH-07` — Distribución por grado
 
-1. Tocá de nuevo **"Postular alumnos"**.
-2. Verificá que **"Alumno Prueba 1"** aparece **deshabilitado** ("Ya postulado en esta mesa") y no deja
-   volver a marcarlo.
+1. En la sección **"Grado"** observá las barras.
 
-**✅ Esperado:** **no** se puede duplicar; **sin** fila repetida. (Por API, `postular_alumno` devuelve
-*"El alumno ya está postulado en esta mesa."*)
+**✅ Esperado:** barras en el **orden del enum** `grado`, con las **etiquetas de color** ("Blanco",
+"Amarillo punta verde", …, "Dan I"…"Dan IX"); **no** se listan grados sin integrantes.
 
-#### E. `TC-POS-05` — Grado máximo (requiere dato)
+#### E. `TC-DASH-02` — Vista específica por instructor
 
-- **Precondición:** un alumno directo en `dan_9`.
-- **Esperado:** aparece deshabilitado con **"Ya alcanzó el grado máximo"**.
+1. Tocá el chip de un **instructor** (ej. "Andres").
+2. Observá las tarjetas y los gráficos.
 
-#### F. `TC-POS-06` — Mesa cerrada
+**✅ Esperado:** los conteos cambian a los de **solo esa rama**; coincide con
+`metricas_dashboard('especifica', p_instructor)`. El chip queda resaltado.
 
-1. Desde la cuenta **Maestro (Jhonatan)** → Mesas de examen → abrir la mesa → **"Cerrar mesa"** →
-   confirmar.
-2. Volvé a `jhona@` → detalle de la mesa.
+#### F. `TC-DASH-04` — Cambiar filtro refresca sin reiniciar
 
-**✅ Esperado:** el botón **"Postular alumnos"** ya no está; se ve *"Esta mesa está cerrada: ya no se
-pueden hacer postulaciones."* y **no** se pueden editar cobros ni quitar postulaciones.
+1. Alterná entre **"Toda mi rama"** y distintos instructores.
+2. Observá que total y gráficos se actualizan **en el momento**.
 
-#### G. `TC-POS-07` — Alumno ajeno
+**✅ Esperado:** cada cambio refresca los datos sin reiniciar la app.
 
-- **Esperado:** un alumno que **no** es directo de `jhona@` **no** aparece en la lista de candidatos.
+#### G. `TC-DASH-03` — Rama sin descendientes
 
-#### H. `TC-POS-09` — Editar cobro y quitar (mesa abierta)
+1. Como **Ale criado**, tocá un chip de instructor **sin gente** (si lo hubiera), o entrá con un
+   **Maestro sin descendientes** (hoy no hay cuenta con login así).
 
-1. En **"Tus postulaciones"**, tocá **"Editar cobro"** → cambiá el monto → **"Guardar cobro"**.
-2. Tocá **"Quitar"** → confirmar.
+**✅ Esperado:** estado vacío **"No hay integrantes en tu rama descendente."** (o *"Este instructor no
+tiene descendientes."* al filtrar) — sin gráficos ni errores.
 
-**✅ Esperado:** "Editar cobro" actualiza el monto (y la recaudación del Maestro); "Quitar" elimina la
-postulación de la lista.
+#### H. `TC-DASH-08` — Privacidad, autorización y fail gracefully (**Smoke**)
 
-#### I. `TC-POS-08` — Recaudación (rol Maestro)
+1. Confirmá visualmente que **no** se muestran nombres ni datos personales (solo conteos).
+2. (API) Forzar `metricas_dashboard('especifica', p_instructor)` con un instructor **fuera de la rama**
+   → el RPC lo **rechaza**.
+3. **Cortá la red** y volvé a entrar a la pantalla (o tocá un chip).
 
-1. Cambiá a la cuenta **Maestro (Jhonatan)** → Mesas de examen → abrí la mesa.
-
-**✅ Esperado:** tarjeta **"Recaudación de la mesa"** con el **total** (suma de derechos) y la nota
-*"Cobrados: X · Pendientes: Y"*, más el **"Detalle de postulaciones"** (nombre, grado y derecho).
-
-#### J. `TC-POS-10` — Postular fuera de jerarquía (API, no UI)
-
-- **Pasos:** con un profesor que **no** es dueño ni subordinado directo del dueño (ej. `sensei@`,
-  nieto), intentar postular a una mesa de Jhonatan vía RPC/API.
-- **Esperado:** excepción **"Solo podés postular en las mesas de tu superior directo."**; **sin** fila
-  en `postulaciones_examen`.
+**✅ Esperado:** nunca se exponen datos personales; la vista específica ajena se rechaza; con red
+cortada aparece el mensaje genérico **"No pudimos cargar las estadísticas."** con **"Reintentar"**,
+sin excepciones crudas.
 
 #### Cierre
 
-- Marcar en [`pendientes-pruebas.md`](./pendientes-pruebas.md) los `TC-POS-*` verificados.
+- Marcar en [`pendientes-pruebas.md`](./pendientes-pruebas.md) los `TC-DASH-*` verificados.
 - Si aparece una desviación, registrarla como pendiente con fecha y referencia al plan.
 
 ---

@@ -1,5 +1,8 @@
 # Plan: Corrección del mapeo de cuentas de prueba (RLS) — `db-fix-mapeo-cuentas-seed.md`
 
+> **⚠️ OBSOLETO (2026-09-24):** las cuentas (`jhona@`, `sensei@`) **ya no existen** tras el reset total
+> (`planes/db-seed-demo-ale-criado.md`). Se conserva como historial.
+
 ## Metadatos
 - **Versión:** 1.1
 - **Estado:** Aprobado

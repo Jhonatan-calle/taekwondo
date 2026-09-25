@@ -1,5 +1,9 @@
 # Plan: mostrar el dueño de la mesa (siempre)
 
+> **⚠️ Cuentas de prueba (2026-09-24):** con el **reset total** a “Ale Criado”
+> (`planes/db-seed-demo-ale-criado.md`), las cuentas viejas (`maestro2@`, `jhona@`, Jhonatan) ya no
+> existen. Readaptar las verificaciones que las nombran.
+
 ## Metadatos
 
 | Campo | Valor |

@@ -1,5 +1,8 @@
 # Plan: Plan de Pruebas (catálogo permanente de casos) — `mobile-plan-de-pruebas.md`
 
+> **⚠️ Cuentas de prueba (2026-09-24):** el escenario cambió con el **reset total** a “Ale Criado”
+> (`planes/db-seed-demo-ale-criado.md`); las cuentas viejas (`jhona@`, `sensei@`) ya no existen.
+
 ## Metadatos
 - **Versión:** 1.0
 - **Estado:** Aprobado

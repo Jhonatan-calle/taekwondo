@@ -125,6 +125,7 @@ eas update:republish --channel preview --destination-channel production -p andro
 - `preview` y `production-apk` usan **distribución interna**: se comparte el archivo/QR.
 - `production` (AAB) queda listo para Play Store; comparte canal con `production-apk`, así que las OTA llegan igual a ambos.
 - **CLI:** se recomienda `npm i -g eas-cli@latest`.
+- **Variante "dev" para la app de testeo (pendiente):** ver `pendientes-pruebas.md` #33 — cuando se priorice, se agrega un `app.config.js` + `APP_VARIANT` para que la app de testeo sea **otra app** (“CHS ALFA dev”, `ar.taekwondoitf.app.dev`) y conviva con la de producción. Requiere credenciales Android para el nuevo `applicationId`.
 
 ---
 

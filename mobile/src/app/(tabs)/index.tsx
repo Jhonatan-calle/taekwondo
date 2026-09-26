@@ -79,6 +79,7 @@ export default function HomeScreen() {
   const [resolviendoId, setResolviendoId] = useState<string | null>(null);
   const [solicitudEnConfirmacion, setSolicitudEnConfirmacion] = useState<string | null>(null);
   const [gradoConfirmado, setGradoConfirmado] = useState<Grado | null>(null);
+  const [concederMaestro, setConcederMaestro] = useState(false);
 
   const cargarSolicitudes = useCallback(async () => {
     setCargandoSolicitudes(true);
@@ -231,10 +232,11 @@ export default function HomeScreen() {
     solicitudId: string,
     resultado: 'aceptada' | 'rechazada',
     grado?: Grado,
+    concederMaestroParam?: boolean,
   ) => {
     if (resolviendoId != null) return;
     setResolviendoId(solicitudId);
-    const { error } = await resolverSolicitudLinaje(solicitudId, resultado, grado);
+    const { error } = await resolverSolicitudLinaje(solicitudId, resultado, grado, concederMaestroParam);
     setResolviendoId(null);
     if (error != null) return;
     setSolicitudes((prev) => prev.filter((s) => s.id !== solicitudId));
@@ -244,12 +246,13 @@ export default function HomeScreen() {
   const abrirConfirmacion = (sol: SolicitudLinaje) => {
     setSolicitudEnConfirmacion(sol.id);
     setGradoConfirmado(sol.grado_solicitado ?? null);
+    setConcederMaestro(sol.solicita_maestro);
   };
 
   const confirmarAceptacion = async (sol: SolicitudLinaje) => {
     if (gradoConfirmado == null) return;
     setSolicitudEnConfirmacion(null);
-    await resolver(sol.id, 'aceptada', gradoConfirmado);
+    await resolver(sol.id, 'aceptada', gradoConfirmado, sol.solicita_maestro && concederMaestro);
   };
 
   const nombre = perfil?.nombre_completo ?? sesion?.user?.email ?? 'usuario';
@@ -395,6 +398,11 @@ export default function HomeScreen() {
                   <Text style={styles.solicitudGrado}>
                     Cinturón declarado: {etiquetaGrado(sol.grado_solicitado)}
                   </Text>
+                  {sol.solicita_maestro ? (
+                    <Text style={styles.solicitudGrado}>
+                      El solicitante declara: ¿tiene profesores a cargo?
+                    </Text>
+                  ) : null}
 
                   {enConfirmacion ? (
                     <View>
@@ -424,6 +432,17 @@ export default function HomeScreen() {
                           );
                         })}
                       </View>
+                      {sol.solicita_maestro ? (
+                        <Pressable
+                          onPress={() => setConcederMaestro((valor) => !valor)}
+                          style={styles.filaCheckMaestro}
+                          accessibilityRole="checkbox"
+                          accessibilityState={{ checked: concederMaestro }}
+                        >
+                          <Text style={styles.checkMaestro}>{concederMaestro ? '☑' : '☐'}</Text>
+                          <Text style={styles.textoCheckMaestro}>¿Tiene profesores a cargo?</Text>
+                        </Pressable>
+                      ) : null}
                       <View style={styles.filaAcciones}>
                         <Pressable
                           onPress={() => void confirmarAceptacion(sol)}
@@ -614,6 +633,21 @@ const styles = StyleSheet.create({
   },
   chipGradoTextoSeleccionado: {
     color: '#fff',
+  },
+  filaCheckMaestro: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  checkMaestro: {
+    fontSize: 20,
+    color: '#C62828',
+    marginRight: 10,
+  },
+  textoCheckMaestro: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
   },
   filaAcciones: {
     flexDirection: 'row',

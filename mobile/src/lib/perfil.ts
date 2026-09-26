@@ -82,7 +82,7 @@ export type InstructorLinaje = {
 
 export type SolicitudLinaje = Pick<
   Database['public']['Tables']['solicitudes_linaje']['Row'],
-  'id' | 'nombre_alumno' | 'grado_solicitado' | 'estado' | 'creado_en'
+  'id' | 'nombre_alumno' | 'grado_solicitado' | 'estado' | 'creado_en' | 'solicita_maestro'
 >
 
 export type Locacion = Pick<

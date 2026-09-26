@@ -85,6 +85,7 @@ export default function OnboardingScreen() {
   const [errorInstructores, setErrorInstructores] = useState(false);
   const [instructorSeleccionado, setInstructorSeleccionado] = useState<string | null>(null);
   const [gradoDeclarado, setGradoDeclarado] = useState<Grado | null>(null);
+  const [declaraMaestro, setDeclaraMaestro] = useState(false);
   const [errores, setErrores] = useState<ErroresFormulario>({});
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
@@ -163,13 +164,13 @@ export default function OnboardingScreen() {
         e.grado = 'Seleccioná tu cinturón (primer Dan o superior).';
       }
       if (cargandoInstructores) {
-        e.instructor = 'La lista de instructores se está cargando…';
+        e.instructor = 'La lista de maestros se está cargando…';
       } else if (errorInstructores) {
-        e.instructor = 'No pudimos cargar la lista de instructores.';
+        e.instructor = 'No pudimos cargar la lista de maestros.';
       } else if (instructores.length === 0) {
-        e.instructor = 'Aún no hay instructores registrados. Avisá a la administración.';
+        e.instructor = 'Aún no hay maestros registrados. Avisá a la administración.';
       } else if (instructorSeleccionado == null) {
-        e.instructor = 'Seleccioná tu instructor.';
+        e.instructor = 'Seleccioná tu maestro.';
       }
     }
     return e;
@@ -208,7 +209,11 @@ export default function OnboardingScreen() {
         return;
       }
       if (necesitaLinaje && instructorSeleccionado != null && gradoDeclarado != null) {
-        const resultadoLinaje = await solicitarLinaje(instructorSeleccionado, gradoDeclarado);
+        const resultadoLinaje = await solicitarLinaje(
+          instructorSeleccionado,
+          gradoDeclarado,
+          declaraMaestro,
+        );
         if (resultadoLinaje.error) {
           setError(resultadoLinaje.error);
           if (resultadoLinaje.error === MENSAJE_ERROR_GENERICO) reportarError();
@@ -381,15 +386,15 @@ export default function OnboardingScreen() {
             </View>
             {errores.grado ? <Text style={styles.errorTexto}>{errores.grado}</Text> : null}
 
-            <Text style={styles.label}>Tu instructor / maestro *</Text>
+            <Text style={styles.label}>Tu maestro *</Text>
             <Text style={styles.edad}>
-              Lo elegís ahora; tu instructor deberá confirmar tu registro desde su cuenta.
+              Lo elegís ahora; tu maestro deberá confirmar tu registro desde su cuenta.
             </Text>
             {cargandoInstructores ? (
-              <Text style={styles.edad}>Cargando instructores…</Text>
+              <Text style={styles.edad}>Cargando maestros…</Text>
             ) : errorInstructores ? (
               <View>
-                <Text style={styles.errorTexto}>No pudimos cargar la lista de instructores.</Text>
+                <Text style={styles.errorTexto}>No pudimos cargar la lista de maestros.</Text>
                 <Pressable
                   onPress={() => void cargarInstructores()}
                   style={styles.reintentar}
@@ -399,7 +404,7 @@ export default function OnboardingScreen() {
                 </Pressable>
               </View>
             ) : instructores.length === 0 ? (
-              <Text style={styles.errorTexto}>Aún no hay instructores registrados. Avisá a la administración.</Text>
+              <Text style={styles.errorTexto}>Aún no hay maestros registrados. Avisá a la administración.</Text>
             ) : (
               <View style={styles.listaInstructores}>
                 {instructores.map((inst) => {
@@ -423,6 +428,19 @@ export default function OnboardingScreen() {
                 })}
               </View>
             )}
+            <Pressable
+              onPress={() => setDeclaraMaestro((valor) => !valor)}
+              style={styles.filaCheckMaestro}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: declaraMaestro }}
+            >
+              <Text style={styles.checkMaestro}>{declaraMaestro ? '☑' : '☐'}</Text>
+              <Text style={styles.textoCheckMaestro}>¿Tenés profesores a cargo?</Text>
+            </Pressable>
+            <Text style={styles.edad}>
+              Si lo marcás, tu maestro podrá confirmarlo al aceptar tu registro.
+            </Text>
+
             {errores.instructor ? <Text style={styles.errorTexto}>{errores.instructor}</Text> : null}
           </View>
         ) : esMaestroUsuario ? (
@@ -596,6 +614,22 @@ const styles = StyleSheet.create({
   },
   chipGradoTextoSeleccionado: {
     color: '#fff',
+  },
+  filaCheckMaestro: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  checkMaestro: {
+    fontSize: 20,
+    color: '#C62828',
+    marginRight: 10,
+  },
+  textoCheckMaestro: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
   },
   reintentar: {
     marginTop: 8,

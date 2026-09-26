@@ -84,12 +84,17 @@ type AuthGlobalValue = {
   obtenerAlumnoDetalle(alumnoId: string): Promise<ResultadoConsulta<AlumnoDetalle | null>>
   altaAlumno(datos: DatosAltaAlumno): Promise<{ error: string | null }>
   listarInstructores(): Promise<ResultadoConsulta<InstructorLinaje[] | null>>
-  solicitarLinaje(maestroId: string, grado: Grado): Promise<{ error: string | null }>
+  solicitarLinaje(
+    maestroId: string,
+    grado: Grado,
+    declaraMaestro: boolean,
+  ): Promise<{ error: string | null }>
   listarSolicitudesPendientes(): Promise<ResultadoConsulta<SolicitudLinaje[] | null>>
   resolverSolicitudLinaje(
     solicitudId: string,
     resultado: 'aceptada' | 'rechazada',
     grado?: Grado,
+    concederMaestro?: boolean,
   ): Promise<{ error: string | null }>
   listarGrupos(): Promise<ResultadoConsulta<Grupo[] | null>>
   crearGrupo(datos: DatosNuevoGrupo): Promise<ResultadoCreacion>
@@ -494,12 +499,20 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
   )
 
   const solicitarLinaje = useCallback(
-    async (maestroId: string, grado: Grado): Promise<{ error: string | null }> => {
+    async (
+      maestroId: string,
+      grado: Grado,
+      declaraMaestro: boolean,
+    ): Promise<{ error: string | null }> => {
       const usuarioId = sesion?.user?.id
       if (usuarioId == null) return { error: MENSAJE_ERROR_GENERICO }
       const { data, error } = await ejecutarConsulta<boolean | null>(
         Promise.resolve(
-          supabase.rpc('solicitar_linaje', { p_instructor: maestroId, p_grado: grado }),
+          supabase.rpc('solicitar_linaje', {
+            p_instructor: maestroId,
+            p_grado: grado,
+            p_solicita_maestro: declaraMaestro,
+          }),
         ),
         { modulo: 'perfil', contexto: 'solicitarLinaje' },
       )
@@ -518,7 +531,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
         Promise.resolve(
           supabase
             .from('solicitudes_linaje')
-            .select('id, nombre_alumno, grado_solicitado, estado, creado_en')
+            .select('id, nombre_alumno, grado_solicitado, estado, creado_en, solicita_maestro')
             .eq('instructor_id', usuarioId)
             .eq('estado', 'pendiente')
             .order('creado_en', { ascending: true }),
@@ -534,6 +547,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
       solicitudId: string,
       resultado: 'aceptada' | 'rechazada',
       grado?: Grado,
+      concederMaestro?: boolean,
     ): Promise<{ error: string | null }> => {
       const { data, error } = await ejecutarConsulta<boolean | null>(
         Promise.resolve(
@@ -541,6 +555,7 @@ export function AuthGlobalProvider({ children }: PropsWithChildren) {
             p_solicitud: solicitudId,
             p_resultado: resultado,
             p_grado: grado,
+            p_conceder_maestro: concederMaestro ?? false,
           }),
         ),
         { modulo: 'perfil', contexto: 'resolverSolicitudLinaje' },

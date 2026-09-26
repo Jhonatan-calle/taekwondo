@@ -12,7 +12,11 @@ jerarquía y disciplina del Taekwondo ITF. Fuente funcional: `srs-sistemaDeGesti
 >   árbol: cada nodo es subordinado directo de su `maestro_id`.
 > - **Faceta Maestro:** boolean `es_maestro` de **uso exclusivo del sistema** (concedido vía Service
 >   Role o RPCs autorizados). Habilita apertura de mesas de examen y poder recursivo sobre toda su
->   rama descendente.
+>   rama descendente. El nuevo usuario puede **declarar** "¿Tenés profesores a cargo?" al registrarse;
+>   la faceta **NO** se activa sola: recién la **confirma el superior** al aceptar el linaje. El
+>   superior puede aceptar como **profesor corriente** (niega la faceta) o confirmarla como Maestro.
+> - **Conteo `hijos_maestros`:** `profiles.hijos_maestros` guarda cuántos hijos **directos** del nodo
+>   son a su vez maestros (dato para el árbol de poder; se mantiene por trigger).
 > - **Faceta Profesor:** solo puede activarse con **1er Dan (o superior) verificado**
 >   (`grado_actual >= 'dan_1'`). Los grados Gup (cinturones de color) tienen el acceso bloqueado.
 >   Sigue siendo alumno respecto a su propio instructor superior (`maestro_id`).

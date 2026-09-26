@@ -381,8 +381,31 @@
 
 ---
 
+### 33. App de testeo con nombre/paquete propios (variante "dev") — PENDIENTE
+- **Fecha de registro:** 2026-09-25
+- **Pedido:** que la app de **testeo** se vea distinta en el celular (ej. **“CHS ALFA dev”**) y sea **otra app**, para convivir con la de producción sin pisarse.
+- **Enfoque (patrón oficial de variantes de EAS):**
+  1. `mobile/app.config.js` dinámico que lee `app.json` y, si `APP_VARIANT === 'preview'`, cambia `name` → `CHS ALFA dev` y `android.package` / `ios.bundleIdentifier` → `ar.taekwondoitf.app.dev`.
+  2. `eas.json`, perfil `preview`: `"env": { "APP_VARIANT": "preview" }`.
+  3. EAS env var `APP_VARIANT=preview` (plaintext) en el entorno `preview` (para que `eas update --environment preview` use la variante correcta).
+  4. (Opcional) ícono distinto para dev (badge “DEV”), generado con `scripts/gen-assets.py`.
+- **Bloqueo:** requiere configurar/**generar credenciales Android** para el nuevo `applicationId` (`…app.dev`) — el keystore actual es del paquete de producción. El primer build lo pediría. **Postergado a pedido del usuario (no es prioridad).**
+- **Consecuencia a tener en cuenta:** la variante cambia el `fingerprint` de preview → su `runtimeVersion` deja de coincidir con producción, así que **`eas update:republish` (promover) deja de aplicar cross-variante**. Se reemplaza por publicar a cada canal por separado (`eas update --channel preview --environment preview` y `--channel production --environment production`).
+- **Referencia:** `planes/mobile-build-apk-eas.md` (v1.3); patrón oficial: `https://docs.expo.dev/build-reference/variants/`.
+
+---
+
+### 34. Faceta de Maestro pendiente + conteo `hijos_maestros` (verificar en dispositivo)
+- **Fecha de registro:** 2026-09-26
+- **Referencia:** `planes/mobile-maestro-faceta-pendiente.md`.
+- **Qué cambió:** el onboarding tiene **"¿Tenés profesores a cargo?"** y el listado **"Tu maestro"** muestra solo cuentas Maestro; al aceptar, el superior confirma el cinturón y puede marcar/desmarcar **"¿Tiene profesores a cargo?"** (si no, queda profesor corriente); `profiles.hijos_maestros` (conteo de hijos directos que son maestros, por trigger).
+- **Verificar:** `TC-LIN-11` (declarar + aceptar con/sin confirmar) y `TC-LIN-12` (listado solo maestros + conteo).
+- **Nota:** la migración `maestro_faceta_pendiente` ya se aplicó (`db push`).
+
+---
+
 ## Por dónde vamos (resumen de sesión)
-- **Catálogo:** 164 casos en 19 módulos; **82 verificados** (auth, onboarding, linaje, navegación, inicio, alumnos, grupos, locaciones, clases, asistencia, objetivos, auditoría, mesas, postulación, planilla/evaluación y panel Maestro).
+- **Catálogo:** 168 casos en 19 módulos; **82 verificados** (auth, onboarding, linaje, navegación, inicio, alumnos, grupos, locaciones, clases, asistencia, objetivos, auditoría, mesas, postulación, planilla/evaluación y panel Maestro).
 - **Bloques cerrados:** Auth/login, Onboarding, Linaje (Realtime), Alumnos, Grupos, Locaciones, Clases+Objetivos, Asistencia, Auditoría+Inicio Maestro, Mesas de examen, Postulación y Planilla/evaluación.
 - **Siguiente sesión:** continuar el **guion de demo** (Dashboard de métricas) y, cuando haya tiempo, los `TC` de **RLS/aislamiento** (con una cuenta sin acceso, ej. `marti@` o un perfil sin facetas).
 - **Pendiente técnico:** `db lint` sigue reportando 1 issue **preexistente** de **torneos** (`llave_id` ambiguo en `sincronizar_resultado_en_vivo`) — congelado, no se toca.

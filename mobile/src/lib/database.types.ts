@@ -861,6 +861,7 @@ export type Database = {
           genero: Database["public"]["Enums"]["genero"] | null
           grado_actual: Database["public"]["Enums"]["grado"] | null
           grados_verificados: boolean
+          hijos_maestros: number
           id: string
           maestro_id: string | null
           nombre_completo: string
@@ -880,6 +881,7 @@ export type Database = {
           genero?: Database["public"]["Enums"]["genero"] | null
           grado_actual?: Database["public"]["Enums"]["grado"] | null
           grados_verificados?: boolean
+          hijos_maestros?: number
           id: string
           maestro_id?: string | null
           nombre_completo?: string
@@ -899,6 +901,7 @@ export type Database = {
           genero?: Database["public"]["Enums"]["genero"] | null
           grado_actual?: Database["public"]["Enums"]["grado"] | null
           grados_verificados?: boolean
+          hijos_maestros?: number
           id?: string
           maestro_id?: string | null
           nombre_completo?: string
@@ -989,6 +992,7 @@ export type Database = {
           instructor_id: string
           nombre_alumno: string
           resuelto_en: string | null
+          solicita_maestro: boolean
         }
         Insert: {
           alumno_id: string
@@ -999,6 +1003,7 @@ export type Database = {
           instructor_id: string
           nombre_alumno?: string
           resuelto_en?: string | null
+          solicita_maestro?: boolean
         }
         Update: {
           alumno_id?: string
@@ -1009,6 +1014,7 @@ export type Database = {
           instructor_id?: string
           nombre_alumno?: string
           resuelto_en?: string | null
+          solicita_maestro?: boolean
         }
         Relationships: [
           {
@@ -1237,6 +1243,7 @@ export type Database = {
       }
       resolver_solicitud_linaje: {
         Args: {
+          p_conceder_maestro?: boolean
           p_grado?: Database["public"]["Enums"]["grado"]
           p_resultado: string
           p_solicitud: string
@@ -1257,6 +1264,7 @@ export type Database = {
         Args: {
           p_grado: Database["public"]["Enums"]["grado"]
           p_instructor: string
+          p_solicita_maestro?: boolean
         }
         Returns: boolean
       }

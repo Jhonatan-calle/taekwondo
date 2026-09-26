@@ -10,10 +10,10 @@
 > Los **pendientes puntuales** (bloqueos, fechas, follow-ups) viven en `pendientes-pruebas.md`.
 
 ## Metadatos
-- **Versión:** 1.44
+- **Versión:** 1.45
 - **Estado:** Vigente
-- **Fecha:** 2026-09-25
-- **Cobertura:** 166 casos en 19 módulos (46 marcados Smoke)
+- **Fecha:** 2026-09-26
+- **Cobertura:** 168 casos en 19 módulos (46 marcados Smoke)
 
 ## Historial de revisiones
 | Versión | Fecha | Cambios |
@@ -59,6 +59,7 @@
 | 1.38 | 2026-09-24 | `TC-POS-06` (mesa cerrada) actualizado al comportamiento real (desaparece del listado; el aviso de "cerrada" queda solo accesible por deep link) y marcado ✅ verificado; se registra la mejora futura en `pendientes-pruebas.md`. |
 | 1.39 | 2026-09-24 | Prueba manual: **módulos Postulación y Planilla/evaluación completos.** `TC-POS-07`…`TC-POS-10` y `TC-EVA-01`, `TC-EVA-03`…`TC-EVA-12` marcados ✅ verificados. |
 | 1.40 | 2026-09-24 | **Reset total de la BD + escenario de demo "Ale Criado":** se reescribe la sección **§2 Usuarios y datos de prueba** (Nico → Ale → Andres/Teresita, 3 logins) y se quitan las referencias a cuentas viejas en `TC-AUD-03`, `TC-MES-12` y `TC-RLS-01`. Referencia: `planes/db-seed-demo-ale-criado.md`. |
+| 1.45 | 2026-09-26 | **Faceta de Maestro pendiente:** `TC-LIN-01`/`TC-LIN-02` actualizados (declaración "¿Tenés profesores a cargo?" + toggle de confirmación al aceptar); nuevos `TC-LIN-11` (declarar/confirmar) y `TC-LIN-12` (listado solo maestros + `hijos_maestros`). Referencia: `planes/mobile-maestro-faceta-pendiente.md`. |
 | 1.41 | 2026-09-25 | **Marca de la app (ícono y splash):** nuevo módulo **`TC-APP`** (4 casos: splash de marca, transición sin parpadeo, ícono de launcher e ícono adaptativo/temático Android 13+). Nota: requieren **APK de `preview`** (Expo Go no muestra ícono/splash propios). Referencia: `planes/mobile-build-apk-eas.md` (v1.1). |
 | 1.42 | 2026-09-25 | **Nombre visible `CHS ALFA`:** `TC-APP-03` ahora también verifica el **label del launcher**. Referencia: `planes/mobile-build-apk-eas.md` (v1.2). |
 | 1.43 | 2026-09-25 | **OTA testeo → producción:** `runtimeVersion` `fingerprint`, canal `preview` (testeo) y `production` (usuarios reales), EAS Environment Variables y perfil `production-apk`; nuevos `TC-APP-05` (update en canal de testeo) y `TC-APP-06` (promoción a producción). Referencia: `planes/mobile-eas-fingerprint-canal-testeo.md`. |
@@ -269,14 +270,14 @@ Nico Saez                [MAESTRO] dan_7  (sin login)   ← raíz
 
 #### TC-LIN-01 — Solicitud de linaje · **Smoke**
 - **Rol:** usuario staff nuevo sin `maestro_id`
-- **Pasos:** onboarding → declarar el cinturón (chips **Dan I…Dan IX**) → elegir instructor de la lista → enviar
+- **Pasos:** onboarding → declarar el cinturón (chips **Dan I…Dan IX**) → elegir **maestro** de la lista (solo cuentas con `es_maestro`) → (opcional) marcar **"¿Tenés profesores a cargo?"** → enviar
 - **Esperado:** con un Gup o sin grado **no deja continuar**; el grado declarado queda como **snapshot** en la solicitud; queda **pendiente**; `maestro_id` sigue `null`; en Inicio aparece el aviso "Tu instructor todavía no confirmó tu registro"
 - **Referencia:** `planes/mobile-linaje-confirmar-grado.md`
 
 #### TC-LIN-02 — Aceptar solicitud y confirmar cinturón
-- **Rol:** instructor (con `es_profesor` o `es_maestro`)
-- **Pasos:** Inicio → "Solicitudes de alumnos" → **Aceptar** → confirmar o **ajustar** el grado (Dan I…Dan IX) → "Confirmar y aceptar"
-- **Esperado:** `maestro_id` se persiste (única vez); `grado_actual` = grado confirmado con **`grados_verificados = true`**; se activa **`es_profesor`**; el aviso del alumno desaparece al refrescar
+- **Rol:** maestro (con `es_maestro`)
+- **Pasos:** Inicio → "Solicitudes de alumnos" → **Aceptar** → confirmar o **ajustar** el grado (Dan I…Dan IX) → si el solicitante **declaró tener profesores a cargo**, marcar/desmarcar **"¿Tiene profesores a cargo?"** → "Confirmar y aceptar"
+- **Esperado:** `maestro_id` se persiste (única vez); `grado_actual` = grado confirmado con **`grados_verificados = true`**; se activa **`es_profesor`**; `es_maestro` queda `true` **solo si** se marcó "¿Tiene profesores a cargo?" (si no, queda profesor corriente); el aviso del alumno desaparece al refrescar
 - **Referencia:** `planes/mobile-linaje-confirmar-grado.md`
 
 #### TC-LIN-03 — Rechazar solicitud · ✅ verificado (2026-09-23)
@@ -314,6 +315,19 @@ Nico Saez                [MAESTRO] dan_7  (sin login)   ← raíz
 - **Pasos:** que otra cuenta envíe una solicitud de linaje, y luego resolverla desde otro dispositivo
 - **Esperado:** la solicitud **aparece sola** en la lista y **desaparece** al resolverse, sin recuperar foco
 - **Referencia:** `planes/mobile-refresco-linaje-tiempo-real.md`
+
+#### TC-LIN-11 — Faceta de Maestro pendiente (declarar + confirmar)
+- **Pasos:** registrarse marcando **"¿Tenés profesores a cargo?"**; el superior **Aceptar** (a) **sin** marcar "¿Tiene profesores a cargo?" y (b) marcándolo
+- **Esperado:**
+  - Antes de aceptar: `es_maestro` **nunca** se activa solo.
+  - (a) acepta sin confirmar → `es_profesor = true`, **`es_maestro = false`** (profesor corriente).
+  - (b) acepta confirmando → `es_profesor = true` **y `es_maestro = true`**.
+- **Referencia:** `planes/mobile-maestro-faceta-pendiente.md`
+
+#### TC-LIN-12 — Listado de maestros y conteo `hijos_maestros`
+- **Pasos:** en el onboarding, ver la lista "Tu maestro"; (BD) revisar `profiles.hijos_maestros`
+- **Esperado:** la lista muestra **solo cuentas con `es_maestro = true`** (no profesores sueltos). `hijos_maestros` = cantidad de hijos **directos** que son maestros (se mantiene solo)
+- **Referencia:** `planes/mobile-maestro-faceta-pendiente.md`
 
 ---
 

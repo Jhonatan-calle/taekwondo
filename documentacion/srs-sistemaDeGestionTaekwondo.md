@@ -10,7 +10,7 @@ El sistema implementa un modelo de acceso basado en un árbol jerárquico infini
 
 ## **Estructura de Roles Dinámica**
 
-* **Maestro:** Usuario superior (con la bandera `es_maestro` habilitada) que tiene descendencia en el sistema. Su posición en el árbol le otorga poder recursivo sobre sus subordinados (Profesores y Alumnos-Profesores) y toda la red debajo de ellos. Son los únicos habilitados para aperturar mesas de examen.
+* **Maestro:** Usuario superior (con la bandera `es_maestro` habilitada) que tiene descendencia en el sistema. Su posición en el árbol le otorga poder recursivo sobre sus subordinados (Profesores y Alumnos-Profesores) y toda la red debajo de ellos. Son los únicos habilitados para aperturar mesas de examen. El usuario puede **declarar** que es maestro al registrarse, pero la faceta recién la **confirma su superior** al aceptar el linaje (puede aceptarlo como profesor corriente).
 * **Profesor / Alumno-Profesor:** Usuario con un grado mínimo de 1º Dan (`dan_1`) que ha sido habilitado para dar clases (bandera `es_profesor` activa). Administra a sus propios alumnos directos. Sigue siendo un alumno respecto a su propio instructor superior (`maestro_id`), a quien le rinde cuentas.
 * **Alumno Regular:** Estudiante en la base del árbol jerárquico, sin permisos de enseñanza ni alumnos a cargo.
 
